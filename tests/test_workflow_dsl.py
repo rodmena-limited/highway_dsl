@@ -126,6 +126,29 @@ def test_foreach_operator_model():
     assert foreach.items == "data_list"
     assert foreach.task_chain == ["process_item"]
 
+def test_wait_operator_serialization():
+    # Test with timedelta
+    wait_duration = WaitOperator(task_id="wait1", wait_for=timedelta(hours=1))
+    dump = wait_duration.model_dump()
+    assert dump["wait_for"] == "duration:3600.0"
+
+    # Test with datetime
+    now = datetime.now().replace(microsecond=0)
+    wait_datetime = WaitOperator(task_id="wait2", wait_for=now)
+    dump = wait_datetime.model_dump()
+    assert dump["wait_for"] == f"datetime:{now.isoformat()}"
+
+    # Test with string (no conversion)
+    wait_string = WaitOperator(task_id="wait3", wait_for="event_name")
+    dump = wait_string.model_dump()
+    assert dump["wait_for"] == "event_name"
+
+    # Test parsing of different data types
+    assert WaitOperator.model_validate({"task_id": "t", "wait_for": "duration:60"}).wait_for == timedelta(seconds=60)
+    now_iso = now.isoformat()
+    assert WaitOperator.model_validate({"task_id": "t", "wait_for": f"datetime:{now_iso}"}).wait_for == now
+    assert WaitOperator.model_validate({"task_id": "t", "wait_for": "event"}).wait_for == "event"
+
 def test_workflow_builder_simple_chain():
     workflow = (
         WorkflowBuilder("simple_chain")
@@ -317,3 +340,13 @@ def test_complex_workflow_creation_and_serialization():
     json_output = workflow.to_json()
     loaded_workflow_from_json = Workflow.from_json(json_output)
     assert sort_dict_recursively(json.loads(workflow.model_dump_json())) == sort_dict_recursively(json.loads(loaded_workflow_from_json.model_dump_json()))
+
+def test_unknown_operator_type_raises_error():
+    yaml_content = """
+    name: test
+    tasks:
+      task1:
+        operator_type: unknown_operator
+    """
+    with pytest.raises(ValueError, match="Unknown operator type: unknown_operator"):
+        Workflow.from_yaml(yaml_content)
