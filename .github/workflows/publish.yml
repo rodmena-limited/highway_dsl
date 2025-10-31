@@ -24,7 +24,7 @@ jobs:
       run: |
         python -m venv .venv
         . .venv/bin/activate
-        pip install wheel setuptools twine
+        pip install wheel setuptools twine build
 
     - name: Build the package
       run: |
