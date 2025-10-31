@@ -3,12 +3,12 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "highway"
-version = "0.0.3"
+name = "highway_dsl"
+version = "0.0.1"
 authors = [
   { name = "Farseed Ashouri", email = "farseed.ashouri@gmail.com" },
 ]
-description = "A workflow engine for reliable and scalable data processing pipelines."
+description = "A domain specific language (DSL) for defining and managing data processing pipelines."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
@@ -22,7 +22,12 @@ classifiers = [
 dependencies = [
     "pydantic>=2.12.3"
     ]
+# dev dependencies
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+]
 
 [project.urls]
-Homepage = "https://github.com/rodmena-limited/highway"
-Issues = "https://github.com/rodmena-limited/highway/issues"
+Homepage = "https://github.com/rodmena-limited/highway_dsl"
+Issues = "https://github.com/rodmena-limited/highway_dsl/issues"

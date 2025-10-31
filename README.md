@@ -1,15 +1,8 @@
-# highway
+# highway DSL
 
-A simple hello-world package created for PyPI.
+A Domain-Specific Language (DSL) for building advanced workflows and pipelines.
 
 ## Installation
 ```bash
-pip install highway
-```
-
-## Usage
-```python
-import highway
-
-highway.hello()
+pip install highway_dsl
 ```
