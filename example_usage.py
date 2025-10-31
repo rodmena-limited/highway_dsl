@@ -1,6 +1,7 @@
 # example_usage.py
+import json
 from datetime import timedelta
-from workflow_dsl import (
+from highway_dsl.workflow_dsl import (
     Workflow,
     WorkflowBuilder,
     TaskOperator,
@@ -10,6 +11,7 @@ from workflow_dsl import (
     ForEachOperator,
     RetryPolicy,
     TimeoutPolicy,
+    OperatorType,
 )
 
 
@@ -42,7 +44,8 @@ def create_complex_workflow() -> Workflow:
             function="workflows.tasks.advanced_processing",
             args=["{{validated_data}}"],
             dependencies=["check_quality"],
-            retry_policy=RetryPolicy(max_retries=5, delay=timedelta(seconds=10)),
+            retry_policy=RetryPolicy(max_retries=5, delay=timedelta(seconds=10), backoff_factor=2.0),
+            operator_type=OperatorType.TASK,
         )
     )
 
@@ -52,6 +55,7 @@ def create_complex_workflow() -> Workflow:
             function="workflows.tasks.basic_processing",
             args=["{{validated_data}}"],
             dependencies=["check_quality"],
+            operator_type=OperatorType.TASK,
         )
     )
 
@@ -64,32 +68,34 @@ def create_complex_workflow() -> Workflow:
                 "branch_b": ["transform_b", "enrich_b"],
             },
             dependencies=["high_quality_processing", "standard_processing"],
+            operator_type=OperatorType.PARALLEL,
         )
     )
 
     # Add parallel branch tasks
     for branch in ["a", "b"]:
         workflow.add_task(
-            TaskOperator(
-                task_id=f"transform_{branch}",
-                function=f"workflows.tasks.transform_{branch}",
-                dependencies=["parallel_processing"],
-                result_key=f"transformed_{branch}",
-            )
-        )
+                    TaskOperator(
+                        task_id=f"transform_{branch}",
+                        function=f"workflows.tasks.transform_{branch}",
+                        dependencies=["parallel_processing"],
+                        result_key=f"transformed_{branch}",
+                        operator_type=OperatorType.TASK,
+                    )        )
 
         workflow.add_task(
-            TaskOperator(
-                task_id=f"enrich_{branch}",
-                function="workflows.tasks.enrich_data",
-                args=[f"{{{{transformed_{branch}}}}}"],
-                dependencies=[f"transform_{branch}"],
-                result_key=f"enriched_{branch}",
-            )
-        )
+                    TaskOperator(
+                        task_id=f"enrich_{branch}",
+                        function="workflows.tasks.enrich_data",
+                        args=[f"{{{{transformed_{branch}}}}}"],
+                        dependencies=[f"transform_{branch}"],
+                        result_key=f"enriched_{branch}",
+                        operator_type=OperatorType.TASK,
+                    )        )
 
     # Continue with builder for the remaining linear flow
-    builder = WorkflowBuilder.from_workflow(workflow, current_task="enrich_b")
+    builder = WorkflowBuilder(workflow.name, existing_workflow=workflow)
+    builder._current_task = "enrich_b"
     workflow = (
         builder.task(
             "aggregate",
@@ -231,20 +237,29 @@ def demonstrate_interoperability():
     print(f"Loaded workflow: {workflow_from_json.name}")
 
     # Verify round-trip conversion
-    assert python_workflow.to_dict() == workflow_from_yaml.to_dict()
-    assert python_workflow.to_dict() == workflow_from_json.to_dict()
+    def sort_dict_recursively(d):
+        if not isinstance(d, dict):
+            return d
+        return {k: sort_dict_recursively(v) for k, v in sorted(d.items())}
+
+    print("\nPython Workflow Dump:")
+    python_dump = json.loads(python_workflow.model_dump_json())
+    print(json.dumps(sort_dict_recursively(python_dump), indent=2))
+
+    print("\nYAML Loaded Workflow Dump:")
+    yaml_dump = json.loads(workflow_from_yaml.model_dump_json())
+    print(json.dumps(sort_dict_recursively(yaml_dump), indent=2))
+
+    print("\nJSON Loaded Workflow Dump:")
+    json_dump = json.loads(workflow_from_json.model_dump_json())
+    print(json.dumps(sort_dict_recursively(json_dump), indent=2))
+
+    assert sort_dict_recursively(python_dump) == sort_dict_recursively(yaml_dump)
+    assert sort_dict_recursively(python_dump) == sort_dict_recursively(json_dump)
     print("\n✅ All formats are interoperable!")
 
 
 if __name__ == "__main__":
-    # Add the missing method to WorkflowBuilder for completeness
-    def from_workflow(cls, workflow: Workflow, current_task: str = None):
-        builder = cls(workflow.name)
-        builder.workflow = workflow
-        builder._current_task = current_task
-        return builder
-
-    WorkflowBuilder.from_workflow = classmethod(from_workflow)
 
     # Run demonstrations
     demonstrate_interoperability()

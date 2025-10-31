@@ -20,12 +20,15 @@ classifiers = [
 
 # add dependencies here
 dependencies = [
-    "pydantic>=2.12.3"
+    "pydantic>=2.12.3",
+    "pyyaml>=6.0"
     ]
 # dev dependencies
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
+    "mypy>=1.0.0",
+    "types-PyYAML>=6.0.0",
 ]
 
 [project.urls]
