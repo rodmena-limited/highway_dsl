@@ -16,6 +16,28 @@ Highway DSL is a Python-based Domain Specific Language (DSL) for defining and ma
 *   **Serialization/Deserialization:** Seamless conversion of workflow definitions between Python objects, YAML, and JSON formats.
 *   **Workflow Builder:** A fluent API for constructing workflows programmatically.
 
+### Feature Overview
+
+```mermaid
+graph TD
+    A[Workflow] --> B{TaskOperator};
+    A --> C{ConditionOperator};
+    A --> D{WaitOperator};
+    A --> E{ParallelOperator};
+    A --> F{ForEachOperator};
+
+    B --> G[Executes Python Function];
+    C --> H{If/Else Branching};
+    D --> I[Pauses Execution];
+    E --> J[Concurrent Branches];
+    F --> K[Iterates Over Items];
+
+    subgraph Policies
+        B --> L[RetryPolicy];
+        B --> M[TimeoutPolicy];
+    end
+```
+
 ## Installation
 
 To install Highway DSL, you can use pip:
@@ -36,7 +58,7 @@ pip install "highway-dsl[dev]"
 
 ```python
 from datetime import timedelta
-from workflow_dsl import WorkflowBuilder
+from highway_dsl import WorkflowBuilder
 
 def demonstrate_basic_workflow():
     """Show a simple complete workflow using just the builder"""
@@ -136,7 +158,7 @@ tasks:
 To load this YAML:
 
 ```python
-from workflow_dsl import Workflow
+from highway_dsl import Workflow
 
 yaml_content = """
 # ... (yaml content from above)
@@ -168,7 +190,9 @@ mypy .
 
 ```
 .highway/
-├── workflow_dsl.py         # Core DSL definitions (Pydantic models)
+├── highway_dsl/
+│   ├── __init__.py         # Exposes the public API
+│   └── workflow_dsl.py     # Core DSL definitions (Pydantic models)
 ├── example_usage.py        # Examples of how to use the DSL
 ├── tests/
 │   ├── __init__.py
