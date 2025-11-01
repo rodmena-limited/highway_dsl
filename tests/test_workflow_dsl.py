@@ -153,13 +153,12 @@ def test_parallel_operator_model():
 
 
 def test_foreach_operator_model():
-    foreach = ForEachOperator(
-        task_id="foreach1", items="data_list", task_chain=["process_item"]
-    )
+    task = TaskOperator(task_id="task1", function="func1")
+    foreach = ForEachOperator(task_id="foreach1", items="data_list", loop_body=[task])
     assert foreach.task_id == "foreach1"
     assert foreach.operator_type == OperatorType.FOREACH
     assert foreach.items == "data_list"
-    assert foreach.task_chain == ["process_item"]
+    assert foreach.loop_body == [task]
 
 
 def test_while_operator_model():
@@ -281,11 +280,17 @@ def test_workflow_builder_foreach():
     workflow = (
         WorkflowBuilder("foreach_workflow")
         .task("fetch_items", "fetch_func")
-        .foreach("loop_items", "items_list", ["process_item"])
+        .foreach(
+            "loop_items",
+            "items_list",
+            lambda b: b.task("process_item", "process_func"),
+        )
         .build()
     )
     assert "loop_items" in workflow.tasks
     assert workflow.tasks["loop_items"].dependencies == ["fetch_items"]
+    assert "process_item" in workflow.tasks
+    assert workflow.tasks["process_item"].dependencies == ["loop_items"]
 
 
 def test_workflow_yaml_round_trip():
