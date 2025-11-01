@@ -1,57 +1,152 @@
 import yaml
 import json
 from pathlib import Path
+from datetime import timedelta
 
-
-def create_complex_workflow():
-    """Import and return the workflow from the old examples"""
-    import sys
-    from importlib.util import spec_from_file_location, module_from_spec
-
-    # Load the example module
-    example_path = (
-        Path(__file__).parent.parent / "examples" / "old_examples" / "example_usage.py"
-    )
-    spec = spec_from_file_location("example_usage", example_path)
-    module = module_from_spec(spec)
-    sys.modules["example_usage"] = module
-    spec.loader.exec_module(module)
-
-    return module.create_complex_workflow()
+from highway_dsl import (
+    Workflow,
+    WorkflowBuilder,
+    TaskOperator,
+    ConditionOperator,
+    ParallelOperator,
+    WaitOperator,
+    WhileOperator,
+    RetryPolicy,
+    TimeoutPolicy,
+    OperatorType,
+)
 
 
 def demonstrate_while_loop():
-    """Import and return the workflow from the old examples"""
-    import sys
-    from importlib.util import spec_from_file_location, module_from_spec
+    """Demonstrate the while loop operator"""
+    builder = WorkflowBuilder("qa_rework_workflow")
 
-    # Load the example module
-    example_path = (
-        Path(__file__).parent.parent / "examples" / "old_examples" / "example_usage.py"
+    builder.task("start_qa", "workflows.tasks.start_qa", result_key="qa_results")
+
+    builder.while_loop(
+        "qa_rework_loop",
+        condition="{{qa_results.status}} == 'failed'",
+        loop_body=lambda b: b.task(
+            "perform_rework", "workflows.tasks.perform_rework"
+        ).task("re_run_qa", "workflows.tasks.run_qa", result_key="qa_results"),
     )
-    spec = spec_from_file_location("example_usage", example_path)
-    module = module_from_spec(spec)
-    sys.modules["example_usage"] = module
-    spec.loader.exec_module(module)
 
-    return module.demonstrate_while_loop()
+    builder.task(
+        "finalize_product",
+        "workflows.tasks.finalize_product",
+        dependencies=["qa_rework_loop"],
+    )
+
+    workflow = builder.build()
+
+    workflow.set_variables({"product_id": "product-123"})
+
+    return workflow
+
+
+def create_complex_workflow() -> Workflow:
+    """Create a complex workflow using the Python DSL"""
+
+    builder = WorkflowBuilder("data_processing_pipeline")
+
+    builder.task("start", "workflows.tasks.initialize", result_key="init_data")
+    builder.task(
+        "validate",
+        "workflows.tasks.validate_data",
+        args=["{{init_data}}"],
+        result_key="validated_data",
+    )
+
+    builder.condition(
+        "check_quality",
+        condition="{{validated_data.quality_score}} > 0.8",
+        if_true=lambda b: b.task(
+            "high_quality_processing",
+            "workflows.tasks.advanced_processing",
+            args=["{{validated_data}}"],
+            retry_policy=RetryPolicy(
+                max_retries=5, delay=timedelta(seconds=10), backoff_factor=2.0
+            ),
+        ),
+        if_false=lambda b: b.task(
+            "standard_processing",
+            "workflows.tasks.basic_processing",
+            args=["{{validated_data}}"],
+        ),
+    )
+
+    builder.parallel(
+        "parallel_processing",
+        branches={
+            "branch_a": lambda b: b.task(
+                "transform_a", "workflows.tasks.transform_a", result_key="transformed_a"
+            ).task(
+                "enrich_a",
+                "workflows.tasks.enrich_data",
+                args=["{{transformed_a}}"],
+                result_key="enriched_a",
+            ),
+            "branch_b": lambda b: b.task(
+                "transform_b", "workflows.tasks.transform_b", result_key="transformed_b"
+            ).task(
+                "enrich_b",
+                "workflows.tasks.enrich_data",
+                args=["{{transformed_b}}"],
+                result_key="enriched_b",
+            ),
+        },
+        dependencies=["high_quality_processing", "standard_processing"],
+    )
+
+    builder.task(
+        "aggregate",
+        "workflows.tasks.aggregate_results",
+        dependencies=["enrich_a", "enrich_b"],
+        result_key="final_result",
+    )
+    builder.wait("wait_notification", timedelta(hours=1))
+    builder.task(
+        "notify", "workflows.tasks.send_notification", args=["{{final_result}}"]
+    )
+
+    workflow = builder.build()
+
+    workflow.set_variables(
+        {
+            "environment": "production",
+            "batch_size": 1000,
+            "notify_email": "team@company.com",
+        }
+    )
+
+    return workflow
 
 
 def demonstrate_basic_workflow():
-    """Import and return the workflow from the old examples"""
-    import sys
-    from importlib.util import spec_from_file_location, module_from_spec
+    """Show a simple complete workflow using just the builder"""
 
-    # Load the example module
-    example_path = (
-        Path(__file__).parent.parent / "examples" / "old_examples" / "example_usage.py"
+    workflow = (
+        WorkflowBuilder("simple_etl")
+        .task("extract", "etl.extract_data", result_key="raw_data")
+        .task(
+            "transform",
+            "etl.transform_data",
+            args=["{{raw_data}}"],
+            result_key="transformed_data",
+        )
+        .retry(max_retries=3, delay=timedelta(seconds=10))
+        .task("load", "etl.load_data", args=["{{transformed_data}}"])
+        .timeout(timeout=timedelta(minutes=30))
+        .wait("wait_next", timedelta(hours=24))
+        .task("cleanup", "etl.cleanup")
+        .build()
     )
-    spec = spec_from_file_location("example_usage", example_path)
-    module = module_from_spec(spec)
-    sys.modules["example_usage"] = module
-    spec.loader.exec_module(module)
 
-    return module.demonstrate_basic_workflow()
+    workflow.set_variables(
+        {"database_url": "postgresql://localhost/mydb", "chunk_size": 1000}
+    )
+
+    return workflow
 
 
 def extract_yaml_content(content):

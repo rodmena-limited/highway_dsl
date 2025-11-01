@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Highway DSL - A powerful Domain Specific Language for defining and managing complex workflow engines and data processing pipelines in Python.">
+    <meta name="keywords" content="workflow engine, DSL, domain specific language, data pipeline, python, automation, orchestration">
+    <meta name="author" content="Highway DSL Team">
+    <title>Highway DSL - Python Workflow Engine Framework</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #1e40af;
+            --accent: #3b82f6;
+            --light: #f8fafc;
+            --dark: #0f172a;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8fafc;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+        }
+        
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            padding: 5rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="0.5" fill="white" opacity="0.2"/><circle cx="50" cy="50" r="0.5" fill="white" opacity="0.2"/><circle cx="75" cy="75" r="0.5" fill="white" opacity="0.2"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)" opacity="0.1"/></svg>');
+            opacity: 0.1;
+        }
+        
+        .feature-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        
+        .code-block {
+            background-color: #1e293b;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #e2e8f0;
+        }
+        
+        .highlight-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4rem 0;
+        }
+        
+        .section {
+            padding: 5rem 0;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary);
+            border-color: var(--secondary);
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        
+        .footer {
+            background-color: var(--dark);
+            color: white;
+            padding: 3rem 0 1rem;
+        }
+        
+        .terminal {
+            background-color: #1e293b;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            font-family: 'Courier New', monospace;
+            color: #10b981;
+            border: 1px solid #334155;
+        }
+        
+        .terminal::before {
+            content: ">";
+            color: #f59e0b;
+            margin-right: 0.5rem;
+        }
+        
+        .terminal span {
+            color: #f8fafc;
+        }
+        
+        .gradient-text {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: bold;
+        }
+        
+        .stats-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary);
+            display: block;
+        }
+        
+        .stats-label {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="fas fa-road me-2"></i>Highway DSL
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#usage">Usage</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#examples">Examples</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#installation">Install</a></li>
+                </ul>
+                <a href="https://github.com/rodmena-limited/highway_dsl" class="btn btn-outline-light ms-2" target="_blank">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section text-center">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <h1 class="display-3 fw-bold mb-4">
+                        Highway DSL - <span class="gradient-text">Workflow Engine Framework</span>
+                    </h1>
+                    <p class="lead mb-4">
+                        A stable, powerful Domain Specific Language for defining and managing complex workflow engines and data processing pipelines in Python. 
+                        Build sophisticated, reliable workflows with intuitive fluent APIs.
+                    </p>
+                    <div class="d-flex justify-content-center gap-3 mb-4">
+                        <a href="#installation" class="btn btn-light btn-lg px-4 py-3 fw-bold">
+                            <i class="fas fa-download me-2"></i>Get Started
+                        </a>
+                        <a href="https://github.com/rodmena-limited/highway_dsl" class="btn btn-outline-light btn-lg px-4 py-3" target="_blank">
+                            <i class="fab fa-github me-2"></i>View on GitHub
+                        </a>
+                    </div>
+                    <div class="terminal mb-3">
+                        pip install highway-dsl
+                    </div>
+                    <p class="text-light opacity-75 mb-0">
+                        <i class="fas fa-check-circle me-1"></i> Stable Release v1.0.2 • <i class="fas fa-shield-alt me-1"></i> MIT License
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="section bg-white">
+        <div class="container">
+            <div class="row text-center mb-5">
+                <div class="col-12">
+                    <h2 class="display-6 fw-bold mb-3">Powerful Workflow Capabilities</h2>
+                    <p class="lead text-muted">Built for complex data processing and orchestration needs</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-3 col-6 mb-4">
+                    <div class="stats-card">
+                        <span class="stats-number">6+</span>
+                        <div class="stats-label">Operator Types</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mb-4">
+                    <div class="stats-card">
+                        <span class="stats-number">100%</span>
+                        <div class="stats-label">Python Type Safety</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mb-4">
+                    <div class="stats-card">
+                        <span class="stats-number">YAML/JSON</span>
+                        <div class="stats-label">Serialization</div>
+                    </div>
+                </div>
+                <div class="col-md-3 col-6 mb-4">
+                    <div class="stats-card">
+                        <span class="stats-number">Fluent</span>
+                        <div class="stats-label">API Design</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="section bg-light">
+        <div class="container">
+            <div class="row text-center mb-5">
+                <div class="col-12">
+                    <h2 class="display-6 fw-bold mb-3">Core Features</h2>
+                    <p class="lead text-muted">Comprehensive workflow engine capabilities</p>
+                </div>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card p-4 bg-white">
+                        <div class="feature-icon">
+                            <i class="fas fa-code"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3">Fluent API</h4>
+                        <p>Intuitive, chainable methods for building complex workflows with clean, readable code.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card p-4 bg-white">
+                        <div class="feature-icon">
+                            <i class="fas fa-project-diagram"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3">Rich Operators</h4>
+                        <p>Support for Task, Condition, Parallel, ForEach, While, and Wait operators for complex logic.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card p-4 bg-white">
+                        <div class="feature-icon">
+                            <i class="fas fa-bolt"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3">Error Handling</h4>
+                        <p>Retry and timeout policies with configurable backoff strategies for resilient workflows.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card p-4 bg-white">
+                        <div class="feature-icon">
+                            <i class="fas fa-sync-alt"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3">Loop Management</h4>
+                        <p>Fixed ForEach and While loops with proper dependency encapsulation and no unwanted "grandparent" dependencies.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card p-4 bg-white">
+                        <div class="feature-icon">
+                            <i class="fas fa-sitemap"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3">Parallel Execution</h4>
+                        <p>Fan-in/fan-out parallel processing with proper synchronization and dependency management.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card p-4 bg-white">
+                        <div class="feature-icon">
+                            <i class="fas fa-file-export"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3">Serialization</h4>
+                        <p>YAML and JSON export/import with round-trip validation and full interoperability.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Usage Section -->
+    <section id="usage" class="section bg-white">
+        <div class="container">
+            <div class="row align-items-center mb-5">
+                <div class="col-lg-6">
+                    <h2 class="display-6 fw-bold mb-3">Simple Yet Powerful</h2>
+                    <p class="lead text-muted">Define complex workflows with intuitive Python code that's both readable and maintainable.</p>
+                    <div class="d-flex flex-column gap-2">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>Chain operations fluently</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>Define dependencies automatically</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>Handle complex branching logic</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>Serialize to multiple formats</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="code-block">
+                        <div class="text-success"># Simple Linear Workflow</div>
+                        <div class="text-warning">from</div> highway_dsl <div class="text-warning">import</div> WorkflowBuilder<br><br>
+                        workflow = (WorkflowBuilder(<span class="text-danger">"simple_etl"</span>)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"extract"</span>, <span class="text-danger">"etl.extract_data"</span>, result_key=<span class="text-danger">"raw_data"</span>)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"transform"</span>, <span class="text-danger">"etl.transform_data"</span>, args=[<span class="text-danger">"{{raw_data}}"</span>], result_key=<span class="text-danger">"transformed_data"</span>)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"load"</span>, <span class="text-danger">"etl.load_data"</span>, args=[<span class="text-danger">"{{transformed_data}}"</span>])<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;.build())<br><br>
+                        <div class="text-success"># Export to YAML</div>
+                        print(workflow.to_yaml())
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Examples Section -->
+    <section id="examples" class="section bg-light">
+        <div class="container">
+            <div class="row text-center mb-5">
+                <div class="col-12">
+                    <h2 class="display-6 fw-bold mb-3">Advanced Examples</h2>
+                    <p class="lead text-muted">See Highway DSL in action with real-world workflow patterns</p>
+                </div>
+            </div>
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <h4><i class="fas fa-exchange-alt me-2 text-primary"></i>Parallel Processing</h4>
+                    <div class="code-block">
+                        <div class="text-success"># Process data in parallel branches</div>
+                        builder.parallel(<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"process_data"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;branches={<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"branch_a"</span>: <span class="text-warning">lambda</span> b: b.task(<span class="text-danger">"task_a1"</span>, <span class="text-danger">"processor.task_a1"</span>)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"task_a2"</span>, <span class="text-danger">"processor.task_a2"</span>),<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"branch_b"</span>: <span class="text-warning">lambda</span> b: b.task(<span class="text-danger">"task_b1"</span>, <span class="text-danger">"processor.task_b1"</span>)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"task_b2"</span>, <span class="text-danger">"processor.task_b2"</span>),<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                        )
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <h4><i class="fas fa-retweet me-2 text-primary"></i>Loop with Fixed Dependencies</h4>
+                    <div class="code-block">
+                        <div class="text-success"># ForEach loop with proper dependency management</div>
+                        builder.foreach(<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"process_items"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;items=<span class="text-danger">"{{data.items}}"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;loop_body=<span class="text-warning">lambda</span> fb: fb.task(<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"process_item"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"processor.handle_item"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;args=[<span class="text-danger">"{{item.id}}"</span>]<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;)<br>
+                        <div class="text-success"># Fixed: Loop body tasks no longer get</div>
+                        <div class="text-success"># unwanted "grandparent" dependencies</div>
+                        )
+                    </div>
+                </div>
+            </div>
+            <div class="row g-4 mt-4">
+                <div class="col-lg-6">
+                    <h4><i class="fas fa-random me-2 text-primary"></i>Conditional Logic</h4>
+                    <div class="code-block">
+                        <div class="text-success"># Branch based on runtime conditions</div>
+                        builder.condition(<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"data_quality_check"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;condition=<span class="text-danger">"{{data.quality_score}} > 0.8"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;if_true=<span class="text-warning">lambda</span> b: b.task(<span class="text-danger">"advanced_processing"</span>, <span class="text-danger">"processor.advanced"</span>),<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;if_false=<span class="text-warning">lambda</span> b: b.task(<span class="text-danger">"basic_processing"</span>, <span class="text-danger">"processor.basic"</span>),<br>
+                        )
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <h4><i class="fas fa-redo me-2 text-primary"></i>While Loop with Retry</h4>
+                    <div class="code-block">
+                        <div class="text-success"># Retry processing until success</div>
+                        builder.while_loop(<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"retry_processing"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;condition=<span class="text-danger">"{{result.status}} == 'failed'"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;loop_body=<span class="text-warning">lambda</span> wb: wb.task(<span class="text-danger">"retry_task"</span>, <span class="text-danger">"processor.process"</span>)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"check_result"</span>, <span class="text-danger">"processor.validate_result"</span>)<br>
+                        )
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installation Section -->
+    <section id="installation" class="section bg-white">
+        <div class="container">
+            <div class="row text-center mb-5">
+                <div class="col-12">
+                    <h2 class="display-6 fw-bold mb-3">Get Started in Seconds</h2>
+                    <p class="lead text-muted">Install Highway DSL and start building workflows today</p>
+                </div>
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="terminal">
+                        pip install highway-dsl
+                    </div>
+                    <div class="text-center mt-4">
+                        <a href="https://pypi.org/project/highway-dsl/" class="btn btn-primary btn-lg me-3" target="_blank">
+                            <i class="fab fa-python me-2"></i>PyPI Package
+                        </a>
+                        <a href="https://github.com/rodmena-limited/highway_dsl" class="btn btn-outline-primary btn-lg" target="_blank">
+                            <i class="fab fa-github me-2"></i>GitHub Repo
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Benefits Section -->
+    <section class="highlight-section">
+        <div class="container">
+            <div class="row text-center">
+                <div class="col-12">
+                    <h2 class="display-6 fw-bold mb-4">Why Highway DSL?</h2>
+                    <div class="row mt-5">
+                        <div class="col-md-4 mb-4">
+                            <div class="text-center">
+                                <i class="fas fa-bolt fa-3x mb-3 text-white"></i>
+                                <h5 class="text-white fw-bold">High Performance</h5>
+                                <p class="text-light">Built with performance in mind, supporting parallel execution and optimized dependency management.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="text-center">
+                                <i class="fas fa-shield-alt fa-3x mb-3 text-white"></i>
+                                <h5 class="text-white fw-bold">Reliable</h5>
+                                <p class="text-light">Stable release with comprehensive error handling, retry mechanisms, and proper dependency management.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="text-center">
+                                <i class="fas fa-rocket fa-3x mb-3 text-white"></i>
+                                <h5 class="text-white fw-bold">Flexible</h5>
+                                <p class="text-light">Supports complex workflow patterns with intuitive APIs and extensible architecture.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-6 mb-4 mb-lg-0">
+                    <h4 class="fw-bold mb-3">
+                        <i class="fas fa-road me-2"></i>Highway DSL
+                    </h4>
+                    <p class="text-light opacity-75">
+                        A stable, powerful Domain Specific Language for defining and managing complex workflow engines and data processing pipelines in Python.
+                    </p>
+                    <div class="d-flex gap-3 mt-3">
+                        <a href="https://github.com/rodmena-limited/highway_dsl" class="text-white opacity-75 hover-opacity-100" target="_blank">
+                            <i class="fab fa-github fa-2x"></i>
+                        </a>
+                        <a href="https://pypi.org/project/highway-dsl/" class="text-white opacity-75 hover-opacity-100" target="_blank">
+                            <i class="fab fa-python fa-2x"></i>
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-3 mb-4 mb-lg-0">
+                    <h5 class="fw-bold text-white mb-3">Resources</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="https://github.com/rodmena-limited/highway_dsl/blob/main/README.md" class="text-light opacity-75 text-decoration-none hover-opacity-100" target="_blank">Documentation</a></li>
+                        <li><a href="https://github.com/rodmena-limited/highway_dsl/issues" class="text-light opacity-75 text-decoration-none hover-opacity-100" target="_blank">Issues</a></li>
+                        <li><a href="https://github.com/rodmena-limited/highway_dsl/blob/main/LICENSE" class="text-light opacity-75 text-decoration-none hover-opacity-100" target="_blank">License</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-3">
+                    <h5 class="fw-bold text-white mb-3">Project</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">Version: 1.0.2</li>
+                        <li class="mb-2">License: MIT</li>
+                        <li>Stable Release</li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="my-4 opacity-25">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <p class="text-light opacity-75 mb-0">&copy; 2025 Highway DSL. Built with ❤️ for workflow automation.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // Add hover effect for cards
+        document.querySelectorAll('.feature-card, .stats-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-10px)';
+            });
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+</body>
+</html>

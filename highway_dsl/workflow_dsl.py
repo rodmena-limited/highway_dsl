@@ -216,7 +216,18 @@ class WorkflowBuilder:
         self._current_task: Optional[str] = None
         self.parent = parent
 
-    def _add_task(self, task: BaseOperator, **kwargs) -> None:
+    def _add_task(
+        self,
+        task: Union[
+            TaskOperator,
+            ConditionOperator,
+            WaitOperator,
+            ParallelOperator,
+            ForEachOperator,
+            WhileOperator,
+        ],
+        **kwargs,
+    ) -> None:
         dependencies = kwargs.get("dependencies", [])
         if self._current_task and not dependencies:
             dependencies.append(self._current_task)

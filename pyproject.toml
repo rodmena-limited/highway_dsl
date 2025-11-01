@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "highway_dsl"
-version = "0.0.4"
+version = "1.0.2"
 authors = [
   { name = "Farseed Ashouri", email = "farseed.ashouri@gmail.com" },
 ]
-description = "A domain specific language (DSL) for defining and managing data processing pipelines."
+description = "A stable domain specific language (DSL) for defining and managing data processing pipelines and workflow engines."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }

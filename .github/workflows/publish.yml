@@ -8,27 +8,64 @@ on:
     types: [created]
 
 jobs:
-  publish:
+  test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9, '3.10', '3.11', '3.12', '3.13']
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.9'
+        python-version: ${{ matrix.python-version }}
 
     - name: Install dependencies
       run: |
-        python -m venv .venv
-        . .venv/bin/activate
-        pip install wheel setuptools twine build
+        python -m pip install --upgrade pip
+        pip install -e .[dev]
+
+    - name: Run tests
+      run: |
+        python -m pytest
+
+    - name: Run type checking
+      run: |
+        python -m mypy .
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'created'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .[dev]
+        pip install build twine
+
+    - name: Run tests
+      run: |
+        python -m pytest
+
+    - name: Run type checking
+      run: |
+        python -m mypy .
 
     - name: Build the package
       run: |
-        . .venv/bin/activate
         python -m build
 
     - name: Publish to PyPI
@@ -36,5 +73,4 @@ jobs:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
         TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
-        . .venv/bin/activate
         twine upload dist/*

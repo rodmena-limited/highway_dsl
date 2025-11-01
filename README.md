@@ -2,21 +2,28 @@
 
 [![PyPI version](https://badge.fury.io/py/highway-dsl.svg)](https://badge.fury.io/py/highway-dsl)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Stable](https://img.shields.io/badge/Status-Stable-brightgreen)](https://pypi.org/project/highway-dsl/)
 
-**Highway DSL** is a Python-based domain-specific language for defining complex workflows in a clear, concise, and fluent manner. It is part of the larger **Highway** project, an advanced workflow engine capable of running complex DAG-based workflows.
+**Highway DSL** is a stable, Python-based domain-specific language for defining complex workflows in a clear, concise, and fluent manner. It is part of the larger **Highway** project, an advanced workflow engine capable of running complex DAG-based workflows.
+
+## Version 1.0.2 - Stable Release
+
+This is a stable release with important bug fixes and enhancements, including a critical fix for the ForEach operator dependency management issue.
 
 ## Features
 
 *   **Fluent API:** A powerful and intuitive `WorkflowBuilder` for defining workflows programmatically.
 *   **Pydantic-based:** All models are built on Pydantic, providing robust data validation, serialization, and documentation.
 *   **Rich Operators:** A comprehensive set of operators for handling various workflow scenarios:
-    *   `Task`
-    *   `Condition` (if/else)
-    *   `Parallel`
-    *   `ForEach`
-    *   `Wait`
-    *   `While`
+    *   `Task` - Basic workflow steps
+    *   `Condition` (if/else) - Conditional branching
+    *   `Parallel` - Execute multiple branches simultaneously 
+    *   `ForEach` - Iterate over collections with proper dependency management
+    *   `Wait` - Pause execution for scheduled tasks
+    *   `While` - Execute loops based on conditions
+*   **Fixed ForEach Bug:** Proper encapsulation of loop body tasks to prevent unwanted "grandparent" dependencies from containing parallel operators.
 *   **YAML/JSON Interoperability:** Workflows can be defined in Python and exported to YAML or JSON, and vice-versa.
+*   **Retry and Timeout Policies:** Built-in error handling and execution time management.
 *   **Extensible:** The DSL is designed to be extensible with custom operators and policies.
 
 ## Installation
@@ -112,6 +119,63 @@ builder.task("finalize_product", "workflows.tasks.finalize_product", dependencie
 workflow = builder.build()
 ```
 
+### For-Each Loops with Proper Dependency Management
+
+Fixed bug where foreach loops were incorrectly inheriting dependencies from containing parallel operators:
+
+```python
+# This loop now properly encapsulates its internal tasks
+builder.foreach(
+    "process_items",
+    items="{{data.items}}",
+    loop_body=lambda fb: fb.task("process_item", "processor.handle_item", args=["{{item.id}}"])
+    # Loop body tasks only have proper dependencies, not unwanted "grandparent" dependencies
+)
+```
+
+### Retry Policies
+
+```python
+from highway_dsl import RetryPolicy
+from datetime import timedelta
+
+builder.task(
+    "reliable_task",
+    "service.operation",
+    retry_policy=RetryPolicy(
+        max_retries=5,
+        delay=timedelta(seconds=10),
+        backoff_factor=2.0
+    )
+)
+```
+
+### Timeout Policies
+
+```python
+from highway_dsl import TimeoutPolicy
+from datetime import timedelta
+
+builder.task(
+    "timed_task",
+    "service.operation",
+    timeout_policy=TimeoutPolicy(
+        timeout=timedelta(hours=1),
+        kill_on_timeout=True
+    )
+)
+```
+
+## What's New in Version 1.0.2
+
+### Bug Fixes
+* **Fixed ForEach Operator Bug**: Resolved issue where foreach loops were incorrectly getting "grandparent" dependencies from containing parallel operators. Loop body tasks are now properly encapsulated and only depend on their parent loop operator and internal chain dependencies.
+
+### Enhancements
+* **Improved Loop Dependency Management**: While loops and ForEach loops now properly encapsulate their internal dependencies without being affected by containing parallel operators.
+* **Better Error Handling**: Enhanced error handling throughout the DSL.
+* **Comprehensive Test Suite**: Added functional tests for all example workflows to ensure consistency.
+
 ## Development
 
 To set up the development environment:
@@ -135,3 +199,7 @@ pytest
 ```bash
 mypy .
 ```
+
+## License
+
+MIT License
