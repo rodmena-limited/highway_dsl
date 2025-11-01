@@ -407,6 +407,78 @@
         </div>
     </section>
 
+    <!-- Examples Section -->
+    <section id="examples" class="section bg-light">
+        <div class="container">
+            <div class="row text-center mb-5">
+                <div class="col-12">
+                    <h2 class="display-6 fw-bold mb-3">Advanced Examples</h2>
+                    <p class="lead text-muted">See Highway DSL in action with real-world workflow patterns</p>
+                </div>
+            </div>
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <h4><i class="fas fa-exchange-alt me-2 text-primary"></i>Parallel Processing</h4>
+                    <div class="code-block">
+                        <div class="text-success"># Process data in parallel branches</div>
+                        builder.parallel(<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"process_data"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;branches={<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"branch_a"</span>: <span class="text-warning">lambda</span> b: b.task(<span class="text-danger">"task_a1"</span>, <span class="text-danger">"processor.task_a1"</span>)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"task_a2"</span>, <span class="text-danger">"processor.task_a2"</span>),<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"branch_b"</span>: <span class="text-warning">lambda</span> b: b.task(<span class="text-danger">"task_b1"</span>, <span class="text-danger">"processor.task_b1"</span>)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"task_b2"</span>, <span class="text-danger">"processor.task_b2"</span>),<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;}<br>
+                        )
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <h4><i class="fas fa-retweet me-2 text-primary"></i>Loop with Fixed Dependencies</h4>
+                    <div class="code-block">
+                        <div class="text-success"># ForEach loop with proper dependency management</div>
+                        builder.foreach(<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"process_items"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;items=<span class="text-danger">"{{data.items}}"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;loop_body=<span class="text-warning">lambda</span> fb: fb.task(<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"process_item"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"processor.handle_item"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;args=[<span class="text-danger">"{{item.id}}"</span>]<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;)<br>
+                        <div class="text-success"># Fixed: Loop body tasks no longer get</div>
+                        <div class="text-success"># unwanted "grandparent" dependencies</div>
+                        )
+                    </div>
+                </div>
+            </div>
+            <div class="row g-4 mt-4">
+                <div class="col-lg-6">
+                    <h4><i class="fas fa-random me-2 text-primary"></i>Conditional Logic</h4>
+                    <div class="code-block">
+                        <div class="text-success"># Branch based on runtime conditions</div>
+                        builder.condition(<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"data_quality_check"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;condition=<span class="text-danger">"{{data.quality_score}} > 0.8"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;if_true=<span class="text-warning">lambda</span> b: b.task(<span class="text-danger">"advanced_processing"</span>, <span class="text-danger">"processor.advanced"</span>),<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;if_false=<span class="text-warning">lambda</span> b: b.task(<span class="text-danger">"basic_processing"</span>, <span class="text-danger">"processor.basic"</span>),<br>
+                        )
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <h4><i class="fas fa-redo me-2 text-primary"></i>While Loop with Retry</h4>
+                    <div class="code-block">
+                        <div class="text-success"># Retry processing until success</div>
+                        builder.while_loop(<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"retry_processing"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;condition=<span class="text-danger">"{{result.status}} == 'failed'"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;loop_body=<span class="text-warning">lambda</span> wb: wb.task(<span class="text-danger">"retry_task"</span>, <span class="text-danger">"processor.process"</span>)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"check_result"</span>, <span class="text-danger">"processor.validate_result"</span>)<br>
+                        )
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- DSL Specification Section -->
     <section id="dsl-specification" class="section bg-light">
         <div class="container">
