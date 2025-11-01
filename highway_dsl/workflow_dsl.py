@@ -215,7 +215,7 @@ class WorkflowBuilder:
 
     def _add_task(self, task: BaseOperator, **kwargs) -> None:
         dependencies = kwargs.get("dependencies", [])
-        if self._current_task:
+        if self._current_task and not dependencies:
             dependencies.append(self._current_task)
 
         task.dependencies = sorted(list(set(dependencies)))
@@ -236,8 +236,8 @@ class WorkflowBuilder:
         if_false: Callable[["WorkflowBuilder"], "WorkflowBuilder"],
         **kwargs,
     ) -> "WorkflowBuilder":
-        true_builder = if_true(WorkflowBuilder(f"{{task_id}}_true", parent=self))
-        false_builder = if_false(WorkflowBuilder(f"{{task_id}}_false", parent=self))
+        true_builder = if_true(WorkflowBuilder(f"{task_id}_true", parent=self))
+        false_builder = if_false(WorkflowBuilder(f"{task_id}_false", parent=self))
 
         true_tasks = list(true_builder.workflow.tasks.keys())
         false_tasks = list(false_builder.workflow.tasks.keys())
@@ -253,10 +253,14 @@ class WorkflowBuilder:
         self._add_task(task, **kwargs)
 
         for task_obj in true_builder.workflow.tasks.values():
-            task_obj.dependencies.append(task_id)
+            # Only add the condition task as dependency, preserve original dependencies
+            if task_id not in task_obj.dependencies:
+                task_obj.dependencies.append(task_id)
             self.workflow.add_task(task_obj)
         for task_obj in false_builder.workflow.tasks.values():
-            task_obj.dependencies.append(task_id)
+            # Only add the condition task as dependency, preserve original dependencies
+            if task_id not in task_obj.dependencies:
+                task_obj.dependencies.append(task_id)
             self.workflow.add_task(task_obj)
 
         self._current_task = task_id
@@ -275,10 +279,10 @@ class WorkflowBuilder:
         branches: Dict[str, Callable[["WorkflowBuilder"], "WorkflowBuilder"]],
         **kwargs,
     ) -> "WorkflowBuilder":
-        branch_builders = {
-            name: branch_func(WorkflowBuilder(f"{{task_id}}_{{name}}", parent=self))
-            for name, branch_func in branches.items()
-        }
+        branch_builders = {}
+        for name, branch_func in branches.items():
+            branch_builder = branch_func(WorkflowBuilder(f"{task_id}_{name}", parent=self))
+            branch_builders[name] = branch_builder
 
         branch_tasks = {
             name: list(builder.workflow.tasks.keys())
@@ -291,7 +295,9 @@ class WorkflowBuilder:
 
         for builder in branch_builders.values():
             for task_obj in builder.workflow.tasks.values():
-                task_obj.dependencies.append(task_id)
+                # Only add the parallel task as dependency, preserve original dependencies
+                if task_id not in task_obj.dependencies:
+                    task_obj.dependencies.append(task_id)
                 self.workflow.add_task(task_obj)
 
         self._current_task = task_id
@@ -304,7 +310,7 @@ class WorkflowBuilder:
         loop_body: Callable[["WorkflowBuilder"], "WorkflowBuilder"],
         **kwargs,
     ) -> "WorkflowBuilder":
-        loop_builder = loop_body(WorkflowBuilder(f"{{task_id}}_loop"))
+        loop_builder = loop_body(WorkflowBuilder(f"{task_id}_loop", parent=self))
         loop_tasks = list(loop_builder.workflow.tasks.values())
 
         task = ForEachOperator(
@@ -316,11 +322,18 @@ class WorkflowBuilder:
 
         self._add_task(task, **kwargs)
 
-        for task_obj in loop_tasks:
-            task_obj.dependencies.append(task.task_id)
-            self.workflow.add_task(task_obj)
+        # Fix: Only add the foreach task as dependency to the FIRST task in the loop body
+        # and preserve the original dependency chain within the loop
+        if loop_tasks:
+            first_task = loop_tasks[0]
+            if task_id not in first_task.dependencies:
+                first_task.dependencies.append(task_id)
+            
+            # Add all loop tasks to workflow without modifying their dependencies further
+            for task_obj in loop_tasks:
+                self.workflow.add_task(task_obj)
 
-        self._current_task = task.task_id
+        self._current_task = task_id
         return self
 
     def while_loop(
@@ -330,7 +343,7 @@ class WorkflowBuilder:
         loop_body: Callable[["WorkflowBuilder"], "WorkflowBuilder"],
         **kwargs,
     ) -> "WorkflowBuilder":
-        loop_builder = loop_body(WorkflowBuilder(f"{{task_id}}_loop"))
+        loop_builder = loop_body(WorkflowBuilder(f"{task_id}_loop", parent=self))
         loop_tasks = list(loop_builder.workflow.tasks.values())
 
         task = WhileOperator(
@@ -342,9 +355,16 @@ class WorkflowBuilder:
 
         self._add_task(task, **kwargs)
 
-        for task_obj in loop_tasks:
-            task_obj.dependencies.append(task_id)
-            self.workflow.add_task(task_obj)
+        # Fix: Only add the while task as dependency to the FIRST task in the loop body
+        # and preserve the original dependency chain within the loop
+        if loop_tasks:
+            first_task = loop_tasks[0]
+            if task_id not in first_task.dependencies:
+                first_task.dependencies.append(task_id)
+            
+            # Add all loop tasks to workflow without modifying their dependencies further
+            for task_obj in loop_tasks:
+                self.workflow.add_task(task_obj)
 
         self._current_task = task_id
         return self
