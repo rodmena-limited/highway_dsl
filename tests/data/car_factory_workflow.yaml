@@ -1,0 +1,257 @@
+--- CAR FACTORY WORKFLOW YAML (COMPLEX) ---
+description: ''
+name: car_factory_build_v1
+start_task: get_build_manifest
+tasks:
+  assemble_electronics_harness:
+    args:
+    - '{{specs.electronics_package}}'
+    dependencies:
+    - parallel_main_assembly
+    function: factory.assembly.build_electronics
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    task_id: assemble_electronics_harness
+  begin_qa_inspection:
+    args:
+    - '{{item.vin}}'
+    dependencies:
+    - paint_vehicle
+    function: human.qa.inspect_vehicle
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    result_key: qa_report
+    task_id: begin_qa_inspection
+    timeout_policy:
+      kill_on_timeout: true
+      timeout: PT2H
+  build_ev_drivetrain:
+    args:
+    - '{{specs.battery_sku}}'
+    - '{{specs.motor_sku}}'
+    dependencies:
+    - route_by_drivetrain
+    function: factory.assembly.build_battery_and_motor
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    result_key: drivetrain_assembly
+    task_id: build_ev_drivetrain
+  build_ice_drivetrain:
+    args:
+    - '{{specs.engine_sku}}'
+    - '{{specs.transmission_sku}}'
+    dependencies:
+    - route_by_drivetrain
+    function: factory.assembly.build_engine_and_transmission
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    result_key: drivetrain_assembly
+    task_id: build_ice_drivetrain
+  build_vehicle_loop:
+    dependencies:
+    - get_build_manifest
+    items: '{{manifest.vehicles}}'
+    loop_body: []
+    metadata: {}
+    operator_type: foreach
+    task_id: build_vehicle_loop
+  check_final_qa:
+    condition: '{{final_qa_status.passed}}'
+    dependencies:
+    - final_rework_qa
+    if_false: flag_for_manual_intervention
+    if_true: mark_vehicle_complete
+    metadata: {}
+    operator_type: condition
+    task_id: check_final_qa
+  check_qa_results:
+    condition: '{{qa_report.passed}}'
+    dependencies:
+    - begin_qa_inspection
+    if_false: perform_rework
+    if_true: mark_vehicle_complete
+    metadata: {}
+    operator_type: condition
+    task_id: check_qa_results
+  check_vehicle_specs:
+    args:
+    - '{{item.vin}}'
+    dependencies: []
+    function: factory.mes.get_specs_for_vin
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    result_key: specs
+    task_id: check_vehicle_specs
+  final_assembly:
+    args:
+    - '{{item.vin}}'
+    dependencies:
+    - prime_frame
+    - assemble_electronics_harness
+    - mount_drivetrain_subassembly
+    function: factory.assembly.final_marriage
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    result_key: assembled_vehicle
+    task_id: final_assembly
+  final_rework_qa:
+    args:
+    - '{{item.vin}}'
+    - '{{rework_report}}'
+    dependencies:
+    - perform_rework
+    function: human.qa.inspect_rework
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    result_key: final_qa_status
+    task_id: final_rework_qa
+  flag_for_manual_intervention:
+    args:
+    - '{{item.vin}}'
+    - QA_FAIL_MANUAL_HOLD
+    dependencies:
+    - check_final_qa
+    function: factory.mes.update_status
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    task_id: flag_for_manual_intervention
+  generate_shipping_labels:
+    args:
+    - '{{manifest.id}}'
+    - '{{build_vehicle_loop_results}}'
+    dependencies:
+    - build_vehicle_loop
+    function: factory.logistics.print_labels_for_manifest
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    result_key: shipping_labels
+    task_id: generate_shipping_labels
+  get_build_manifest:
+    args: []
+    dependencies: []
+    function: factory.erp.get_daily_build_manifest
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    result_key: manifest
+    retry_policy:
+      backoff_factor: 2.0
+      delay: PT1M
+      max_retries: 5
+    task_id: get_build_manifest
+  mark_vehicle_complete:
+    args:
+    - '{{item.vin}}'
+    - BUILT
+    dependencies:
+    - check_qa_results
+    - check_final_qa
+    function: factory.mes.update_status
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    task_id: mark_vehicle_complete
+  mount_drivetrain_subassembly:
+    args:
+    - '{{drivetrain_assembly}}'
+    dependencies:
+    - parallel_main_assembly
+    function: factory.assembly.prep_drivetrain_for_marriage
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    task_id: mount_drivetrain_subassembly
+  notify_logistics:
+    args:
+    - '{{manifest.id}}'
+    dependencies:
+    - generate_shipping_labels
+    function: factory.erp.notify_logistics_of_completion
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    task_id: notify_logistics
+  paint_vehicle:
+    args:
+    - '{{assembled_vehicle}}'
+    - '{{specs.color}}'
+    dependencies:
+    - final_assembly
+    function: factory.robotics.paint_body
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    task_id: paint_vehicle
+  parallel_main_assembly:
+    branches:
+      drivetrain_prep:
+      - mount_drivetrain_subassembly
+      electronics_build:
+      - assemble_electronics_harness
+      frame_build:
+      - weld_frame
+      - prime_frame
+    dependencies:
+    - build_ev_drivetrain
+    - build_ice_drivetrain
+    metadata: {}
+    operator_type: parallel
+    task_id: parallel_main_assembly
+  perform_rework:
+    args:
+    - '{{item.vin}}'
+    - '{{qa_report.issues}}'
+    dependencies:
+    - check_qa_results
+    function: human.rework.fix_issues
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    result_key: rework_report
+    task_id: perform_rework
+  prime_frame:
+    args: []
+    dependencies:
+    - weld_frame
+    function: factory.robotics.apply_primer
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    task_id: prime_frame
+  route_by_drivetrain:
+    condition: '{{specs.drivetrain_type}} == ''EV'''
+    dependencies:
+    - check_vehicle_specs
+    if_false: build_ice_drivetrain
+    if_true: build_ev_drivetrain
+    metadata: {}
+    operator_type: condition
+    task_id: route_by_drivetrain
+  weld_frame:
+    args:
+    - '{{specs.frame_model}}'
+    dependencies:
+    - parallel_main_assembly
+    function: factory.robotics.weld_chassis
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    task_id: weld_frame
+variables:
+  erp_api_key: secret_abc_123
+  mes_endpoint: http://10.0.0.5/api
+version: 1.0.0
+
+---------------------------------------------
+
+✅ Successfully generated complex factory workflow YAML.
+Total tasks defined: 22

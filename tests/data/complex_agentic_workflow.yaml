@@ -1,0 +1,175 @@
+--- COMPLEX AGENTIC WORKFLOW YAML (CORRECTED) ---
+description: ''
+name: customer_support_agent_v2
+start_task: get_pending_tasks
+tasks:
+  analyze:
+    args:
+    - '{{item.text}}'
+    dependencies: []
+    function: agent.analyze_sentiment
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    result_key: sentiment_analysis
+    task_id: analyze
+  archive_rejected_task:
+    args:
+    - '{{item.id}}'
+    - Rejected by human review
+    dependencies:
+    - process_approval
+    function: agent.archive_task
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    task_id: archive_rejected_task
+  auto_approve_branch_start:
+    args:
+    - '{{item.text}}'
+    dependencies:
+    - route_by_review
+    function: agent.generate_response
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    result_key: auto_response
+    task_id: auto_approve_branch_start
+  check_review:
+    args:
+    - '{{sentiment_analysis.sentiment}}'
+    dependencies:
+    - analyze
+    function: agent.needs_human_review
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    result_key: review_check
+    task_id: check_review
+  create_summary_report:
+    args:
+    - '{{process_all_tasks_results}}'
+    dependencies:
+    - process_all_tasks
+    function: agent.create_summary_report
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    result_key: final_report
+    task_id: create_summary_report
+  find_docs:
+    args:
+    - '{{item.text}}'
+    dependencies:
+    - human_review_branch_start
+    function: agent.find_documentation
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    result_key: docs
+    task_id: find_docs
+  generate_draft:
+    args:
+    - '{{item.text}}'
+    dependencies:
+    - human_review_branch_start
+    function: agent.generate_response
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    result_key: draft_response
+    task_id: generate_draft
+  get_pending_tasks:
+    args: []
+    dependencies: []
+    function: agent.get_pending_tasks
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    result_key: task_list_obj
+    task_id: get_pending_tasks
+  human_review_branch_start:
+    branches:
+      branch_docs:
+      - find_docs
+      branch_draft:
+      - generate_draft
+    dependencies:
+    - route_by_review
+    metadata: {}
+    operator_type: parallel
+    task_id: human_review_branch_start
+  process_all_tasks:
+    dependencies:
+    - get_pending_tasks
+    items: '{{task_list_obj.tasks}}'
+    loop_body: []
+    metadata: {}
+    operator_type: foreach
+    task_id: process_all_tasks
+  process_approval:
+    condition: '{{approval.approved}}'
+    dependencies:
+    - request_approval
+    if_false: archive_rejected_task
+    if_true: send_human_approved_response
+    metadata: {}
+    operator_type: condition
+    task_id: process_approval
+  request_approval:
+    args:
+    - '{{item}}'
+    - '{{draft_response.response}}'
+    - '{{docs.doc_url}}'
+    dependencies:
+    - generate_draft
+    - find_docs
+    function: human.request_human_approval
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    result_key: approval
+    task_id: request_approval
+    timeout_policy:
+      kill_on_timeout: true
+      timeout: PT4H
+  route_by_review:
+    condition: '{{review_check.review_needed}}'
+    dependencies:
+    - check_review
+    if_false: auto_approve_branch_start
+    if_true: human_review_branch_start
+    metadata: {}
+    operator_type: condition
+    task_id: route_by_review
+  send_auto_response:
+    args:
+    - '{{item.id}}'
+    - '{{auto_response.response}}'
+    dependencies:
+    - auto_approve_branch_start
+    function: agent.send_final_response
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    task_id: send_auto_response
+  send_human_approved_response:
+    args:
+    - '{{item.id}}'
+    - '{{approval.final_response}}'
+    dependencies:
+    - process_approval
+    function: agent.send_final_response
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    task_id: send_human_approved_response
+variables:
+  api_key: xyz-123
+  default_user: agent_bot
+version: 1.0.0
+
+-------------------------------------------------
+
+✅ Successfully generated complex workflow YAML.
+Total tasks defined: 15

@@ -1,0 +1,772 @@
+=== Creating workflow in Python ===
+Workflow: simple_etl
+Tasks: ['extract', 'transform', 'load', 'wait_next', 'cleanup']
+
+=== Converting to YAML ===
+description: ''
+name: simple_etl
+start_task: extract
+tasks:
+  cleanup:
+    args: []
+    dependencies:
+    - wait_next
+    function: etl.cleanup
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    task_id: cleanup
+  extract:
+    args: []
+    dependencies: []
+    function: etl.extract_data
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    result_key: raw_data
+    task_id: extract
+  load:
+    args:
+    - '{{transformed_data}}'
+    dependencies:
+    - transform
+    function: etl.load_data
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    task_id: load
+    timeout_policy:
+      kill_on_timeout: true
+      timeout: PT30M
+  transform:
+    args:
+    - '{{raw_data}}'
+    dependencies:
+    - extract
+    function: etl.transform_data
+    kwargs: {}
+    metadata: {}
+    operator_type: task
+    result_key: transformed_data
+    retry_policy:
+      backoff_factor: 2.0
+      delay: PT10S
+      max_retries: 3
+    task_id: transform
+  wait_next:
+    dependencies:
+    - load
+    metadata: {}
+    operator_type: wait
+    task_id: wait_next
+    wait_for: P1D
+variables:
+  chunk_size: 1000
+  database_url: postgresql://localhost/mydb
+version: 1.0.0
+
+
+=== Converting to JSON ===
+{
+  "name": "simple_etl",
+  "version": "1.0.0",
+  "description": "",
+  "tasks": {
+    "extract": {
+      "task_id": "extract",
+      "operator_type": "task",
+      "dependencies": [],
+      "retry_policy": null,
+      "timeout_policy": null,
+      "metadata": {},
+      "function": "etl.extract_data",
+      "args": [],
+      "kwargs": {},
+      "result_key": "raw_data"
+    },
+    "transform": {
+      "task_id": "transform",
+      "operator_type": "task",
+      "dependencies": [
+        "extract"
+      ],
+      "retry_policy": {
+        "max_retries": 3,
+        "delay": "PT10S",
+        "backoff_factor": 2.0
+      },
+      "timeout_policy": null,
+      "metadata": {},
+      "function": "etl.transform_data",
+      "args": [
+        "{{raw_data}}"
+      ],
+      "kwargs": {},
+      "result_key": "transformed_data"
+    },
+    "load": {
+      "task_id": "load",
+      "operator_type": "task",
+      "dependencies": [
+        "transform"
+      ],
+      "retry_policy": null,
+      "timeout_policy": {
+        "timeout": "PT30M",
+        "kill_on_timeout": true
+      },
+      "metadata": {},
+      "function": "etl.load_data",
+      "args": [
+        "{{transformed_data}}"
+      ],
+      "kwargs": {},
+      "result_key": null
+    },
+    "wait_next": {
+      "task_id": "wait_next",
+      "operator_type": "wait",
+      "dependencies": [
+        "load"
+      ],
+      "retry_policy": null,
+      "timeout_policy": null,
+      "metadata": {},
+      "wait_for": "P1D"
+    },
+    "cleanup": {
+      "task_id": "cleanup",
+      "operator_type": "task",
+      "dependencies": [
+        "wait_next"
+      ],
+      "retry_policy": null,
+      "timeout_policy": null,
+      "metadata": {},
+      "function": "etl.cleanup",
+      "args": [],
+      "kwargs": {},
+      "result_key": null
+    }
+  },
+  "variables": {
+    "database_url": "postgresql://localhost/mydb",
+    "chunk_size": 1000
+  },
+  "start_task": "extract"
+}
+
+=== Loading from YAML ===
+Loaded workflow: simple_etl
+
+=== Loading from JSON ===
+Loaded workflow: simple_etl
+
+Python Workflow Dump:
+{
+  "description": "",
+  "name": "simple_etl",
+  "start_task": "extract",
+  "tasks": {
+    "cleanup": {
+      "args": [],
+      "dependencies": [
+        "wait_next"
+      ],
+      "function": "etl.cleanup",
+      "kwargs": {},
+      "metadata": {},
+      "operator_type": "task",
+      "result_key": null,
+      "retry_policy": null,
+      "task_id": "cleanup",
+      "timeout_policy": null
+    },
+    "extract": {
+      "args": [],
+      "dependencies": [],
+      "function": "etl.extract_data",
+      "kwargs": {},
+      "metadata": {},
+      "operator_type": "task",
+      "result_key": "raw_data",
+      "retry_policy": null,
+      "task_id": "extract",
+      "timeout_policy": null
+    },
+    "load": {
+      "args": [
+        "{{transformed_data}}"
+      ],
+      "dependencies": [
+        "transform"
+      ],
+      "function": "etl.load_data",
+      "kwargs": {},
+      "metadata": {},
+      "operator_type": "task",
+      "result_key": null,
+      "retry_policy": null,
+      "task_id": "load",
+      "timeout_policy": {
+        "kill_on_timeout": true,
+        "timeout": "PT30M"
+      }
+    },
+    "transform": {
+      "args": [
+        "{{raw_data}}"
+      ],
+      "dependencies": [
+        "extract"
+      ],
+      "function": "etl.transform_data",
+      "kwargs": {},
+      "metadata": {},
+      "operator_type": "task",
+      "result_key": "transformed_data",
+      "retry_policy": {
+        "backoff_factor": 2.0,
+        "delay": "PT10S",
+        "max_retries": 3
+      },
+      "task_id": "transform",
+      "timeout_policy": null
+    },
+    "wait_next": {
+      "dependencies": [
+        "load"
+      ],
+      "metadata": {},
+      "operator_type": "wait",
+      "retry_policy": null,
+      "task_id": "wait_next",
+      "timeout_policy": null,
+      "wait_for": "P1D"
+    }
+  },
+  "variables": {
+    "chunk_size": 1000,
+    "database_url": "postgresql://localhost/mydb"
+  },
+  "version": "1.0.0"
+}
+
+YAML Loaded Workflow Dump:
+{
+  "description": "",
+  "name": "simple_etl",
+  "start_task": "extract",
+  "tasks": {
+    "cleanup": {
+      "args": [],
+      "dependencies": [
+        "wait_next"
+      ],
+      "function": "etl.cleanup",
+      "kwargs": {},
+      "metadata": {},
+      "operator_type": "task",
+      "result_key": null,
+      "retry_policy": null,
+      "task_id": "cleanup",
+      "timeout_policy": null
+    },
+    "extract": {
+      "args": [],
+      "dependencies": [],
+      "function": "etl.extract_data",
+      "kwargs": {},
+      "metadata": {},
+      "operator_type": "task",
+      "result_key": "raw_data",
+      "retry_policy": null,
+      "task_id": "extract",
+      "timeout_policy": null
+    },
+    "load": {
+      "args": [
+        "{{transformed_data}}"
+      ],
+      "dependencies": [
+        "transform"
+      ],
+      "function": "etl.load_data",
+      "kwargs": {},
+      "metadata": {},
+      "operator_type": "task",
+      "result_key": null,
+      "retry_policy": null,
+      "task_id": "load",
+      "timeout_policy": {
+        "kill_on_timeout": true,
+        "timeout": "PT30M"
+      }
+    },
+    "transform": {
+      "args": [
+        "{{raw_data}}"
+      ],
+      "dependencies": [
+        "extract"
+      ],
+      "function": "etl.transform_data",
+      "kwargs": {},
+      "metadata": {},
+      "operator_type": "task",
+      "result_key": "transformed_data",
+      "retry_policy": {
+        "backoff_factor": 2.0,
+        "delay": "PT10S",
+        "max_retries": 3
+      },
+      "task_id": "transform",
+      "timeout_policy": null
+    },
+    "wait_next": {
+      "dependencies": [
+        "load"
+      ],
+      "metadata": {},
+      "operator_type": "wait",
+      "retry_policy": null,
+      "task_id": "wait_next",
+      "timeout_policy": null,
+      "wait_for": "P1D"
+    }
+  },
+  "variables": {
+    "chunk_size": 1000,
+    "database_url": "postgresql://localhost/mydb"
+  },
+  "version": "1.0.0"
+}
+
+JSON Loaded Workflow Dump:
+{
+  "description": "",
+  "name": "simple_etl",
+  "start_task": "extract",
+  "tasks": {
+    "cleanup": {
+      "args": [],
+      "dependencies": [
+        "wait_next"
+      ],
+      "function": "etl.cleanup",
+      "kwargs": {},
+      "metadata": {},
+      "operator_type": "task",
+      "result_key": null,
+      "retry_policy": null,
+      "task_id": "cleanup",
+      "timeout_policy": null
+    },
+    "extract": {
+      "args": [],
+      "dependencies": [],
+      "function": "etl.extract_data",
+      "kwargs": {},
+      "metadata": {},
+      "operator_type": "task",
+      "result_key": "raw_data",
+      "retry_policy": null,
+      "task_id": "extract",
+      "timeout_policy": null
+    },
+    "load": {
+      "args": [
+        "{{transformed_data}}"
+      ],
+      "dependencies": [
+        "transform"
+      ],
+      "function": "etl.load_data",
+      "kwargs": {},
+      "metadata": {},
+      "operator_type": "task",
+      "result_key": null,
+      "retry_policy": null,
+      "task_id": "load",
+      "timeout_policy": {
+        "kill_on_timeout": true,
+        "timeout": "PT30M"
+      }
+    },
+    "transform": {
+      "args": [
+        "{{raw_data}}"
+      ],
+      "dependencies": [
+        "extract"
+      ],
+      "function": "etl.transform_data",
+      "kwargs": {},
+      "metadata": {},
+      "operator_type": "task",
+      "result_key": "transformed_data",
+      "retry_policy": {
+        "backoff_factor": 2.0,
+        "delay": "PT10S",
+        "max_retries": 3
+      },
+      "task_id": "transform",
+      "timeout_policy": null
+    },
+    "wait_next": {
+      "dependencies": [
+        "load"
+      ],
+      "metadata": {},
+      "operator_type": "wait",
+      "retry_policy": null,
+      "task_id": "wait_next",
+      "timeout_policy": null,
+      "wait_for": "P1D"
+    }
+  },
+  "variables": {
+    "chunk_size": 1000,
+    "database_url": "postgresql://localhost/mydb"
+  },
+  "version": "1.0.0"
+}
+
+✅ All formats are interoperable!
+
+==================================================
+COMPLEX WORKFLOW EXAMPLE
+==================================================
+Complex workflow: data_processing_pipeline
+Tasks: ['start', 'validate', 'check_quality', 'high_quality_processing', 'standard_processing', 'parallel_processing', 'transform_a', 'enrich_a', 'transform_b', 'enrich_b', 'aggregate', 'wait_notification', 'notify']
+
+Complex workflow JSON:
+{
+  "name": "data_processing_pipeline",
+  "version": "1.0.0",
+  "description": "",
+  "tasks": {
+    "start": {
+      "task_id": "start",
+      "operator_type": "task",
+      "dependencies": [],
+      "retry_policy": null,
+      "timeout_policy": null,
+      "metadata": {},
+      "function": "workflows.tasks.initialize",
+      "args": [],
+      "kwargs": {},
+      "result_key": "init_data"
+    },
+    "validate": {
+      "task_id": "validate",
+      "operator_type": "task",
+      "dependencies": [
+        "start"
+      ],
+      "retry_policy": null,
+      "timeout_policy": null,
+      "metadata": {},
+      "function": "workflows.tasks.validate_data",
+      "args": [
+        "{{init_data}}"
+      ],
+      "kwargs": {},
+      "result_key": "validated_data"
+    },
+    "check_quality": {
+      "task_id": "check_quality",
+      "operator_type": "condition",
+      "dependencies": [
+        "validate"
+      ],
+      "retry_policy": null,
+      "timeout_policy": null,
+      "metadata": {},
+      "condition": "{{validated_data.quality_score}} > 0.8",
+      "if_true": "high_quality_processing",
+      "if_false": "standard_processing"
+    },
+    "high_quality_processing": {
+      "task_id": "high_quality_processing",
+      "operator_type": "task",
+      "dependencies": [
+        "check_quality"
+      ],
+      "retry_policy": {
+        "max_retries": 5,
+        "delay": "PT10S",
+        "backoff_factor": 2.0
+      },
+      "timeout_policy": null,
+      "metadata": {},
+      "function": "workflows.tasks.advanced_processing",
+      "args": [
+        "{{validated_data}}"
+      ],
+      "kwargs": {},
+      "result_key": null
+    },
+    "standard_processing": {
+      "task_id": "standard_processing",
+      "operator_type": "task",
+      "dependencies": [
+        "check_quality"
+      ],
+      "retry_policy": null,
+      "timeout_policy": null,
+      "metadata": {},
+      "function": "workflows.tasks.basic_processing",
+      "args": [
+        "{{validated_data}}"
+      ],
+      "kwargs": {},
+      "result_key": null
+    },
+    "parallel_processing": {
+      "task_id": "parallel_processing",
+      "operator_type": "parallel",
+      "dependencies": [
+        "high_quality_processing",
+        "standard_processing"
+      ],
+      "retry_policy": null,
+      "timeout_policy": null,
+      "metadata": {},
+      "branches": {
+        "branch_a": [
+          "transform_a",
+          "enrich_a"
+        ],
+        "branch_b": [
+          "transform_b",
+          "enrich_b"
+        ]
+      }
+    },
+    "transform_a": {
+      "task_id": "transform_a",
+      "operator_type": "task",
+      "dependencies": [
+        "parallel_processing"
+      ],
+      "retry_policy": null,
+      "timeout_policy": null,
+      "metadata": {},
+      "function": "workflows.tasks.transform_a",
+      "args": [],
+      "kwargs": {},
+      "result_key": "transformed_a"
+    },
+    "enrich_a": {
+      "task_id": "enrich_a",
+      "operator_type": "task",
+      "dependencies": [
+        "transform_a",
+        "parallel_processing"
+      ],
+      "retry_policy": null,
+      "timeout_policy": null,
+      "metadata": {},
+      "function": "workflows.tasks.enrich_data",
+      "args": [
+        "{{transformed_a}}"
+      ],
+      "kwargs": {},
+      "result_key": "enriched_a"
+    },
+    "transform_b": {
+      "task_id": "transform_b",
+      "operator_type": "task",
+      "dependencies": [
+        "parallel_processing"
+      ],
+      "retry_policy": null,
+      "timeout_policy": null,
+      "metadata": {},
+      "function": "workflows.tasks.transform_b",
+      "args": [],
+      "kwargs": {},
+      "result_key": "transformed_b"
+    },
+    "enrich_b": {
+      "task_id": "enrich_b",
+      "operator_type": "task",
+      "dependencies": [
+        "transform_b",
+        "parallel_processing"
+      ],
+      "retry_policy": null,
+      "timeout_policy": null,
+      "metadata": {},
+      "function": "workflows.tasks.enrich_data",
+      "args": [
+        "{{transformed_b}}"
+      ],
+      "kwargs": {},
+      "result_key": "enriched_b"
+    },
+    "aggregate": {
+      "task_id": "aggregate",
+      "operator_type": "task",
+      "dependencies": [
+        "enrich_a",
+        "enrich_b"
+      ],
+      "retry_policy": null,
+      "timeout_policy": null,
+      "metadata": {},
+      "function": "workflows.tasks.aggregate_results",
+      "args": [],
+      "kwargs": {},
+      "result_key": "final_result"
+    },
+    "wait_notification": {
+      "task_id": "wait_notification",
+      "operator_type": "wait",
+      "dependencies": [
+        "aggregate"
+      ],
+      "retry_policy": null,
+      "timeout_policy": null,
+      "metadata": {},
+      "wait_for": "PT1H"
+    },
+    "notify": {
+      "task_id": "notify",
+      "operator_type": "task",
+      "dependencies": [
+        "wait_notification"
+      ],
+      "retry_policy": null,
+      "timeout_policy": null,
+      "metadata": {},
+      "function": "workflows.tasks.send_notification",
+      "args": [
+        "{{final_result}}"
+      ],
+      "kwargs": {},
+      "result_key": null
+    }
+  },
+  "variables": {
+    "environment": "production",
+    "batch_size": 1000,
+    "notify_email": "team@company.com"
+  },
+  "start_task": "start"
+}
+
+==================================================
+WHILE LOOP WORKFLOW EXAMPLE
+==================================================
+While loop workflow: qa_rework_workflow
+Tasks: ['start_qa', 'qa_rework_loop', 'perform_rework', 're_run_qa', 'finalize_product']
+
+While loop workflow JSON:
+{
+  "name": "qa_rework_workflow",
+  "version": "1.0.0",
+  "description": "",
+  "tasks": {
+    "start_qa": {
+      "task_id": "start_qa",
+      "operator_type": "task",
+      "dependencies": [],
+      "retry_policy": null,
+      "timeout_policy": null,
+      "metadata": {},
+      "function": "workflows.tasks.start_qa",
+      "args": [],
+      "kwargs": {},
+      "result_key": "qa_results"
+    },
+    "qa_rework_loop": {
+      "task_id": "qa_rework_loop",
+      "operator_type": "while",
+      "dependencies": [
+        "start_qa"
+      ],
+      "retry_policy": null,
+      "timeout_policy": null,
+      "metadata": {},
+      "condition": "{{qa_results.status}} == 'failed'",
+      "loop_body": [
+        {
+          "task_id": "perform_rework",
+          "operator_type": "task",
+          "dependencies": [
+            "qa_rework_loop"
+          ],
+          "retry_policy": null,
+          "timeout_policy": null,
+          "metadata": {},
+          "function": "workflows.tasks.perform_rework",
+          "args": [],
+          "kwargs": {},
+          "result_key": null
+        },
+        {
+          "task_id": "re_run_qa",
+          "operator_type": "task",
+          "dependencies": [
+            "perform_rework"
+          ],
+          "retry_policy": null,
+          "timeout_policy": null,
+          "metadata": {},
+          "function": "workflows.tasks.run_qa",
+          "args": [],
+          "kwargs": {},
+          "result_key": "qa_results"
+        }
+      ]
+    },
+    "perform_rework": {
+      "task_id": "perform_rework",
+      "operator_type": "task",
+      "dependencies": [
+        "qa_rework_loop"
+      ],
+      "retry_policy": null,
+      "timeout_policy": null,
+      "metadata": {},
+      "function": "workflows.tasks.perform_rework",
+      "args": [],
+      "kwargs": {},
+      "result_key": null
+    },
+    "re_run_qa": {
+      "task_id": "re_run_qa",
+      "operator_type": "task",
+      "dependencies": [
+        "perform_rework"
+      ],
+      "retry_policy": null,
+      "timeout_policy": null,
+      "metadata": {},
+      "function": "workflows.tasks.run_qa",
+      "args": [],
+      "kwargs": {},
+      "result_key": "qa_results"
+    },
+    "finalize_product": {
+      "task_id": "finalize_product",
+      "operator_type": "task",
+      "dependencies": [
+        "qa_rework_loop"
+      ],
+      "retry_policy": null,
+      "timeout_policy": null,
+      "metadata": {},
+      "function": "workflows.tasks.finalize_product",
+      "args": [],
+      "kwargs": {},
+      "result_key": null
+    }
+  },
+  "variables": {
+    "product_id": "product-123"
+  },
+  "start_task": "start_qa"
+}
