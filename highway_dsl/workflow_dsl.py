@@ -39,7 +39,9 @@ class BaseOperator(BaseModel, ABC):
     retry_policy: Optional[RetryPolicy] = None
     timeout_policy: Optional[TimeoutPolicy] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
-    is_internal_loop_task: bool = Field(default=False, exclude=True)  # Mark if task is internal to a loop
+    is_internal_loop_task: bool = Field(
+        default=False, exclude=True
+    )  # Mark if task is internal to a loop
 
     model_config = ConfigDict(use_enum_values=True, arbitrary_types_allowed=True)
 
@@ -282,7 +284,9 @@ class WorkflowBuilder:
     ) -> "WorkflowBuilder":
         branch_builders = {}
         for name, branch_func in branches.items():
-            branch_builder = branch_func(WorkflowBuilder(f"{task_id}_{name}", parent=self))
+            branch_builder = branch_func(
+                WorkflowBuilder(f"{task_id}_{name}", parent=self)
+            )
             branch_builders[name] = branch_builder
 
         branch_tasks = {
@@ -298,7 +302,10 @@ class WorkflowBuilder:
             for task_obj in builder.workflow.tasks.values():
                 # Only add the parallel task as dependency to non-internal tasks,
                 # preserve original dependencies
-                if not getattr(task_obj, 'is_internal_loop_task', False) and task_id not in task_obj.dependencies:
+                if (
+                    not getattr(task_obj, "is_internal_loop_task", False)
+                    and task_id not in task_obj.dependencies
+                ):
                     task_obj.dependencies.append(task_id)
                 self.workflow.add_task(task_obj)
 
@@ -338,7 +345,7 @@ class WorkflowBuilder:
             first_task = loop_tasks[0]
             if task_id not in first_task.dependencies:
                 first_task.dependencies.append(task_id)
-            
+
             # Add all loop tasks to workflow
             for task_obj in loop_tasks:
                 self.workflow.add_task(task_obj)
@@ -375,7 +382,7 @@ class WorkflowBuilder:
             first_task = loop_tasks[0]
             if task_id not in first_task.dependencies:
                 first_task.dependencies.append(task_id)
-            
+
             # Add all loop tasks to workflow without modifying their dependencies further
             for task_obj in loop_tasks:
                 self.workflow.add_task(task_obj)

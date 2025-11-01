@@ -1,5 +1,5 @@
 import json
-from datetime import timedelta, time, datetime # Need datetime for the validator
+from datetime import timedelta, time, datetime  # Need datetime for the validator
 
 try:
     from highway_dsl import (
@@ -85,7 +85,12 @@ def demonstrate_bank_etl_workflow():
         .task(
             "run_reconciliation_check",
             "etl.validation.run_initial_checksums",
-            args=["{{core_data}}", "{{card_data}}", "{{loan_data}}", "{{payment_data}}"],
+            args=[
+                "{{core_data}}",
+                "{{card_data}}",
+                "{{loan_data}}",
+                "{{payment_data}}",
+            ],
             result_key="recon_status",
         ),
         dependencies=["run_pre_reconciliation"],
@@ -109,13 +114,19 @@ def demonstrate_bank_etl_workflow():
                 "credit_card_batch_loop",
                 items="{{card_accounts_list}}",
                 loop_body=lambda fb: fb.task(
-                    "calc_card_interest", "etl.cards.calculate_interest", args=["{{item.account_id}}"]
+                    "calc_card_interest",
+                    "etl.cards.calculate_interest",
+                    args=["{{item.account_id}}"],
                 )
                 .task(
-                    "apply_card_payments", "etl.cards.apply_payments", args=["{{item.account_id}}"]
+                    "apply_card_payments",
+                    "etl.cards.apply_payments",
+                    args=["{{item.account_id}}"],
                 )
                 .task(
-                    "generate_card_statement_data", "etl.cards.generate_statement", args=["{{item.account_id}}"]
+                    "generate_card_statement_data",
+                    "etl.cards.generate_statement",
+                    args=["{{item.account_id}}"],
                 ),
             ),
         },
@@ -178,14 +189,14 @@ def demonstrate_bank_etl_workflow():
         "etl.reports.refresh_management_bi_dashboards",
         dependencies=["load_to_data_warehouse"],
     )
-    
+
     # Wait until 4:00 AM to archive old data
     builder.wait(
         "wait_for_archive_window",
         "time:04:00:00",  # <-- CORRECTED: Was time(4, 0)
         dependencies=["load_to_data_warehouse"],
     )
-    
+
     builder.task(
         "archive_raw_data",
         "etl.archive.s3_archive_raw_feeds",
