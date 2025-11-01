@@ -39,6 +39,7 @@ class BaseOperator(BaseModel, ABC):
     retry_policy: Optional[RetryPolicy] = None
     timeout_policy: Optional[TimeoutPolicy] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
+    is_internal_loop_task: bool = Field(default=False, exclude=True)  # Mark if task is internal to a loop
 
     model_config = ConfigDict(use_enum_values=True, arbitrary_types_allowed=True)
 
@@ -295,8 +296,9 @@ class WorkflowBuilder:
 
         for builder in branch_builders.values():
             for task_obj in builder.workflow.tasks.values():
-                # Only add the parallel task as dependency, preserve original dependencies
-                if task_id not in task_obj.dependencies:
+                # Only add the parallel task as dependency to non-internal tasks,
+                # preserve original dependencies
+                if not getattr(task_obj, 'is_internal_loop_task', False) and task_id not in task_obj.dependencies:
                     task_obj.dependencies.append(task_id)
                 self.workflow.add_task(task_obj)
 
@@ -310,9 +312,16 @@ class WorkflowBuilder:
         loop_body: Callable[["WorkflowBuilder"], "WorkflowBuilder"],
         **kwargs,
     ) -> "WorkflowBuilder":
-        loop_builder = loop_body(WorkflowBuilder(f"{task_id}_loop", parent=self))
+        # Create a temporary builder for the loop body.
+        temp_builder = WorkflowBuilder(f"{task_id}_loop", parent=self)
+        loop_builder = loop_body(temp_builder)
         loop_tasks = list(loop_builder.workflow.tasks.values())
 
+        # Mark all loop body tasks as internal to prevent parallel dependency injection
+        for task_obj in loop_tasks:
+            task_obj.is_internal_loop_task = True
+
+        # Create the foreach operator
         task = ForEachOperator(
             task_id=task_id,
             items=items,
@@ -320,16 +329,17 @@ class WorkflowBuilder:
             **kwargs,
         )
 
+        # Add the foreach task to workflow to establish initial dependencies
         self._add_task(task, **kwargs)
 
-        # Fix: Only add the foreach task as dependency to the FIRST task in the loop body
+        # Add the foreach task as dependency to the FIRST task in the loop body
         # and preserve the original dependency chain within the loop
         if loop_tasks:
             first_task = loop_tasks[0]
             if task_id not in first_task.dependencies:
                 first_task.dependencies.append(task_id)
             
-            # Add all loop tasks to workflow without modifying their dependencies further
+            # Add all loop tasks to workflow
             for task_obj in loop_tasks:
                 self.workflow.add_task(task_obj)
 
@@ -345,6 +355,10 @@ class WorkflowBuilder:
     ) -> "WorkflowBuilder":
         loop_builder = loop_body(WorkflowBuilder(f"{task_id}_loop", parent=self))
         loop_tasks = list(loop_builder.workflow.tasks.values())
+
+        # Mark all loop body tasks as internal to prevent parallel dependency injection
+        for task_obj in loop_tasks:
+            task_obj.is_internal_loop_task = True
 
         task = WhileOperator(
             task_id=task_id,
