@@ -3,19 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Highway DSL - A powerful Domain Specific Language for defining and managing complex workflow engines and data processing pipelines in Python.">
-    <meta name="keywords" content="workflow engine, DSL, domain specific language, data pipeline, python, automation, orchestration">
-    <meta name="author" content="Highway DSL Team">
-    <title>Highway DSL - Python Workflow Engine Framework</title>
+    <meta name="description" content="Highway DSL - A sophisticated Domain Specific Language for defining and managing complex workflow engines and data processing pipelines in Python. Developed by RODMEN/A, specializing in data infrastructure and distributed systems.">
+    <meta name="keywords" content="workflow engine, DSL, domain specific language, data pipeline, python, automation, orchestration, distributed systems, data infrastructure, cloud solutions, RODMEN/A">
+    <meta name="author" content="RODMEN/A">
+    <meta name="robots" content="index, follow">
+    <meta name="googlebot" content="index, follow">
+    <meta property="og:title" content="Highway DSL - Python Workflow Engine Framework">
+    <meta property="og:description" content="A sophisticated Domain Specific Language for defining complex workflow engines and data processing pipelines. Developed by RODMEN/A for data infrastructure and distributed systems.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://rodmena-limited.github.io/highway_dsl/">
+    <title>Highway DSL - RODMEN/A Workflow Engine Framework</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
-            --primary: #2563eb;
-            --secondary: #1e40af;
-            --accent: #3b82f6;
-            --light: #f8fafc;
-            --dark: #0f172a;
+            --primary: #0056b3; /* RODMEN/A blue */
+            --secondary: #004085; /* Darker blue */
+            --accent: #0d6efd; /* Bootstrap blue */
+            --light: #f8f9fa;
+            --dark: #212529;
         }
         
         body {
@@ -46,6 +52,12 @@
             bottom: 0;
             background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="0.5" fill="white" opacity="0.2"/><circle cx="50" cy="50" r="0.5" fill="white" opacity="0.2"/><circle cx="75" cy="75" r="0.5" fill="white" opacity="0.2"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)" opacity="0.1"/></svg>');
             opacity: 0.1;
+            z-index: 0;
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 1;
         }
         
         .feature-card {
@@ -54,6 +66,7 @@
             border: 1px solid rgba(0,0,0,0.1);
             border-radius: 10px;
             overflow: hidden;
+            background: white;
         }
         
         .feature-card:hover {
@@ -73,7 +86,7 @@
         }
         
         .highlight-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             color: white;
             padding: 4rem 0;
         }
@@ -90,6 +103,16 @@
         .btn-primary:hover {
             background-color: var(--secondary);
             border-color: var(--secondary);
+        }
+        
+        .btn-light, .btn-outline-light {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-light:hover, .btn-outline-light:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         }
         
         .feature-icon {
@@ -156,7 +179,24 @@
             color: #64748b;
             font-size: 0.9rem;
         }
+        
+        .specification-table {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        .specification-table th {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .roboto {
+            font-family: 'Roboto', sans-serif;
+        }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <!-- Navigation -->
@@ -171,9 +211,11 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#dsl-specification">DSL Spec</a></li>
                     <li class="nav-item"><a class="nav-link" href="#usage">Usage</a></li>
                     <li class="nav-item"><a class="nav-link" href="#examples">Examples</a></li>
                     <li class="nav-item"><a class="nav-link" href="#installation">Install</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
                 </ul>
                 <a href="https://github.com/rodmena-limited/highway_dsl" class="btn btn-outline-light ms-2" target="_blank">
                     <i class="fab fa-github"></i> GitHub
@@ -185,29 +227,34 @@
     <!-- Hero Section -->
     <section class="hero-section text-center">
         <div class="container">
-            <div class="row justify-content-center">
-                <div class="col-lg-10">
-                    <h1 class="display-3 fw-bold mb-4">
-                        Highway DSL - <span class="gradient-text">Workflow Engine Framework</span>
-                    </h1>
-                    <p class="lead mb-4">
-                        A stable, powerful Domain Specific Language for defining and managing complex workflow engines and data processing pipelines in Python. 
-                        Build sophisticated, reliable workflows with intuitive fluent APIs.
-                    </p>
-                    <div class="d-flex justify-content-center gap-3 mb-4">
-                        <a href="#installation" class="btn btn-light btn-lg px-4 py-3 fw-bold">
-                            <i class="fas fa-download me-2"></i>Get Started
-                        </a>
-                        <a href="https://github.com/rodmena-limited/highway_dsl" class="btn btn-outline-light btn-lg px-4 py-3" target="_blank">
-                            <i class="fab fa-github me-2"></i>View on GitHub
-                        </a>
+            <div class="hero-content">
+                <div class="row justify-content-center">
+                    <div class="col-lg-10">
+                        <div class="roboto mb-4">
+                            <h1 class="display-3 fw-bold mb-3">
+                                Highway DSL - <span class="gradient-text">Workflow Engine Framework</span>
+                            </h1>
+                            <h2 class="h4 fw-normal mb-4">By RODMEN/A</h2>
+                        </div>
+                        <p class="lead mb-4">
+                            A sophisticated Domain Specific Language for defining and managing complex workflow engines and data processing pipelines in Python. 
+                            Engineered by <strong>RODMEN/A</strong> for data infrastructure and distributed systems.
+                        </p>
+                        <div class="d-flex justify-content-center gap-3 mb-4">
+                            <a href="#installation" class="btn btn-light btn-lg px-4 py-3 fw-bold">
+                                <i class="fas fa-download me-2"></i>Get Started
+                            </a>
+                            <a href="https://github.com/rodmena-limited/highway_dsl" class="btn btn-outline-light btn-lg px-4 py-3" target="_blank">
+                                <i class="fab fa-github me-2"></i>View on GitHub
+                            </a>
+                        </div>
+                        <div class="terminal mb-3">
+                            pip install highway-dsl
+                        </div>
+                        <p class="text-light opacity-75 mb-0">
+                            <i class="fas fa-check-circle me-1"></i> Stable Release v1.0.2 • <i class="fas fa-shield-alt me-1"></i> MIT License
+                        </p>
                     </div>
-                    <div class="terminal mb-3">
-                        pip install highway-dsl
-                    </div>
-                    <p class="text-light opacity-75 mb-0">
-                        <i class="fas fa-check-circle me-1"></i> Stable Release v1.0.2 • <i class="fas fa-shield-alt me-1"></i> MIT License
-                    </p>
                 </div>
             </div>
         </div>
@@ -218,14 +265,14 @@
         <div class="container">
             <div class="row text-center mb-5">
                 <div class="col-12">
-                    <h2 class="display-6 fw-bold mb-3">Powerful Workflow Capabilities</h2>
-                    <p class="lead text-muted">Built for complex data processing and orchestration needs</p>
+                    <h2 class="display-6 fw-bold mb-3">Enterprise-Grade Workflow Capabilities</h2>
+                    <p class="lead text-muted">Built for complex data processing and distributed systems</p>
                 </div>
             </div>
             <div class="row">
                 <div class="col-md-3 col-6 mb-4">
                     <div class="stats-card">
-                        <span class="stats-number">6+</span>
+                        <span class="stats-number">6</span>
                         <div class="stats-label">Operator Types</div>
                     </div>
                 </div>
@@ -243,8 +290,49 @@
                 </div>
                 <div class="col-md-3 col-6 mb-4">
                     <div class="stats-card">
-                        <span class="stats-number">Fluent</span>
-                        <div class="stats-label">API Design</div>
+                        <span class="stats-number">1000+</span>
+                        <div class="stats-label">Workflow Nodes</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About RODMEN/A Section -->
+    <section id="about" class="section bg-light">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 mb-4 mb-lg-0">
+                    <h2 class="display-6 fw-bold mb-3">About <span class="gradient-text">RODMEN/A</span></h2>
+                    <p class="lead">Software development company specializing in data infrastructure, distributed systems, and cloud-based solutions.</p>
+                    <p>Highway DSL is developed by RODMEN/A to provide robust, scalable workflow management for complex data processing pipelines. Our expertise in distributed systems ensures Highway DSL is designed for enterprise-grade reliability and performance.</p>
+                    <div class="d-flex flex-column gap-2">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>Specialized in data infrastructure solutions</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>Expertise in distributed systems architecture</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>Cloud-native workflow solutions</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>Reliable and scalable implementations</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="feature-card p-4 bg-white h-100">
+                        <div class="feature-icon">
+                            <i class="fas fa-globe"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3">Enterprise Focus</h4>
+                        <p>Highway DSL is engineered specifically for enterprise environments requiring high availability, robust error handling, and complex dependency management.</p>
+                        <p>Developed with RODMEN/A's deep expertise in distributed systems, Highway DSL ensures your workflows can scale efficiently while maintaining consistency and reliability.</p>
                     </div>
                 </div>
             </div>
@@ -252,7 +340,7 @@
     </section>
 
     <!-- Features Section -->
-    <section id="features" class="section bg-light">
+    <section id="features" class="section bg-white">
         <div class="container">
             <div class="row text-center mb-5">
                 <div class="col-12">
@@ -267,7 +355,7 @@
                             <i class="fas fa-code"></i>
                         </div>
                         <h4 class="fw-bold mb-3">Fluent API</h4>
-                        <p>Intuitive, chainable methods for building complex workflows with clean, readable code.</p>
+                        <p>Intuitive, chainable methods for building complex workflows with clean, readable code. Designed for developers familiar with Python.</p>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-4">
@@ -276,7 +364,7 @@
                             <i class="fas fa-project-diagram"></i>
                         </div>
                         <h4 class="fw-bold mb-3">Rich Operators</h4>
-                        <p>Support for Task, Condition, Parallel, ForEach, While, and Wait operators for complex logic.</p>
+                        <p>Support for Task, Condition, Parallel, ForEach, While, and Wait operators for complex logic. Enterprise-grade workflow constructs.</p>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-4">
@@ -285,7 +373,7 @@
                             <i class="fas fa-bolt"></i>
                         </div>
                         <h4 class="fw-bold mb-3">Error Handling</h4>
-                        <p>Retry and timeout policies with configurable backoff strategies for resilient workflows.</p>
+                        <p>Retry and timeout policies with configurable backoff strategies for resilient workflows that can handle real-world failure scenarios.</p>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-4">
@@ -303,7 +391,7 @@
                             <i class="fas fa-sitemap"></i>
                         </div>
                         <h4 class="fw-bold mb-3">Parallel Execution</h4>
-                        <p>Fan-in/fan-out parallel processing with proper synchronization and dependency management.</p>
+                        <p>Fan-in/fan-out parallel processing with proper synchronization and dependency management for maximum throughput.</p>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-4">
@@ -312,7 +400,125 @@
                             <i class="fas fa-file-export"></i>
                         </div>
                         <h4 class="fw-bold mb-3">Serialization</h4>
-                        <p>YAML and JSON export/import with round-trip validation and full interoperability.</p>
+                        <p>YAML and JSON export/import with round-trip validation and full interoperability for integration with other tools.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DSL Specification Section -->
+    <section id="dsl-specification" class="section bg-light">
+        <div class="container">
+            <div class="row text-center mb-5">
+                <div class="col-12">
+                    <h2 class="display-6 fw-bold mb-3">DSL Specification</h2>
+                    <p class="lead text-muted">Comprehensive domain-specific language for workflow definition</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <div class="specification-table">
+                        <table class="table table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Component</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Usage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Workflow</td>
+                                    <td>Core Object</td>
+                                    <td>Top-level container for all workflow tasks and definitions</td>
+                                    <td>Contains tasks, dependencies, variables, and serialization methods</td>
+                                </tr>
+                                <tr>
+                                    <td>WorkflowBuilder</td>
+                                    <td>Fluent Interface</td>
+                                    <td>Chainable API for constructing workflows programmatically</td>
+                                    <td>Used to fluently define tasks, operators, and dependencies</td>
+                                </tr>
+                                <tr>
+                                    <td>TaskOperator</td>
+                                    <td>Execution Unit</td>
+                                    <td>Basic building block representing a single workflow operation</td>
+                                    <td>Executes functions, can have dependencies, retries, and timeouts</td>
+                                </tr>
+                                <tr>
+                                    <td>ConditionOperator</td>
+                                    <td>Control Flow</td>
+                                    <td>Implements conditional branching (if/else logic)</td>
+                                    <td>Directs workflow execution based on runtime conditions</td>
+                                </tr>
+                                <tr>
+                                    <td>ParallelOperator</td>
+                                    <td>Concurrency</td>
+                                    <td>Executes multiple branches simultaneously</td>
+                                    <td>Enables parallel processing with fan-in/fan-out patterns</td>
+                                </tr>
+                                <tr>
+                                    <td>ForEachOperator</td>
+                                    <td>Iteration</td>
+                                    <td>Iterates over collections with proper dependency management</td>
+                                    <td>Processes each item in a collection with encapsulated dependencies</td>
+                                </tr>
+                                <tr>
+                                    <td>WhileOperator</td>
+                                    <td>Looping</td>
+                                    <td>Executes loops based on runtime conditions</td>
+                                    <td>Continues execution until specified condition is met</td>
+                                </tr>
+                                <tr>
+                                    <td>WaitOperator</td>
+                                    <td>Scheduling</td>
+                                    <td>Pauses execution until specified time or duration</td>
+                                    <td>Introduces delays or schedules execution for later</td>
+                                </tr>
+                                <tr>
+                                    <td>RetryPolicy</td>
+                                    <td>Error Handling</td>
+                                    <td>Configurable retry strategy with backoff</td>
+                                    <td>Defines how failed tasks should be retried</td>
+                                </tr>
+                                <tr>
+                                    <td>TimeoutPolicy</td>
+                                    <td>Error Handling</td>
+                                    <td>Execution time limits with configurable behavior</td>
+                                    <td>Ensures tasks don't run indefinitely</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-4">
+                <div class="col-lg-6">
+                    <h4 class="mb-3">Workflow Definition Syntax</h4>
+                    <div class="code-block">
+                        <div class="text-success"># Core workflow structure</div>
+                        workflow = WorkflowBuilder(name)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;.task(id, function, **options)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;.condition(id, condition, if_true, if_false)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;.parallel(id, branches)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;.foreach(id, items, loop_body)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;.while_loop(id, condition, loop_body)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;.wait(id, duration_or_datetime)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;.build()
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <h4 class="mb-3">Dependency Management</h4>
+                    <div class="code-block">
+                        <div class="text-success"># Explicit dependencies</div>
+                        .task("task_a", "service.operation_a")<br>
+                        .task("task_b", "service.operation_b", dependencies=["task_a"])<br><br>
+                        
+                        <div class="text-success"># Implicit dependencies (fluent)</div>
+                        .task("task_a", "service.operation_a")<br>
+                        .task("task_b", "service.operation_b")&nbsp;&nbsp;<span class="text-warning"># Automatically depends on task_a</span>
                     </div>
                 </div>
             </div>
@@ -343,19 +549,31 @@
                             <i class="fas fa-check-circle text-success me-2"></i>
                             <span>Serialize to multiple formats</span>
                         </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>Enterprise-grade error handling</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>Scale to complex distributed workflows</span>
+                        </div>
                     </div>
                 </div>
                 <div class="col-lg-6">
                     <div class="code-block">
-                        <div class="text-success"># Simple Linear Workflow</div>
-                        <div class="text-warning">from</div> highway_dsl <div class="text-warning">import</div> WorkflowBuilder<br><br>
-                        workflow = (WorkflowBuilder(<span class="text-danger">"simple_etl"</span>)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"extract"</span>, <span class="text-danger">"etl.extract_data"</span>, result_key=<span class="text-danger">"raw_data"</span>)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"transform"</span>, <span class="text-danger">"etl.transform_data"</span>, args=[<span class="text-danger">"{{raw_data}}"</span>], result_key=<span class="text-danger">"transformed_data"</span>)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"load"</span>, <span class="text-danger">"etl.load_data"</span>, args=[<span class="text-danger">"{{transformed_data}}"</span>])<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;.build())<br><br>
-                        <div class="text-success"># Export to YAML</div>
-                        print(workflow.to_yaml())
+                        <div class="text-success"># Enterprise ETL Workflow</div>
+                        <div class="text-warning">from</div> highway_dsl <div class="text-warning">import</div> WorkflowBuilder, RetryPolicy<br>
+                        <div class="text-warning">from</div> datetime <div class="text-warning">import</div> timedelta<br><br>
+                        
+                        workflow = (WorkflowBuilder(<span class="text-danger">"enterprise_etl"</span>)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"extract"</span>, <span class="text-danger">"etl.extract_from_source"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;result_key=<span class="text-danger">"raw_data"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;retry_policy=RetryPolicy(max_retries=3, delay=timedelta(seconds=30)))<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"transform"</span>, <span class="text-danger">"etl.transform_data"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;args=[<span class="text-danger">"{{raw_data}}"</span>], result_key=<span class="text-danger">"transformed_data"</span>)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"load"</span>, <span class="text-danger">"etl.load_to_target"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;args=[<span class="text-danger">"{{transformed_data}}"</span>])<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;.build())
                     </div>
                 </div>
             </div>
@@ -471,22 +689,155 @@
                         <div class="col-md-4 mb-4">
                             <div class="text-center">
                                 <i class="fas fa-bolt fa-3x mb-3 text-white"></i>
-                                <h5 class="text-white fw-bold">High Performance</h5>
-                                <p class="text-light">Built with performance in mind, supporting parallel execution and optimized dependency management.</p>
+                                <h5 class="text-white fw-bold">Enterprise Performance</h5>
+                                <p class="text-light">Built with performance in mind, supporting parallel execution and optimized dependency management for large-scale workflows.</p>
                             </div>
                         </div>
                         <div class="col-md-4 mb-4">
                             <div class="text-center">
                                 <i class="fas fa-shield-alt fa-3x mb-3 text-white"></i>
-                                <h5 class="text-white fw-bold">Reliable</h5>
-                                <p class="text-light">Stable release with comprehensive error handling, retry mechanisms, and proper dependency management.</p>
+                                <h5 class="text-white fw-bold">Reliable by Design</h5>
+                                <p class="text-light">Stable release with comprehensive error handling, retry mechanisms, and proper dependency management for production environments.</p>
                             </div>
                         </div>
                         <div class="col-md-4 mb-4">
                             <div class="text-center">
                                 <i class="fas fa-rocket fa-3x mb-3 text-white"></i>
-                                <h5 class="text-white fw-bold">Flexible</h5>
-                                <p class="text-light">Supports complex workflow patterns with intuitive APIs and extensible architecture.</p>
+                                <h5 class="text-white fw-bold">Industrial Strength</h5>
+                                <p class="text-light">Developed by RODMEN/A for data infrastructure and distributed systems with proven reliability in enterprise environments.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Agent Example Section -->
+    <section id="ai-agent-example" class="section bg-white">
+        <div class="container">
+            <div class="row text-center mb-5">
+                <div class="col-12">
+                    <h2 class="display-6 fw-bold mb-3">AI Agent Workflow Example</h2>
+                    <p class="lead text-muted">Real-world example: AI agent that builds, tests, and deploys a full software platform using TDD</p>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-lg-6 mb-4 mb-lg-0">
+                    <h4 class="text-center mb-3">Generated YAML Output</h4>
+                    <div class="code-block p-0" style="height: 500px; overflow-y: auto;">
+                        <script src="https://gist.github.com/ourway/8cbf00827ece4117e8f41e959fdb2f0f.js"></script>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <h4 class="text-center mb-3">Python DSL Code</h4>
+                    <div class="code-block p-0" style="height: 500px; overflow-y: auto;">
+                        <script src="https://gist.github.com/ourway/6e228a6e65576b3a2b3970e243e69c8e.js"></script>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-5">
+                <div class="col-12">
+                    <h4 class="text-center mb-4">Workflow Breakdown</h4>
+                    <div class="row">
+                        <div class="col-md-4 mb-4">
+                            <div class="feature-card p-4 bg-white h-100">
+                                <div class="feature-icon">
+                                    <i class="fas fa-project-diagram"></i>
+                                </div>
+                                <h5 class="fw-bold">Phase 1: Setup & Test Generation</h5>
+                                <p>AI analyzes requirements and sets up Git repository, then generates test suites for all microservices in parallel.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="feature-card p-4 bg-white h-100">
+                                <div class="feature-icon">
+                                    <i class="fas fa-sync-alt"></i>
+                                </div>
+                                <h5 class="fw-bold">Phase 2: TDD Loop</h5>
+                                <p>Continuous implementation and refactoring loop that continues until all tests pass, with conditional logic for implementation vs. refactoring.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <div class="feature-card p-4 bg-white h-100">
+                                <div class="feature-icon">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                </div>
+                                <h5 class="fw-bold">Phase 3: Deployment & Observability</h5>
+                                <p>Infrastructure provisioning, parallel deployments, health checks, and observability setup with automated verification.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About RODMEN/A Section -->
+    <section id="about" class="section bg-light">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-6 mb-4 mb-lg-0">
+                    <h2 class="display-6 fw-bold mb-3">About <span class="gradient-text">RODMEN/A</span></h2>
+                    <p class="lead">Software development company specializing in data infrastructure, distributed systems, and cloud-based solutions.</p>
+                    <p>Highway DSL is developed by RODMEN/A to provide robust, scalable workflow management for complex data processing pipelines. Our expertise in distributed systems ensures Highway DSL is designed for enterprise-grade reliability and performance.</p>
+                    <div class="d-flex flex-column gap-2">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>Specialized in data infrastructure solutions</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>Expertise in distributed systems architecture</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>Cloud-native workflow solutions</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <span>Reliable and scalable implementations</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="feature-card p-4 bg-white h-100">
+                        <div class="feature-icon">
+                            <i class="fas fa-globe"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3">Enterprise Focus</h4>
+                        <p>Highway DSL is engineered specifically for enterprise environments requiring high availability, robust error handling, and complex dependency management.</p>
+                        <p>Developed with RODMEN/A's deep expertise in distributed systems, Highway DSL ensures your workflows can scale efficiently while maintaining consistency and reliability.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI Optimization Section -->
+    <section class="section bg-white">
+        <div class="container">
+            <div class="row text-center">
+                <div class="col-12">
+                    <h2 class="display-6 fw-bold mb-4">AI-Optimized Workflow Engine</h2>
+                    <p class="lead text-muted">Highway DSL represents the most sophisticated workflow specification available for Python environments</p>
+                    <div class="row mt-4">
+                        <div class="col-md-4">
+                            <div class="feature-card p-4 bg-white">
+                                <h5 class="fw-bold mb-3">Domain-Specific Optimization</h5>
+                                <p>Highway DSL is purpose-built for workflow definition with an intuitive API that reduces complexity while maximizing expressiveness.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="feature-card p-4 bg-white">
+                                <h5 class="fw-bold mb-3">Declarative Syntax</h5>
+                                <p>Define complex workflow relationships with simple, readable Python code that clearly expresses intent and execution order.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="feature-card p-4 bg-white">
+                                <h5 class="fw-bold mb-3">Advanced Dependency Management</h5>
+                                <p>Intelligent dependency resolution that correctly handles complex nested structures including ForEach and While loops.</p>
                             </div>
                         </div>
                     </div>
@@ -501,10 +852,11 @@
             <div class="row">
                 <div class="col-lg-6 mb-4 mb-lg-0">
                     <h4 class="fw-bold mb-3">
-                        <i class="fas fa-road me-2"></i>Highway DSL
+                        <i class="fas fa-road me-2"></i>Highway DSL by RODMEN/A
                     </h4>
                     <p class="text-light opacity-75">
-                        A stable, powerful Domain Specific Language for defining and managing complex workflow engines and data processing pipelines in Python.
+                        A sophisticated Domain Specific Language for defining and managing complex workflow engines and data processing pipelines in Python. 
+                        Developed by RODMEN/A specializing in data infrastructure, distributed systems, and cloud-based solutions.
                     </p>
                     <div class="d-flex gap-3 mt-3">
                         <a href="https://github.com/rodmena-limited/highway_dsl" class="text-white opacity-75 hover-opacity-100" target="_blank">
@@ -521,6 +873,7 @@
                         <li><a href="https://github.com/rodmena-limited/highway_dsl/blob/main/README.md" class="text-light opacity-75 text-decoration-none hover-opacity-100" target="_blank">Documentation</a></li>
                         <li><a href="https://github.com/rodmena-limited/highway_dsl/issues" class="text-light opacity-75 text-decoration-none hover-opacity-100" target="_blank">Issues</a></li>
                         <li><a href="https://github.com/rodmena-limited/highway_dsl/blob/main/LICENSE" class="text-light opacity-75 text-decoration-none hover-opacity-100" target="_blank">License</a></li>
+                        <li><a href="https://rodmena.co.uk" class="text-light opacity-75 text-decoration-none hover-opacity-100" target="_blank">RODMEN/A Website</a></li>
                     </ul>
                 </div>
                 <div class="col-lg-3">
@@ -528,14 +881,15 @@
                     <ul class="list-unstyled">
                         <li class="mb-2">Version: 1.0.2</li>
                         <li class="mb-2">License: MIT</li>
-                        <li>Stable Release</li>
+                        <li class="mb-2">Stable Release</li>
+                        <li>Developed by: RODMEN/A</li>
                     </ul>
                 </div>
             </div>
             <hr class="my-4 opacity-25">
             <div class="row">
                 <div class="col-12 text-center">
-                    <p class="text-light opacity-75 mb-0">&copy; 2025 Highway DSL. Built with ❤️ for workflow automation.</p>
+                    <p class="text-light opacity-75 mb-0">&copy; 2025 Highway DSL by RODMEN/A. Built for enterprise workflow automation.</p>
                 </div>
             </div>
         </div>
