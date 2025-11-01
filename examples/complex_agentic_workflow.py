@@ -1,5 +1,6 @@
 import json
 from datetime import timedelta
+
 try:
     from highway_dsl import (
         Workflow,
@@ -16,6 +17,7 @@ try:
 except ImportError:
     print("Error: highway_dsl library not found. Please install it.")
     exit()
+
 
 def demonstrate_complex_agentic_workflow():
     """
@@ -52,12 +54,12 @@ def demonstrate_complex_agentic_workflow():
     # Note: The DSL does not seem to have a way to pass the
     # loop item ("task") to the sub-tasks automatically,
     # so we assume the execution engine handles this context.
-    
+
     workflow.add_task(
         TaskOperator(
             task_id="analyze",
             function="agent.analyze_sentiment",
-            args=["{{item.text}}"], # Assuming 'item' is the loop variable
+            args=["{{item.text}}"],  # Assuming 'item' is the loop variable
             result_key="sentiment_analysis",
             # No dependencies, as it's the start of the task_chain
         )
@@ -76,8 +78,8 @@ def demonstrate_complex_agentic_workflow():
         ConditionOperator(
             task_id="route_by_review",
             condition="{{review_check.review_needed}}",
-            if_true="human_review_branch_start", # ID of task to run if true
-            if_false="auto_approve_branch_start", # ID of task to run if false
+            if_true="human_review_branch_start",  # ID of task to run if true
+            if_false="auto_approve_branch_start",  # ID of task to run if false
             dependencies=["check_review"],
         )
     )
@@ -102,7 +104,7 @@ def demonstrate_complex_agentic_workflow():
     )
 
     # --- Define the "human review" branch (with parallelism) ---
-    
+
     # 4. Add the Parallel operator
     workflow.add_task(
         ParallelOperator(
@@ -135,7 +137,7 @@ def demonstrate_complex_agentic_workflow():
             dependencies=["human_review_branch_start"],
         )
     )
-    
+
     # 5. Fan-in: A task that waits for *both* parallel branches
     workflow.add_task(
         TaskOperator(
@@ -143,11 +145,11 @@ def demonstrate_complex_agentic_workflow():
             function="human.request_human_approval",
             args=["{{item}}", "{{draft_response.response}}", "{{docs.doc_url}}"],
             result_key="approval",
-            dependencies=["generate_draft", "find_docs"], # Waits for both
+            dependencies=["generate_draft", "find_docs"],  # Waits for both
             timeout_policy=TimeoutPolicy(timeout=timedelta(hours=4)),
         )
     )
-    
+
     # 6. Another conditional based on human approval
     workflow.add_task(
         ConditionOperator(
@@ -178,26 +180,21 @@ def demonstrate_complex_agentic_workflow():
     # 7. Final aggregation task (fan-in for the ForEach loop)
     # We re-attach the builder to fluently add the last step.
     builder = WorkflowBuilder(workflow.name, existing_workflow=workflow)
-    
+
     # Manually set the builder's last task to the ForEach operator,
     # so the next task depends on it.
     builder._current_task = "process_all_tasks"
-    
-    workflow = (
-        builder.task(
-            "create_summary_report",
-            "agent.create_summary_report",
-            # Assumes the ForEach operator aggregates results
-            args=["{{process_all_tasks_results}}"],
-            result_key="final_report",
-        )
-        .build()
-    )
 
-    workflow.set_variables(
-        {"api_key": "xyz-123", "default_user": "agent_bot"}
-    )
-    
+    workflow = builder.task(
+        "create_summary_report",
+        "agent.create_summary_report",
+        # Assumes the ForEach operator aggregates results
+        args=["{{process_all_tasks_results}}"],
+        result_key="final_report",
+    ).build()
+
+    workflow.set_variables({"api_key": "xyz-123", "default_user": "agent_bot"})
+
     return workflow
 
 

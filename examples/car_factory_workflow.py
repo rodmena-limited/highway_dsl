@@ -1,5 +1,6 @@
 import json
 from datetime import timedelta
+
 try:
     from highway_dsl import (
         Workflow,
@@ -17,6 +18,7 @@ except ImportError:
     print("Error: highway_dsl library not found. Please install it.")
     exit()
 
+
 def demonstrate_car_factory_workflow():
     """
     Defines an extremely complex workflow for a car factory,
@@ -30,7 +32,7 @@ def demonstrate_car_factory_workflow():
             "get_build_manifest",
             "factory.erp.get_daily_build_manifest",
             result_key="manifest",
-            retry_policy=RetryPolicy(max_retries=5, delay=timedelta(minutes=1))
+            retry_policy=RetryPolicy(max_retries=5, delay=timedelta(minutes=1)),
         )
         .build()
     )
@@ -41,7 +43,7 @@ def demonstrate_car_factory_workflow():
         ForEachOperator(
             task_id="build_vehicle_loop",
             items="{{manifest.vehicles}}",  # e.g., [{"vin": "...", "model": "...", "type": "EV"}, ...]
-            task_chain=["check_vehicle_specs"], # Entry point for the sub-workflow
+            task_chain=["check_vehicle_specs"],  # Entry point for the sub-workflow
             dependencies=["get_build_manifest"],
         )
     )
@@ -113,7 +115,7 @@ def demonstrate_car_factory_workflow():
             dependencies=["build_ev_drivetrain", "build_ice_drivetrain"],
         )
     )
-    
+
     # --- Tasks inside the Parallel Branches ---
     workflow.add_task(
         TaskOperator(
@@ -155,11 +157,11 @@ def demonstrate_car_factory_workflow():
             function="factory.assembly.final_marriage",
             args=["{{item.vin}}"],
             dependencies=[
-                "prime_frame", # End of frame_build branch
-                "assemble_electronics_harness", # End of electronics_build
-                "mount_drivetrain_subassembly", # End of drivetrain_prep
+                "prime_frame",  # End of frame_build branch
+                "assemble_electronics_harness",  # End of electronics_build
+                "mount_drivetrain_subassembly",  # End of drivetrain_prep
             ],
-            result_key="assembled_vehicle"
+            result_key="assembled_vehicle",
         )
     )
 
@@ -181,7 +183,7 @@ def demonstrate_car_factory_workflow():
             args=["{{item.vin}}"],
             result_key="qa_report",
             dependencies=["paint_vehicle"],
-            timeout_policy=TimeoutPolicy(timeout=timedelta(hours=2))
+            timeout_policy=TimeoutPolicy(timeout=timedelta(hours=2)),
         )
     )
 
@@ -191,7 +193,7 @@ def demonstrate_car_factory_workflow():
             task_id="check_qa_results",
             condition="{{qa_report.passed}}",
             if_true="mark_vehicle_complete",  # End of this loop
-            if_false="perform_rework",         # Go to rework sub-path
+            if_false="perform_rework",  # Go to rework sub-path
             dependencies=["begin_qa_inspection"],
         )
     )
@@ -215,15 +217,15 @@ def demonstrate_car_factory_workflow():
             dependencies=["perform_rework"],
         )
     )
-    
+
     # 10. Final check. This demonstrates the "fixed rework attempts"
     #     limitation of a DAG.
     workflow.add_task(
         ConditionOperator(
             task_id="check_final_qa",
             condition="{{final_qa_status.passed}}",
-            if_true="mark_vehicle_complete", # Pass: End of this loop
-            if_false="flag_for_manual_intervention", # Fail: End of this loop
+            if_true="mark_vehicle_complete",  # Pass: End of this loop
+            if_false="flag_for_manual_intervention",  # Fail: End of this loop
             dependencies=["final_rework_qa"],
         )
     )
@@ -247,16 +249,15 @@ def demonstrate_car_factory_workflow():
             dependencies=["check_final_qa"],
         )
     )
-    
-    # --- End of "Build One Vehicle" Sub-Workflow ---
 
+    # --- End of "Build One Vehicle" Sub-Workflow ---
 
     # 11. Final Aggregation Step (after the ForEach loop)
     # Re-attach the builder to add a final step that depends
     # on the *entire loop* finishing.
     builder = WorkflowBuilder(workflow.name, existing_workflow=workflow)
-    builder._current_task = "build_vehicle_loop" # Depends on the loop itself
-    
+    builder._current_task = "build_vehicle_loop"  # Depends on the loop itself
+
     workflow = (
         builder.task(
             "generate_shipping_labels",
@@ -273,12 +274,9 @@ def demonstrate_car_factory_workflow():
     )
 
     workflow.set_variables(
-        {
-            "erp_api_key": "secret_abc_123",
-            "mes_endpoint": "http://10.0.0.5/api"
-        }
+        {"erp_api_key": "secret_abc_123", "mes_endpoint": "http://10.0.0.5/api"}
     )
-    
+
     return workflow
 
 

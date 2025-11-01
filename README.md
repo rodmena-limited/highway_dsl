@@ -1,178 +1,130 @@
 # Highway DSL
 
-Highway DSL is a Python-based Domain Specific Language (DSL) for defining and managing complex workflows. It allows users to declaratively specify tasks, dependencies, and execution parameters, supporting various control flow mechanisms like conditions, parallel execution, and retries.
+[![PyPI version](https://badge.fury.io/py/highway-dsl.svg)](https://badge.fury.io/py/highway-dsl)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+**Highway DSL** is a Python-based domain-specific language for defining complex workflows in a clear, concise, and fluent manner. It is part of the larger **Highway** project, an advanced workflow engine capable of running complex DAG-based workflows.
 
 ## Features
 
-*   **Declarative Workflow Definition:** Define workflows using a clear and concise Python API or through YAML/JSON configurations.
-*   **Pydantic Models:** Leverages Pydantic for robust data validation and serialization/deserialization of workflow definitions.
-*   **Rich Task Types:** Supports various operators including:
-    *   `TaskOperator`: Executes a Python function.
-    *   `ConditionOperator`: Enables conditional branching based on expressions.
-    *   `WaitOperator`: Pauses workflow execution for a specified duration or until a specific datetime.
-    *   `ParallelOperator`: Executes multiple branches of tasks concurrently.
-    *   `ForEachOperator`: Iterates over a collection, executing a chain of tasks for each item.
-*   **Retry and Timeout Policies:** Define retry strategies and timeout limits for individual tasks.
-*   **Serialization/Deserialization:** Seamless conversion of workflow definitions between Python objects, YAML, and JSON formats.
-*   **Workflow Builder:** A fluent API for constructing workflows programmatically.
-
-### Feature Overview
-
-```mermaid
-graph TD
-    A[Workflow] --> B{TaskOperator};
-    A --> C{ConditionOperator};
-    A --> D{WaitOperator};
-    A --> E{ParallelOperator};
-    A --> F{ForEachOperator};
-
-    B --> G[Executes Python Function];
-    C --> H{If/Else Branching};
-    D --> I[Pauses Execution];
-    E --> J[Concurrent Branches];
-    F --> K[Iterates Over Items];
-
-    subgraph Policies
-        B --> L[RetryPolicy];
-        B --> M[TimeoutPolicy];
-    end
-```
+*   **Fluent API:** A powerful and intuitive `WorkflowBuilder` for defining workflows programmatically.
+*   **Pydantic-based:** All models are built on Pydantic, providing robust data validation, serialization, and documentation.
+*   **Rich Operators:** A comprehensive set of operators for handling various workflow scenarios:
+    *   `Task`
+    *   `Condition` (if/else)
+    *   `Parallel`
+    *   `ForEach`
+    *   `Wait`
+    *   `While`
+*   **YAML/JSON Interoperability:** Workflows can be defined in Python and exported to YAML or JSON, and vice-versa.
+*   **Extensible:** The DSL is designed to be extensible with custom operators and policies.
 
 ## Installation
-
-To install Highway DSL, you can use pip:
 
 ```bash
 pip install highway-dsl
 ```
 
-If you want to install it for development, including testing dependencies:
+## Quick Start
 
-```bash
-pip install "highway-dsl[dev]"
-```
-
-## Usage
-
-### Defining a Simple Workflow
+Here's a simple example of how to define a workflow using the `WorkflowBuilder`:
 
 ```python
 from datetime import timedelta
 from highway_dsl import WorkflowBuilder
 
-def demonstrate_basic_workflow():
-    """Show a simple complete workflow using just the builder"""
-
-    workflow = (
-        WorkflowBuilder("simple_etl")
-        .task("extract", "etl.extract_data", result_key="raw_data")
-        .task(
-            "transform",
-            "etl.transform_data",
-            args=["{{raw_data}}"],
-            result_key="transformed_data",
-        )
-        .retry(max_retries=3, delay=timedelta(seconds=10))
-        .task("load", "etl.load_data", args=["{{transformed_data}}"])
-        .timeout(timeout=timedelta(minutes=30))
-        .wait("wait_next", timedelta(hours=24))
-        .task("cleanup", "etl.cleanup")
-        .build()
+workflow = (
+    WorkflowBuilder("simple_etl")
+    .task("extract", "etl.extract_data", result_key="raw_data")
+    .task(
+        "transform",
+        "etl.transform_data",
+        args=["{{raw_data}}"],
+        result_key="transformed_data",
     )
+    .retry(max_retries=3, delay=timedelta(seconds=10))
+    .task("load", "etl.load_data", args=["{{transformed_data}}"])
+    .timeout(timeout=timedelta(minutes=30))
+    .wait("wait_next", timedelta(hours=24))
+    .task("cleanup", "etl.cleanup")
+    .build()
+)
 
-    workflow.set_variables(
-        {"database_url": "postgresql://localhost/mydb", "chunk_size": 1000}
-    )
-
-    return workflow
-
-if __name__ == "__main__":
-    basic_workflow = demonstrate_basic_workflow()
-    print(basic_workflow.to_yaml())
+print(workflow.to_yaml())
 ```
 
-### Defining a Complex Workflow
+## Advanced Usage
 
-Refer to `example_usage.py` for a more complex example demonstrating conditional logic, parallel execution, and iteration.
-
-### YAML Configuration
-
-You can also define workflows directly in YAML:
-
-```yaml
-name: simple_etl
-version: 1.0.0
-description: Simple ETL workflow with retry and timeout
-variables:
-  database_url: postgresql://localhost/mydb
-  chunk_size: 1000
-start_task: extract
-tasks:
-  extract:
-    task_id: extract
-    operator_type: task
-    function: etl.extract_data
-    result_key: raw_data
-    dependencies: []
-    metadata: {}
-    
-  transform:
-    task_id: transform
-    operator_type: task
-    function: etl.transform_data
-    args: ["{{raw_data}}"]
-    result_key: transformed_data
-    dependencies: ["extract"]
-    retry_policy:
-      max_retries: 3
-      delay: PT10S
-      backoff_factor: 2.0
-    metadata: {}
-    
-  load:
-    task_id: load
-    operator_type: task
-    function: etl.load_data
-    args: ["{{transformed_data}}"]
-    dependencies: ["transform"]
-    timeout_policy:
-      timeout: PT30M
-      kill_on_timeout: true
-    metadata: {}
-    
-  wait_next:
-    task_id: wait_next
-    operator_type: wait
-    wait_for: "P1D"
-    dependencies: ["load"]
-    metadata: {}
-    
-  cleanup:
-    task_id: cleanup
-    operator_type: task
-    function: etl.cleanup
-    dependencies: ["wait_next"]
-    metadata: {}
-```
-
-To load this YAML:
+### Conditional Logic
 
 ```python
-from highway_dsl import Workflow
+from highway_dsl import WorkflowBuilder, RetryPolicy
+from datetime import timedelta
 
-yaml_content = """
-# ... (yaml content from above)
-"""
+builder = WorkflowBuilder("data_processing_pipeline")
 
-workflow = Workflow.from_yaml(yaml_content)
-print(workflow.name)
+builder.task("start", "workflows.tasks.initialize", result_key="init_data")
+builder.task(
+    "validate",
+    "workflows.tasks.validate_data",
+    args=["{{init_data}}"],
+    result_key="validated_data",
+)
+
+builder.condition(
+    "check_quality",
+    condition="{{validated_data.quality_score}} > 0.8",
+    if_true=lambda b: b.task(
+        "high_quality_processing",
+        "workflows.tasks.advanced_processing",
+        args=["{{validated_data}}"],
+        retry_policy=RetryPolicy(max_retries=5, delay=timedelta(seconds=10), backoff_factor=2.0),
+    ),
+    if_false=lambda b: b.task(
+        "standard_processing",
+        "workflows.tasks.basic_processing",
+        args=["{{validated_data}}"],
+    ),
+)
+
+workflow = builder.build()
+```
+
+### While Loops
+
+```python
+from highway_dsl import WorkflowBuilder
+
+builder = WorkflowBuilder("qa_rework_workflow")
+
+builder.task("start_qa", "workflows.tasks.start_qa", result_key="qa_results")
+
+builder.while_loop(
+    "qa_rework_loop",
+    condition="{{qa_results.status}} == 'failed'",
+    loop_body=lambda b: b.task("perform_rework", "workflows.tasks.perform_rework").task(
+        "re_run_qa", "workflows.tasks.run_qa", result_key="qa_results"
+    ),
+)
+
+builder.task("finalize_product", "workflows.tasks.finalize_product", dependencies=["qa_rework_loop"])
+
+workflow = builder.build()
 ```
 
 ## Development
 
-### Running Tests
+To set up the development environment:
 
-To run the unit tests, navigate to the project root and execute:
+```bash
+git clone https://github.com/your-username/highway.git
+cd highway
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .[dev]
+```
+
+### Running Tests
 
 ```bash
 pytest
@@ -180,25 +132,6 @@ pytest
 
 ### Type Checking
 
-To perform static type checking with MyPy:
-
 ```bash
 mypy .
-```
-
-## Project Structure
-
-```
-.highway/
-├── highway_dsl/
-│   ├── __init__.py         # Exposes the public API
-│   └── workflow_dsl.py     # Core DSL definitions (Pydantic models)
-├── example_usage.py        # Examples of how to use the DSL
-├── tests/
-│   ├── __init__.py
-│   ├── conftest.py         # Pytest configuration
-│   └── test_workflow_dsl.py # Unit and integration tests
-├── pyproject.toml          # Project metadata and dependencies
-├── README.md               # This file
-└── SUMMARY.md              # Summary of changes and future instructions
 ```

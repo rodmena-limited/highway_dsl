@@ -16,6 +16,7 @@ class OperatorType(Enum):
     FOREACH = "foreach"
     SWITCH = "switch"
     TRY_CATCH = "try_catch"
+    WHILE = "while"
 
 
 class RetryPolicy(BaseModel):
@@ -52,8 +53,8 @@ class TaskOperator(BaseOperator):
 
 class ConditionOperator(BaseOperator):
     condition: str
-    if_true: str
-    if_false: str
+    if_true: Optional[str]
+    if_false: Optional[str]
     operator_type: OperatorType = Field(OperatorType.CONDITION, frozen=True)
 
 
@@ -94,6 +95,21 @@ class ForEachOperator(BaseOperator):
     operator_type: OperatorType = Field(OperatorType.FOREACH, frozen=True)
 
 
+class WhileOperator(BaseOperator):
+    condition: str
+    loop_body: List[
+        Union[
+            TaskOperator,
+            ConditionOperator,
+            WaitOperator,
+            ParallelOperator,
+            ForEachOperator,
+            "WhileOperator",
+        ]
+    ] = Field(default_factory=list)
+    operator_type: OperatorType = Field(OperatorType.WHILE, frozen=True)
+
+
 class Workflow(BaseModel):
     name: str
     version: str = "1.0.0"
@@ -106,6 +122,7 @@ class Workflow(BaseModel):
             WaitOperator,
             ParallelOperator,
             ForEachOperator,
+            WhileOperator,
         ],
     ] = Field(default_factory=dict)
     variables: Dict[str, Any] = Field(default_factory=dict)
@@ -122,6 +139,7 @@ class Workflow(BaseModel):
                 OperatorType.WAIT.value: WaitOperator,
                 OperatorType.PARALLEL.value: ParallelOperator,
                 OperatorType.FOREACH.value: ForEachOperator,
+                OperatorType.WHILE.value: WhileOperator,
             }
             for task_id, task_data in data["tasks"].items():
                 operator_type = task_data.get("operator_type")
@@ -141,6 +159,7 @@ class Workflow(BaseModel):
             WaitOperator,
             ParallelOperator,
             ForEachOperator,
+            WhileOperator,
         ],
     ) -> "Workflow":
         self.tasks[task.task_id] = task
@@ -172,12 +191,18 @@ class Workflow(BaseModel):
 
 
 class WorkflowBuilder:
-    def __init__(self, name: str, existing_workflow: Optional[Workflow] = None):
+    def __init__(
+        self,
+        name: str,
+        existing_workflow: Optional[Workflow] = None,
+        parent: Optional["WorkflowBuilder"] = None,
+    ):
         if existing_workflow:
             self.workflow = existing_workflow
         else:
             self.workflow = Workflow(name=name)
         self._current_task: Optional[str] = None
+        self.parent = parent
 
     def task(self, task_id: str, function: str, **kwargs) -> "WorkflowBuilder":
         task = TaskOperator(task_id=task_id, function=function, **kwargs)
@@ -188,18 +213,37 @@ class WorkflowBuilder:
         return self
 
     def condition(
-        self, task_id: str, condition: str, if_true: str, if_false: str, **kwargs
+        self,
+        task_id: str,
+        condition: str,
+        if_true: Callable[["WorkflowBuilder"], "WorkflowBuilder"],
+        if_false: Callable[["WorkflowBuilder"], "WorkflowBuilder"],
+        **kwargs,
     ) -> "WorkflowBuilder":
+        true_builder = if_true(WorkflowBuilder(f"{{task_id}}_true", parent=self))
+        false_builder = if_false(WorkflowBuilder(f"{{task_id}}_false", parent=self))
+
+        true_tasks = list(true_builder.workflow.tasks.keys())
+        false_tasks = list(false_builder.workflow.tasks.keys())
+
         task = ConditionOperator(
             task_id=task_id,
             condition=condition,
-            if_true=if_true,
-            if_false=if_false,
+            if_true=true_tasks[0] if true_tasks else None,
+            if_false=false_tasks[0] if false_tasks else None,
             **kwargs,
         )
+
         if self._current_task:
             task.dependencies.append(self._current_task)
+
         self.workflow.add_task(task)
+
+        for task_obj in true_builder.workflow.tasks.values():
+            self.workflow.add_task(task_obj)
+        for task_obj in false_builder.workflow.tasks.values():
+            self.workflow.add_task(task_obj)
+
         self._current_task = task_id
         return self
 
@@ -214,12 +258,32 @@ class WorkflowBuilder:
         return self
 
     def parallel(
-        self, task_id: str, branches: Dict[str, List[str]], **kwargs
+        self,
+        task_id: str,
+        branches: Dict[str, Callable[["WorkflowBuilder"], "WorkflowBuilder"]],
+        **kwargs,
     ) -> "WorkflowBuilder":
-        task = ParallelOperator(task_id=task_id, branches=branches, **kwargs)
+        branch_builders = {
+            name: branch_func(WorkflowBuilder(f"{{task_id}}_{{name}}", parent=self))
+            for name, branch_func in branches.items()
+        }
+
+        branch_tasks = {
+            name: list(builder.workflow.tasks.keys())
+            for name, builder in branch_builders.items()
+        }
+
+        task = ParallelOperator(task_id=task_id, branches=branch_tasks, **kwargs)
+
         if self._current_task:
             task.dependencies.append(self._current_task)
+
         self.workflow.add_task(task)
+
+        for builder in branch_builders.values():
+            for task_obj in builder.workflow.tasks.values():
+                self.workflow.add_task(task_obj)
+
         self._current_task = task_id
         return self
 
@@ -232,6 +296,34 @@ class WorkflowBuilder:
         if self._current_task:
             task.dependencies.append(self._current_task)
         self.workflow.add_task(task)
+        self._current_task = task_id
+        return self
+
+    def while_loop(
+        self,
+        task_id: str,
+        condition: str,
+        loop_body: Callable[["WorkflowBuilder"], "WorkflowBuilder"],
+        **kwargs,
+    ) -> "WorkflowBuilder":
+        loop_builder = loop_body(WorkflowBuilder(f"{{task_id}}_loop", parent=self))
+        loop_tasks = list(loop_builder.workflow.tasks.values())
+
+        task = WhileOperator(
+            task_id=task_id,
+            condition=condition,
+            loop_body=loop_tasks,
+            **kwargs,
+        )
+
+        if self._current_task:
+            task.dependencies.append(self._current_task)
+
+        self.workflow.add_task(task)
+
+        for task_obj in loop_tasks:
+            self.workflow.add_task(task_obj)
+
         self._current_task = task_id
         return self
 

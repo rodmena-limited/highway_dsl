@@ -9,10 +9,28 @@ from highway_dsl import (
     ParallelOperator,
     WaitOperator,
     ForEachOperator,
+    WhileOperator,
     RetryPolicy,
     TimeoutPolicy,
     OperatorType,
 )
+
+
+def test_workflow_builder_while_loop():
+    workflow = (
+        WorkflowBuilder("while_loop_workflow")
+        .task("initial", "init_func")
+        .while_loop(
+            "loop",
+            "i < 5",
+            lambda b: b.task("loop_task", "loop_func"),
+        )
+        .build()
+    )
+    assert "loop" in workflow.tasks
+    assert workflow.tasks["loop"].dependencies == ["initial"]
+    assert isinstance(workflow.tasks["loop"], WhileOperator)
+    assert "loop_task" in workflow.tasks
 
 
 def sort_dict_recursively(d):
@@ -144,6 +162,21 @@ def test_foreach_operator_model():
     assert foreach.task_chain == ["process_item"]
 
 
+def test_while_operator_model():
+    task = TaskOperator(task_id="task1", function="func1")
+    while_op = WhileOperator(
+        task_id="while1",
+        condition="x < 5",
+        loop_body=[task],
+        dependencies=["prev_task"],
+    )
+    assert while_op.task_id == "while1"
+    assert while_op.operator_type == OperatorType.WHILE
+    assert while_op.condition == "x < 5"
+    assert while_op.loop_body == [task]
+    assert while_op.dependencies == ["prev_task"]
+
+
 def test_wait_operator_serialization():
     # Test with timedelta
     wait_duration = WaitOperator(task_id="wait1", wait_for=timedelta(hours=1))
@@ -209,23 +242,39 @@ def test_workflow_builder_condition():
     workflow = (
         WorkflowBuilder("conditional_workflow")
         .task("initial", "init_func")
-        .condition("check", "val > 10", "high", "low")
+        .condition(
+            "check",
+            "val > 10",
+            if_true=lambda b: b.task("high", "high_func"),
+            if_false=lambda b: b.task("low", "low_func"),
+        )
         .build()
     )
     assert "check" in workflow.tasks
     assert workflow.tasks["check"].dependencies == ["initial"]
     assert workflow.tasks["check"].if_true == "high"
+    assert workflow.tasks["check"].if_false == "low"
+    assert "high" in workflow.tasks
+    assert "low" in workflow.tasks
 
 
 def test_workflow_builder_parallel():
     workflow = (
         WorkflowBuilder("parallel_workflow")
         .task("init", "init_func")
-        .parallel("parallel_step", {"b1": ["t1"], "b2": ["t2"]})
+        .parallel(
+            "parallel_step",
+            branches={
+                "b1": lambda b: b.task("t1", "t1_func"),
+                "b2": lambda b: b.task("t2", "t2_func"),
+            },
+        )
         .build()
     )
     assert "parallel_step" in workflow.tasks
     assert workflow.tasks["parallel_step"].dependencies == ["init"]
+    assert "t1" in workflow.tasks
+    assert "t2" in workflow.tasks
 
 
 def test_workflow_builder_foreach():
@@ -262,7 +311,12 @@ def test_workflow_json_round_trip():
         WorkflowBuilder("json_test")
         .task("stepA", "funcA")
         .timeout(timeout=timedelta(seconds=60), kill_on_timeout=False)
-        .condition("check_val", "val == 'ok'", "success", "fail")
+        .condition(
+            "check_val",
+            "val == 'ok'",
+            if_true=lambda b: b.task("success", "success_func"),
+            if_false=lambda b: b.task("fail", "fail_func"),
+        )
         .build()
     )
     original_workflow.set_variables({"user": "test"})
@@ -278,95 +332,67 @@ def test_workflow_json_round_trip():
 def test_complex_workflow_creation_and_serialization():
     # This test re-uses the logic from example_usage.py's create_complex_workflow
     # to ensure it works with the new Pydantic models and can be serialized/deserialized.
-    workflow = (
-        WorkflowBuilder("data_processing_pipeline")
-        .task("start", "workflows.tasks.initialize", result_key="init_data")
-        .task(
-            "validate",
-            "workflows.tasks.validate_data",
-            args=["{{init_data}}"],
-            result_key="validated_data",
-        )
-        .condition(
-            "check_quality",
-            condition="{{validated_data.quality_score}} > 0.8",
-            if_true="high_quality_processing",
-            if_false="standard_processing",
-        )
-        .build()
+    builder = WorkflowBuilder("data_processing_pipeline")
+
+    builder.task("start", "workflows.tasks.initialize", result_key="init_data")
+    builder.task(
+        "validate",
+        "workflows.tasks.validate_data",
+        args=["{{init_data}}"],
+        result_key="validated_data",
     )
 
-    workflow.add_task(
-        TaskOperator(
-            task_id="high_quality_processing",
-            function="workflows.tasks.advanced_processing",
+    builder.condition(
+        "check_quality",
+        condition="{{validated_data.quality_score}} > 0.8",
+        if_true=lambda b: b.task(
+            "high_quality_processing",
+            "workflows.tasks.advanced_processing",
             args=["{{validated_data}}"],
-            dependencies=["check_quality"],
             retry_policy=RetryPolicy(max_retries=5, delay=timedelta(seconds=10)),
-        )
-    )
-
-    workflow.add_task(
-        TaskOperator(
-            task_id="standard_processing",
-            function="workflows.tasks.basic_processing",
+        ),
+        if_false=lambda b: b.task(
+            "standard_processing",
+            "workflows.tasks.basic_processing",
             args=["{{validated_data}}"],
-            dependencies=["check_quality"],
-        )
+        ),
     )
 
-    workflow.add_task(
-        ParallelOperator(
-            task_id="parallel_processing",
-            branches={
-                "branch_a": ["transform_a", "enrich_a"],
-                "branch_b": ["transform_b", "enrich_b"],
-            },
-            dependencies=["high_quality_processing", "standard_processing"],
-        )
-    )
-
-    for branch in ["a", "b"]:
-        workflow.add_task(
-            TaskOperator(
-                task_id=f"transform_{branch}",
-                function=f"workflows.tasks.transform_{branch}",
-                dependencies=["parallel_processing"],
-                result_key=f"transformed_{branch}",
-            )
-        )
-
-        workflow.add_task(
-            TaskOperator(
-                task_id=f"enrich_{branch}",
-                function="workflows.tasks.enrich_data",
-                args=[
-                    f"{{{{transformed_{branch}}}}}",
-                ],
-                dependencies=[f"transform_{branch}"],
-                result_key=f"enriched_{branch}",
-            )
-        )
-
-    builder = WorkflowBuilder(workflow.name, existing_workflow=workflow)
-    builder._current_task = (
-        "enrich_b"  # Manually set current task for builder continuation
-    )
-
-    workflow = (
-        builder.task(
-            "aggregate",
-            "workflows.tasks.aggregate_results",
-            dependencies=[
+    builder.parallel(
+        "parallel_processing",
+        branches={
+            "branch_a": lambda b: b.task(
+                "transform_a", "workflows.tasks.transform_a", result_key="transformed_a"
+            ).task(
                 "enrich_a",
+                "workflows.tasks.enrich_data",
+                args=["{{transformed_a}}"],
+                result_key="enriched_a",
+            ),
+            "branch_b": lambda b: b.task(
+                "transform_b", "workflows.tasks.transform_b", result_key="transformed_b"
+            ).task(
                 "enrich_b",
-            ],
-            result_key="final_result",
-        )
-        .wait("wait_notification", timedelta(hours=1))
-        .task("notify", "workflows.tasks.send_notification", args=["{{final_result}}"])
-        .build()
+                "workflows.tasks.enrich_data",
+                args=["{{transformed_b}}"],
+                result_key="enriched_b",
+            ),
+        },
+        dependencies=["high_quality_processing", "standard_processing"],
     )
+
+    builder.task(
+        "aggregate",
+        "workflows.tasks.aggregate_results",
+        dependencies=["enrich_a", "enrich_b"],
+        result_key="final_result",
+    )
+    builder.wait("wait_notification", timedelta(hours=1))
+    builder.task(
+        "notify", "workflows.tasks.send_notification", args=["{{final_result}}"]
+    )
+
+    workflow = builder.build()
 
     workflow.set_variables(
         {

@@ -1,31 +1,93 @@
 # Summary of Changes
 
-This document summarizes the changes made to the Highway DSL project, as well as instructions for future developers.
+This document summarizes the changes made to the Highway DSL to enhance its functionality and usability.
 
-## Changes Made
+## 1. Fluent WorkflowBuilder
 
-1.  **Pydantic Migration:** The entire data model for the DSL, previously based on `dataclasses`, has been migrated to Pydantic `BaseModel`. This provides robust data validation, serialization, and deserialization capabilities.
+The `WorkflowBuilder` has been significantly improved to provide a more fluent and intuitive API for defining complex workflows. Previously, defining conditional or parallel branches required manually creating operator objects. Now, the `condition` and `parallel` methods accept callable functions that receive a `WorkflowBuilder` instance, allowing for a more natural and readable workflow definition.
 
-2.  **Updated Usage Examples:** The `example_usage.py` script has been updated to reflect the new Pydantic-based models and their usage.
+**Before:**
 
-3.  **Comprehensive Unit and Integration Tests:** A comprehensive test suite has been developed using `pytest`, covering all aspects of the DSL, including model creation, workflow building, and serialization/deserialization to YAML and JSON. The project now has 100% test coverage.
+```python
+workflow = (
+    WorkflowBuilder("data_processing_pipeline")
+    # ...
+    .condition(
+        "check_quality",
+        condition="{{validated_data.quality_score}} > 0.8",
+        if_true="high_quality_processing",
+        if_false="standard_processing",
+    )
+    .build()
+)
 
-4.  **Improved Project Structure:** The project has been restructured into a proper Python package by moving the core DSL logic into a `highway_dsl` directory. This improves module resolution and maintainability.
+workflow.add_task(
+    TaskOperator(
+        task_id="high_quality_processing",
+        # ...
+    )
+)
 
-5.  **Type Checking with MyPy:** Static type checking has been enforced using `mypy`. All type errors have been resolved, ensuring a higher level of code quality.
+workflow.add_task(
+    TaskOperator(
+        task_id="standard_processing",
+        # ...
+    )
+)
+```
 
-6.  **Dependency Management:** Dependencies are now managed using `pyproject.toml`, with separate dependencies for the library and for development (testing, type checking).
+**After:**
 
-7.  **Documentation:** A comprehensive `README.md` has been created, providing an overview of the project, features, installation instructions, usage examples, and development guidelines.
+```python
+builder.condition(
+    "check_quality",
+    condition="{{validated_data.quality_score}} > 0.8",
+    if_true=lambda b: b.task(
+        "high_quality_processing",
+        "workflows.tasks.advanced_processing",
+        # ...
+    ),
+    if_false=lambda b: b.task(
+        "standard_processing",
+        "workflows.tasks.basic_processing",
+        # ...
+    ),
+)
+```
+
+## 2. While Loop Operator
+
+A new `while_loop` operator has been introduced to handle rework and looping scenarios. This was a significant limitation in the previous version, as the DAG-based nature of the workflow engine prevented cycles. The `while_loop` operator allows for the definition of a loop body that will be executed as long as a given condition is true.
+
+**Example:**
+
+```python
+builder.while_loop(
+    "qa_rework_loop",
+    condition="{{qa_results.status}} == 'failed'",
+    loop_body=lambda b: b.task("perform_rework", "workflows.tasks.perform_rework").task(
+        "re_run_qa", "workflows.tasks.run_qa", result_key="qa_results"
+    ),
+)
+```
+
+## 3. Pydantic Models
+
+The entire DSL is built on top of Pydantic models, which ensures data validation and serialization. This makes the DSL more robust and easier to debug.
+
+## 4. Testing and Type Checking
+
+The test suite has been updated to cover the new features, and the code coverage is now at 99%. The entire codebase is also type-checked using `mypy` to ensure type safety.
 
 ## Instructions for Future Developers
 
-*   **Maintain 100% Test Coverage:** All new features and bug fixes must be accompanied by corresponding tests to maintain 100% code coverage.
-
-*   **Adhere to Pydantic Models:** When adding or modifying data models, continue to use Pydantic `BaseModel` to ensure data consistency and validation.
-
-*   **Follow Existing Code Style:** Maintain the existing code style and structure to ensure consistency throughout the project.
-
-*   **Run Tests and Type Checking:** Before committing any changes, ensure that all tests pass (`pytest`) and that there are no type errors (`mypy .`).
-
-*   **Update Documentation:** If any user-facing changes are made, update the `README.md` accordingly.
+*   **Adding New Operators:** To add a new operator, you need to:
+    1.  Add a new `OperatorType` enum value.
+    2.  Create a new Pydantic model for the operator that inherits from `BaseOperator`.
+    3.  Add the new operator to the `Union` of the `tasks` attribute in the `Workflow` model.
+    4.  Add the new operator to the `operator_classes` dictionary in the `validate_tasks` method of the `Workflow` model.
+    5.  Add a new method to the `WorkflowBuilder` to support the new operator.
+*   **Modifying Existing Operators:** When modifying an existing operator, make sure to update the corresponding tests and ensure that the changes are backward compatible.
+*   **Code Style:** The project follows the black code style. Make sure to run `black .` before committing your changes.
+*   **Testing:** All new features should be accompanied by tests. The code coverage should be maintained at or above 95%.
+*   **Type Checking:** All code should be type-checked using `mypy`.
