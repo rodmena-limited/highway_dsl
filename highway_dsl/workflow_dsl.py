@@ -304,7 +304,7 @@ class WorkflowBuilder:
         loop_body: Callable[["WorkflowBuilder"], "WorkflowBuilder"],
         **kwargs,
     ) -> "WorkflowBuilder":
-        loop_builder = loop_body(WorkflowBuilder(f"{{task_id}}_loop", parent=self))
+        loop_builder = loop_body(WorkflowBuilder(f"{{task_id}}_loop"))
         loop_tasks = list(loop_builder.workflow.tasks.values())
 
         task = ForEachOperator(
@@ -317,6 +317,7 @@ class WorkflowBuilder:
         self._add_task(task, **kwargs)
 
         for task_obj in loop_tasks:
+            task_obj.dependencies.append(task.task_id)
             self.workflow.add_task(task_obj)
 
         self._current_task = task.task_id
@@ -329,7 +330,7 @@ class WorkflowBuilder:
         loop_body: Callable[["WorkflowBuilder"], "WorkflowBuilder"],
         **kwargs,
     ) -> "WorkflowBuilder":
-        loop_builder = loop_body(WorkflowBuilder(f"{{task_id}}_loop", parent=self))
+        loop_builder = loop_body(WorkflowBuilder(f"{{task_id}}_loop"))
         loop_tasks = list(loop_builder.workflow.tasks.values())
 
         task = WhileOperator(
