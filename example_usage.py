@@ -1,7 +1,7 @@
 # example_usage.py
 import json
 from datetime import timedelta
-from highway_dsl.workflow_dsl import (
+from highway_dsl import (
     Workflow,
     WorkflowBuilder,
     TaskOperator,
@@ -44,7 +44,9 @@ def create_complex_workflow() -> Workflow:
             function="workflows.tasks.advanced_processing",
             args=["{{validated_data}}"],
             dependencies=["check_quality"],
-            retry_policy=RetryPolicy(max_retries=5, delay=timedelta(seconds=10), backoff_factor=2.0),
+            retry_policy=RetryPolicy(
+                max_retries=5, delay=timedelta(seconds=10), backoff_factor=2.0
+            ),
             operator_type=OperatorType.TASK,
         )
     )
@@ -75,23 +77,25 @@ def create_complex_workflow() -> Workflow:
     # Add parallel branch tasks
     for branch in ["a", "b"]:
         workflow.add_task(
-                    TaskOperator(
-                        task_id=f"transform_{branch}",
-                        function=f"workflows.tasks.transform_{branch}",
-                        dependencies=["parallel_processing"],
-                        result_key=f"transformed_{branch}",
-                        operator_type=OperatorType.TASK,
-                    )        )
+            TaskOperator(
+                task_id=f"transform_{branch}",
+                function=f"workflows.tasks.transform_{branch}",
+                dependencies=["parallel_processing"],
+                result_key=f"transformed_{branch}",
+                operator_type=OperatorType.TASK,
+            )
+        )
 
         workflow.add_task(
-                    TaskOperator(
-                        task_id=f"enrich_{branch}",
-                        function="workflows.tasks.enrich_data",
-                        args=[f"{{{{transformed_{branch}}}}}"],
-                        dependencies=[f"transform_{branch}"],
-                        result_key=f"enriched_{branch}",
-                        operator_type=OperatorType.TASK,
-                    )        )
+            TaskOperator(
+                task_id=f"enrich_{branch}",
+                function="workflows.tasks.enrich_data",
+                args=[f"{{{{transformed_{branch}}}}}"],
+                dependencies=[f"transform_{branch}"],
+                result_key=f"enriched_{branch}",
+                operator_type=OperatorType.TASK,
+            )
+        )
 
     # Continue with builder for the remaining linear flow
     builder = WorkflowBuilder(workflow.name, existing_workflow=workflow)
@@ -260,7 +264,6 @@ def demonstrate_interoperability():
 
 
 if __name__ == "__main__":
-
     # Run demonstrations
     demonstrate_interoperability()
 

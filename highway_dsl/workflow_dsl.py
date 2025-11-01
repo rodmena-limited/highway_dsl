@@ -26,7 +26,9 @@ class RetryPolicy(BaseModel):
 
 class TimeoutPolicy(BaseModel):
     timeout: timedelta = Field(..., description="Timeout duration")
-    kill_on_timeout: bool = Field(True, description="Whether to kill the task on timeout")
+    kill_on_timeout: bool = Field(
+        True, description="Whether to kill the task on timeout"
+    )
 
 
 class BaseOperator(BaseModel, ABC):
@@ -59,7 +61,7 @@ class WaitOperator(BaseOperator):
     wait_for: Union[timedelta, datetime, str]
     operator_type: OperatorType = Field(OperatorType.WAIT, frozen=True)
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def parse_wait_for(cls, data: Any) -> Any:
         if isinstance(data, dict) and "wait_for" in data:
@@ -96,17 +98,20 @@ class Workflow(BaseModel):
     name: str
     version: str = "1.0.0"
     description: str = ""
-    tasks: Dict[str, Union[
-        TaskOperator,
-        ConditionOperator,
-        WaitOperator,
-        ParallelOperator,
-        ForEachOperator,
-    ]] = Field(default_factory=dict)
+    tasks: Dict[
+        str,
+        Union[
+            TaskOperator,
+            ConditionOperator,
+            WaitOperator,
+            ParallelOperator,
+            ForEachOperator,
+        ],
+    ] = Field(default_factory=dict)
     variables: Dict[str, Any] = Field(default_factory=dict)
     start_task: Optional[str] = None
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def validate_tasks(cls, data: Any) -> Any:
         if isinstance(data, dict) and "tasks" in data:
@@ -128,13 +133,16 @@ class Workflow(BaseModel):
             data["tasks"] = validated_tasks
         return data
 
-    def add_task(self, task: Union[
-        TaskOperator,
-        ConditionOperator,
-        WaitOperator,
-        ParallelOperator,
-        ForEachOperator,
-    ]) -> "Workflow":
+    def add_task(
+        self,
+        task: Union[
+            TaskOperator,
+            ConditionOperator,
+            WaitOperator,
+            ParallelOperator,
+            ForEachOperator,
+        ],
+    ) -> "Workflow":
         self.tasks[task.task_id] = task
         return self
 
@@ -147,7 +155,7 @@ class Workflow(BaseModel):
         return self
 
     def to_yaml(self) -> str:
-        data = self.model_dump(mode='json', by_alias=True, exclude_none=True)
+        data = self.model_dump(mode="json", by_alias=True, exclude_none=True)
         return yaml.dump(data, default_flow_style=False)
 
     def to_json(self) -> str:
@@ -183,7 +191,11 @@ class WorkflowBuilder:
         self, task_id: str, condition: str, if_true: str, if_false: str, **kwargs
     ) -> "WorkflowBuilder":
         task = ConditionOperator(
-            task_id=task_id, condition=condition, if_true=if_true, if_false=if_false, **kwargs
+            task_id=task_id,
+            condition=condition,
+            if_true=if_true,
+            if_false=if_false,
+            **kwargs,
         )
         if self._current_task:
             task.dependencies.append(self._current_task)
@@ -214,7 +226,9 @@ class WorkflowBuilder:
     def foreach(
         self, task_id: str, items: str, task_chain: List[str], **kwargs
     ) -> "WorkflowBuilder":
-        task = ForEachOperator(task_id=task_id, items=items, task_chain=task_chain, **kwargs)
+        task = ForEachOperator(
+            task_id=task_id, items=items, task_chain=task_chain, **kwargs
+        )
         if self._current_task:
             task.dependencies.append(self._current_task)
         self.workflow.add_task(task)

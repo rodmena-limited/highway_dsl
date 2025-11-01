@@ -1,7 +1,7 @@
 import pytest
 import json
 from datetime import timedelta, datetime
-from highway_dsl.workflow_dsl import (
+from highway_dsl import (
     Workflow,
     WorkflowBuilder,
     TaskOperator,
@@ -14,19 +14,24 @@ from highway_dsl.workflow_dsl import (
     OperatorType,
 )
 
+
 def sort_dict_recursively(d):
     if not isinstance(d, dict):
         return d
     return {k: sort_dict_recursively(v) for k, v in sorted(d.items())}
 
+
 def test_workflow_creation():
-    workflow = Workflow(name="test_workflow", version="1.0.0", description="A test workflow")
+    workflow = Workflow(
+        name="test_workflow", version="1.0.0", description="A test workflow"
+    )
     assert workflow.name == "test_workflow"
     assert workflow.version == "1.0.0"
     assert workflow.description == "A test workflow"
     assert workflow.tasks == {}
     assert workflow.variables == {}
     assert workflow.start_task is None
+
 
 def test_add_task_to_workflow():
     workflow = Workflow(name="test_workflow")
@@ -35,6 +40,7 @@ def test_add_task_to_workflow():
     assert "task1" in workflow.tasks
     assert workflow.tasks["task1"] == task
 
+
 def test_set_variables():
     workflow = Workflow(name="test_workflow")
     workflow.set_variables({"key1": "value1"})
@@ -42,10 +48,12 @@ def test_set_variables():
     workflow.set_variables({"key2": "value2"})
     assert workflow.variables == {"key1": "value1", "key2": "value2"}
 
+
 def test_set_start_task():
     workflow = Workflow(name="test_workflow")
     workflow.set_start_task("task1")
     assert workflow.start_task == "task1"
+
 
 def test_retry_policy_model():
     policy = RetryPolicy(max_retries=5, delay=timedelta(seconds=10), backoff_factor=2.5)
@@ -53,10 +61,12 @@ def test_retry_policy_model():
     assert policy.delay == timedelta(seconds=10)
     assert policy.backoff_factor == 2.5
 
+
 def test_timeout_policy_model():
     policy = TimeoutPolicy(timeout=timedelta(minutes=5), kill_on_timeout=False)
     assert policy.timeout == timedelta(minutes=5)
     assert policy.kill_on_timeout is False
+
 
 def test_task_operator_model():
     task = TaskOperator(
@@ -81,6 +91,7 @@ def test_task_operator_model():
     assert task.timeout_policy.timeout == timedelta(seconds=30)
     assert task.metadata == {"meta1": "data1"}
 
+
 def test_condition_operator_model():
     condition = ConditionOperator(
         task_id="cond1",
@@ -96,6 +107,7 @@ def test_condition_operator_model():
     assert condition.if_false == "task_false"
     assert condition.dependencies == ["prev_task"]
 
+
 def test_wait_operator_model():
     wait_duration = WaitOperator(task_id="wait1", wait_for=timedelta(hours=1))
     assert wait_duration.wait_for == timedelta(hours=1)
@@ -108,6 +120,7 @@ def test_wait_operator_model():
     wait_string = WaitOperator(task_id="wait3", wait_for="event_name")
     assert wait_string.wait_for == "event_name"
 
+
 def test_parallel_operator_model():
     parallel = ParallelOperator(
         task_id="parallel1",
@@ -115,7 +128,11 @@ def test_parallel_operator_model():
     )
     assert parallel.task_id == "parallel1"
     assert parallel.operator_type == OperatorType.PARALLEL
-    assert parallel.branches == {"branch_a": ["task_a1", "task_a2"], "branch_b": ["task_b1"]}
+    assert parallel.branches == {
+        "branch_a": ["task_a1", "task_a2"],
+        "branch_b": ["task_b1"],
+    }
+
 
 def test_foreach_operator_model():
     foreach = ForEachOperator(
@@ -125,6 +142,7 @@ def test_foreach_operator_model():
     assert foreach.operator_type == OperatorType.FOREACH
     assert foreach.items == "data_list"
     assert foreach.task_chain == ["process_item"]
+
 
 def test_wait_operator_serialization():
     # Test with timedelta
@@ -144,10 +162,21 @@ def test_wait_operator_serialization():
     assert dump["wait_for"] == "event_name"
 
     # Test parsing of different data types
-    assert WaitOperator.model_validate({"task_id": "t", "wait_for": "duration:60"}).wait_for == timedelta(seconds=60)
+    assert WaitOperator.model_validate(
+        {"task_id": "t", "wait_for": "duration:60"}
+    ).wait_for == timedelta(seconds=60)
     now_iso = now.isoformat()
-    assert WaitOperator.model_validate({"task_id": "t", "wait_for": f"datetime:{now_iso}"}).wait_for == now
-    assert WaitOperator.model_validate({"task_id": "t", "wait_for": "event"}).wait_for == "event"
+    assert (
+        WaitOperator.model_validate(
+            {"task_id": "t", "wait_for": f"datetime:{now_iso}"}
+        ).wait_for
+        == now
+    )
+    assert (
+        WaitOperator.model_validate({"task_id": "t", "wait_for": "event"}).wait_for
+        == "event"
+    )
+
 
 def test_workflow_builder_simple_chain():
     workflow = (
@@ -162,6 +191,7 @@ def test_workflow_builder_simple_chain():
     assert workflow.tasks["middle"].dependencies == ["start"]
     assert workflow.start_task == "start"
 
+
 def test_workflow_builder_with_retry_and_timeout():
     workflow = (
         WorkflowBuilder("retry_timeout_workflow")
@@ -174,6 +204,7 @@ def test_workflow_builder_with_retry_and_timeout():
     assert workflow.tasks["step1"].retry_policy.delay == timedelta(seconds=15)
     assert workflow.tasks["step1"].timeout_policy.timeout == timedelta(minutes=1)
 
+
 def test_workflow_builder_condition():
     workflow = (
         WorkflowBuilder("conditional_workflow")
@@ -185,6 +216,7 @@ def test_workflow_builder_condition():
     assert workflow.tasks["check"].dependencies == ["initial"]
     assert workflow.tasks["check"].if_true == "high"
 
+
 def test_workflow_builder_parallel():
     workflow = (
         WorkflowBuilder("parallel_workflow")
@@ -195,6 +227,7 @@ def test_workflow_builder_parallel():
     assert "parallel_step" in workflow.tasks
     assert workflow.tasks["parallel_step"].dependencies == ["init"]
 
+
 def test_workflow_builder_foreach():
     workflow = (
         WorkflowBuilder("foreach_workflow")
@@ -204,6 +237,7 @@ def test_workflow_builder_foreach():
     )
     assert "loop_items" in workflow.tasks
     assert workflow.tasks["loop_items"].dependencies == ["fetch_items"]
+
 
 def test_workflow_yaml_round_trip():
     original_workflow = (
@@ -218,7 +252,10 @@ def test_workflow_yaml_round_trip():
 
     yaml_output = original_workflow.to_yaml()
     loaded_workflow = Workflow.from_yaml(yaml_output)
-    assert sort_dict_recursively(json.loads(original_workflow.model_dump_json())) == sort_dict_recursively(json.loads(loaded_workflow.model_dump_json()))
+    assert sort_dict_recursively(
+        json.loads(original_workflow.model_dump_json())
+    ) == sort_dict_recursively(json.loads(loaded_workflow.model_dump_json()))
+
 
 def test_workflow_json_round_trip():
     original_workflow = (
@@ -233,7 +270,10 @@ def test_workflow_json_round_trip():
     json_output = original_workflow.to_json()
     loaded_workflow = Workflow.from_json(json_output)
 
-    assert sort_dict_recursively(json.loads(original_workflow.model_dump_json())) == sort_dict_recursively(json.loads(loaded_workflow.model_dump_json()))
+    assert sort_dict_recursively(
+        json.loads(original_workflow.model_dump_json())
+    ) == sort_dict_recursively(json.loads(loaded_workflow.model_dump_json()))
+
 
 def test_complex_workflow_creation_and_serialization():
     # This test re-uses the logic from example_usage.py's create_complex_workflow
@@ -300,14 +340,18 @@ def test_complex_workflow_creation_and_serialization():
             TaskOperator(
                 task_id=f"enrich_{branch}",
                 function="workflows.tasks.enrich_data",
-                args=[f"{{{{transformed_{branch}}}}}",],
+                args=[
+                    f"{{{{transformed_{branch}}}}}",
+                ],
                 dependencies=[f"transform_{branch}"],
                 result_key=f"enriched_{branch}",
             )
         )
 
     builder = WorkflowBuilder(workflow.name, existing_workflow=workflow)
-    builder._current_task = "enrich_b" # Manually set current task for builder continuation
+    builder._current_task = (
+        "enrich_b"  # Manually set current task for builder continuation
+    )
 
     workflow = (
         builder.task(
@@ -335,11 +379,16 @@ def test_complex_workflow_creation_and_serialization():
     # Test serialization and deserialization
     yaml_output = workflow.to_yaml()
     loaded_workflow_from_yaml = Workflow.from_yaml(yaml_output)
-    assert sort_dict_recursively(json.loads(workflow.model_dump_json())) == sort_dict_recursively(json.loads(loaded_workflow_from_yaml.model_dump_json()))
+    assert sort_dict_recursively(
+        json.loads(workflow.model_dump_json())
+    ) == sort_dict_recursively(json.loads(loaded_workflow_from_yaml.model_dump_json()))
 
     json_output = workflow.to_json()
     loaded_workflow_from_json = Workflow.from_json(json_output)
-    assert sort_dict_recursively(json.loads(workflow.model_dump_json())) == sort_dict_recursively(json.loads(loaded_workflow_from_json.model_dump_json()))
+    assert sort_dict_recursively(
+        json.loads(workflow.model_dump_json())
+    ) == sort_dict_recursively(json.loads(loaded_workflow_from_json.model_dump_json()))
+
 
 def test_unknown_operator_type_raises_error():
     yaml_content = """
