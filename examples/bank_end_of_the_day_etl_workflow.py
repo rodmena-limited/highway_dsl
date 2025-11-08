@@ -20,7 +20,7 @@ except ImportError:
     exit()
 
 
-def demonstrate_bank_etl_workflow():
+def demonstrate_bank_etl_workflow() -> Workflow:
     """
     Defines a massive, complex EOD banking ETL, risk, and
     regulatory reporting workflow.
@@ -37,13 +37,13 @@ def demonstrate_bank_etl_workflow():
                 "etl.ingest.from_mainframe_db2",
                 args=["accounts", "balances"],
                 result_key="core_data",
-                retry_policy=RetryPolicy(max_retries=5),
+                retry_policy=RetryPolicy(max_retries=5, delay=timedelta(seconds=5), backoff_factor=2.0),
             ),
             "card_transactions": lambda b: b.task(
                 "ingest_card_txns",
                 "etl.ingest.from_payment_gateway_sftp",
                 result_key="card_data",
-                timeout_policy=TimeoutPolicy(timeout=timedelta(hours=2)),
+                timeout_policy=TimeoutPolicy(timeout=timedelta(hours=2), kill_on_timeout=True),
             ),
             "loan_systems": lambda b: b.task(
                 "ingest_loan_systems",
@@ -182,7 +182,7 @@ def demonstrate_bank_etl_workflow():
         "load_to_data_warehouse",
         "etl.load.load_all_to_warehouse",
         dependencies=["risk_and_regulatory_reporting"],
-        timeout_policy=TimeoutPolicy(timeout=timedelta(hours=3)),
+        timeout_policy=TimeoutPolicy(timeout=timedelta(hours=3), kill_on_timeout=True),
     )
     builder.task(
         "generate_management_dashboards",

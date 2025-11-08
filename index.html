@@ -782,7 +782,7 @@
                         </div>
                         <div class="d-flex justify-content-center gap-4 flex-wrap" style="font-size: 0.95rem;">
                             <span class="text-light opacity-75">
-                                <i class="fas fa-check-circle text-success me-2"></i>Stable Release <strong>v1.0.4</strong>
+                                <i class="fas fa-check-circle text-success me-2"></i>Feature Release <strong>v1.1.0</strong>
                             </span>
                             <span class="text-light opacity-75">
                                 <i class="fas fa-shield-alt text-info me-2"></i>MIT License
@@ -815,9 +815,9 @@
                 <div class="col-lg-3 col-md-6">
                     <div class="stats-card">
                         <i class="fas fa-puzzle-piece mb-3" style="font-size: 2.5rem; color: var(--primary);"></i>
-                        <span class="stats-number">6</span>
+                        <span class="stats-number">9</span>
                         <div class="stats-label">Operator Types</div>
-                        <p class="mt-2 mb-0" style="font-size: 0.8rem; color: var(--gray-600);">Task, Parallel, Condition, Loop, Wait</p>
+                        <p class="mt-2 mb-0" style="font-size: 0.8rem; color: var(--gray-600);">Task, Parallel, Condition, Loop, Wait, Event, Switch</p>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
@@ -842,6 +842,110 @@
                         <span class="stats-number">∞</span>
                         <div class="stats-label">Scalability</div>
                         <p class="mt-2 mb-0" style="font-size: 0.8rem; color: var(--gray-600);">Unlimited workflow nodes</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Real-World Example Showcase -->
+    <section class="section section-alt">
+        <div class="container">
+            <div class="row text-center mb-5">
+                <div class="col-12">
+                    <h2 class="display-6 fw-bold mb-3 section-title">Real-World Power: E-Commerce Order Processing</h2>
+                    <p class="lead text-muted" style="max-width: 900px; margin: 0 auto;">
+                        See Highway DSL in action with a production-ready workflow that handles orders, payments, and shipping
+                    </p>
+                </div>
+            </div>
+            <div class="row align-items-center">
+                <div class="col-lg-6 mb-4 mb-lg-0">
+                    <div class="code-block" style="font-size: 0.8rem;">
+                        <div class="text-warning">from</div> highway_dsl <div class="text-warning">import</div> WorkflowBuilder, RetryPolicy<br>
+                        <div class="text-warning">from</div> datetime <div class="text-warning">import</div> datetime, timedelta<br><br>
+
+                        workflow = (WorkflowBuilder(<span class="text-danger">"order_processing"</span>)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;.set_schedule(<span class="text-danger">"*/5 * * * *"</span>)&nbsp;&nbsp;<div class="text-success"># Every 5 min</div><br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;.set_start_date(datetime(2025, 1, 1))<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;.add_tags(<span class="text-danger">"production"</span>, <span class="text-danger">"orders"</span>, <span class="text-danger">"critical"</span>)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;.set_default_retry_policy(<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RetryPolicy(max_retries=3, delay=timedelta(seconds=30))<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;)<br><br>
+
+                        &nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"fetch_orders"</span>, <span class="text-danger">"orders.get_pending"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;result_key=<span class="text-danger">"orders"</span>)<br><br>
+
+                        &nbsp;&nbsp;&nbsp;&nbsp;.foreach(<span class="text-danger">"process_each_order"</span>, items=<span class="text-danger">"{{orders}}"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;loop_body=<span class="text-warning">lambda</span> b: (<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b.task(<span class="text-danger">"validate"</span>, <span class="text-danger">"orders.validate"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;args=[<span class="text-danger">"{{item}}"</span>])<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"charge_payment"</span>, <span class="text-danger">"payments.charge"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;args=[<span class="text-danger">"{{item}}"</span>])<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"send_failure_email"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"email.send_failure"</span>)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.on_failure(<span class="text-danger">"send_failure_email"</span>)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.switch(<span class="text-danger">"route_by_amount"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;switch_on=<span class="text-danger">"{{item.total}}"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cases={<span class="text-danger">"high"</span>: <span class="text-danger">"priority_shipping"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"medium"</span>: <span class="text-danger">"standard_shipping"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"low"</span>: <span class="text-danger">"economy_shipping"</span>})<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;)<br><br>
+
+                        &nbsp;&nbsp;&nbsp;&nbsp;.emit_event(<span class="text-danger">"notify_analytics"</span>,<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;event_name=<span class="text-danger">"orders_processed_{{ds}}"</span>)<br>
+                        &nbsp;&nbsp;&nbsp;&nbsp;.build()<br>
+                        )
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="mb-4">
+                        <div class="d-flex align-items-start mb-3">
+                            <div style="background: linear-gradient(135deg, #10b981, #059669); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                                <i class="fas fa-calendar-alt" style="font-size: 1.3rem; color: white;"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-1">Automated Scheduling</h5>
+                                <p class="text-muted mb-0">Runs every 5 minutes with cron scheduling</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start mb-3">
+                            <div style="background: linear-gradient(135deg, #2563eb, #1e40af); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                                <i class="fas fa-redo" style="font-size: 1.3rem; color: white;"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-1">Smart Retry Logic</h5>
+                                <p class="text-muted mb-0">Default retry policy with exponential backoff</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start mb-3">
+                            <div style="background: linear-gradient(135deg, #f59e0b, #d97706); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                                <i class="fas fa-bell" style="font-size: 1.3rem; color: white;"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-1">Failure Callbacks</h5>
+                                <p class="text-muted mb-0">Automatic alerts on payment failures</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start mb-3">
+                            <div style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                                <i class="fas fa-random" style="font-size: 1.3rem; color: white;"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-1">Dynamic Routing</h5>
+                                <p class="text-muted mb-0">Switch/case shipping based on order amount</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-start">
+                            <div style="background: linear-gradient(135deg, #06b6d4, #0891b2); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
+                                <i class="fas fa-broadcast-tower" style="font-size: 1.3rem; color: white;"></i>
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-1">Event-Driven</h5>
+                                <p class="text-muted mb-0">Emits events for downstream analytics workflows</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1676,7 +1780,7 @@
                 <div class="col-lg-3">
                     <h5 class="fw-bold text-white mb-3">Project</h5>
                     <ul class="list-unstyled">
-                        <li class="mb-2">Version: 1.0.4</li>
+                        <li class="mb-2">Version: 1.1.0</li>
                         <li class="mb-2">License: MIT</li>
                         <li class="mb-2">Stable Release</li>
                         <li>Developed by: RODMEN/A</li>

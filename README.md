@@ -7,9 +7,162 @@
 
 **Highway DSL** is a Python-based domain-specific language for defining complex workflows in a clear, concise, and fluent manner. It is part of the larger **Highway** project, an advanced workflow engine capable of running complex DAG-based workflows.
 
-## Version 1.0.3 - Stable Release
+## Version 1.1.0 - Feature Release
 
-This is a stable release with important bug fixes and enhancements, including a critical fix for the ForEach operator dependency management issue.
+This major feature release adds **Airflow-parity** features to enable production-grade workflows:
+
+### New Features
+
+#### 1. **Scheduling Metadata** (Airflow Parity)
+Define cron-based schedules directly in your workflow:
+```python
+builder = (
+    WorkflowBuilder("daily_pipeline")
+    .set_schedule("0 2 * * *")  # Run daily at 2 AM
+    .set_start_date(datetime(2025, 1, 1))
+    .set_catchup(False)
+    .add_tags("production", "daily")
+    .set_max_active_runs(1)
+)
+```
+
+#### 2. **Event-Based Operators** (Absurd Integration)
+First-class support for event-driven workflows:
+```python
+# Emit an event that other workflows can wait for
+builder.emit_event(
+    "notify_completion",
+    event_name="pipeline_done",
+    payload={"status": "success"}
+)
+
+# Wait for an external event
+builder.wait_for_event(
+    "wait_upstream",
+    event_name="data_ready",
+    timeout_seconds=3600
+)
+```
+
+#### 3. **Callback Hooks** (Production Workflows)
+Durable success/failure handlers as first-class workflow nodes:
+```python
+builder.task("risky_operation", "process.data")
+
+builder.task("send_alert", "alerts.notify")
+builder.on_failure("send_alert")  # Runs if risky_operation fails
+
+builder.task("cleanup", "cleanup.resources")
+builder.on_success("cleanup")  # Runs if risky_operation succeeds
+```
+
+#### 4. **Switch/Case Operator**
+Multi-branch routing with cleaner syntax than nested conditions:
+```python
+builder.switch(
+    "route_by_status",
+    switch_on="{{data.status}}",
+    cases={
+        "approved": "approve_task",
+        "rejected": "reject_task",
+        "pending": "review_task"
+    },
+    default="unknown_handler"
+)
+```
+
+#### 5. **Task Descriptions**
+Document your workflow inline:
+```python
+builder.task(
+    "process",
+    "data.transform",
+    description="Transform raw data into analytics format"
+)
+```
+
+#### 6. **Workflow-Level Default Retry Policy**
+Set a default retry policy for all tasks:
+```python
+builder.set_default_retry_policy(
+    RetryPolicy(max_retries=3, delay=timedelta(seconds=60))
+)
+```
+
+See `examples/scheduled_event_workflow.py` for a comprehensive example using all new features.
+
+### RFC-Style Specification
+
+For implementers and advanced users, Highway DSL v1.1.0 includes a comprehensive **3,215-line RFC-style specification** (`spec.txt`) modeled after IETF RFCs (RFC 2119, RFC 8259). This authoritative document provides:
+
+- Complete operator specifications with execution semantics
+- Integration guidance for Absurd and other runtimes
+- Security considerations and best practices
+- Comprehensive examples for all features
+- Formal data model definitions
+
+Access the specification at `/dsl/spec.txt` in the repository.
+
+## Architecture Diagram
+
+```mermaid
+graph TB
+    subgraph "Highway DSL v1.1.0 Features"
+        A[WorkflowBuilder<br/>Fluent API] --> B[Core Operators]
+        A --> C[Scheduling]
+        A --> D[Events]
+        A --> E[Error Handling]
+
+        B --> B1[Task]
+        B --> B2[Condition]
+        B --> B3[Parallel]
+        B --> B4[ForEach]
+        B --> B5[While]
+        B --> B6[Wait]
+        B --> B7[Switch]
+
+        C --> C1[Cron Schedules]
+        C --> C2[Start Date]
+        C --> C3[Catchup]
+        C --> C4[Tags]
+
+        D --> D1[EmitEvent]
+        D --> D2[WaitForEvent]
+
+        E --> E1[RetryPolicy]
+        E --> E2[TimeoutPolicy]
+        E --> E3[Callbacks]
+    end
+
+    subgraph "Output Formats"
+        F[YAML]
+        G[JSON]
+    end
+
+    subgraph "Runtime Integration"
+        H[Absurd Runtime]
+        I[Airflow]
+        J[Temporal]
+        K[Custom Engines]
+    end
+
+    A --> F
+    A --> G
+    F --> H
+    F --> I
+    F --> J
+    F --> K
+    G --> H
+    G --> I
+    G --> J
+    G --> K
+
+    style A fill:#2563eb,stroke:#1e40af,color:#fff
+    style B fill:#8b5cf6,stroke:#7c3aed,color:#fff
+    style C fill:#10b981,stroke:#059669,color:#fff
+    style D fill:#f59e0b,stroke:#d97706,color:#fff
+    style E fill:#ef4444,stroke:#dc2626,color:#fff
+```
 
 ## Features
 
@@ -18,11 +171,16 @@ This is a stable release with important bug fixes and enhancements, including a 
 *   **Rich Operators:** A comprehensive set of operators for handling various workflow scenarios:
     *   `Task` - Basic workflow steps
     *   `Condition` (if/else) - Conditional branching
-    *   `Parallel` - Execute multiple branches simultaneously 
+    *   `Parallel` - Execute multiple branches simultaneously
     *   `ForEach` - Iterate over collections with proper dependency management
     *   `Wait` - Pause execution for scheduled tasks
     *   `While` - Execute loops based on conditions
-*   **Fixed ForEach Bug:** Proper encapsulation of loop body tasks to prevent unwanted "grandparent" dependencies from containing parallel operators.
+    *   **NEW in v1.1:** `EmitEvent` - Emit events for cross-workflow coordination
+    *   **NEW in v1.1:** `WaitForEvent` - Wait for external events with timeout
+    *   **NEW in v1.1:** `Switch` - Multi-branch routing (switch/case)
+*   **Scheduling:** Built-in support for cron-based scheduling, start dates, and catchup configuration
+*   **Event-Driven:** First-class support for event emission and waiting (Absurd integration)
+*   **Callback Hooks:** Durable success/failure handlers as workflow nodes
 *   **YAML/JSON Interoperability:** Workflows can be defined in Python and exported to YAML or JSON, and vice-versa.
 *   **Retry and Timeout Policies:** Built-in error handling and execution time management.
 *   **Extensible:** The DSL is designed to be extensible with custom operators and policies.
@@ -60,6 +218,66 @@ workflow = (
 
 print(workflow.to_yaml())
 ```
+
+## Real-World Example: E-Commerce Order Processing
+
+```python
+from highway_dsl import WorkflowBuilder, RetryPolicy
+from datetime import datetime, timedelta
+
+# Production-ready e-commerce order workflow
+workflow = (
+    WorkflowBuilder("order_processing")
+    .set_schedule("*/5 * * * *")  # Run every 5 minutes
+    .set_start_date(datetime(2025, 1, 1))
+    .add_tags("production", "orders", "critical")
+    .set_default_retry_policy(RetryPolicy(max_retries=3, delay=timedelta(seconds=30)))
+
+    # Fetch pending orders
+    .task("fetch_orders", "orders.get_pending", result_key="orders")
+
+    # Process each order
+    .foreach(
+        "process_each_order",
+        items="{{orders}}",
+        loop_body=lambda b: (
+            b.task("validate", "orders.validate", args=["{{item}}"])
+            .task("charge_payment", "payments.charge", args=["{{item}}"],
+                  result_key="payment_result")
+            .task("send_failure_email", "email.send_failure",
+                  args=["{{item.customer_email}}"])
+            .on_failure("send_failure_email")  # Alert on payment failure
+            .switch(
+                "route_by_amount",
+                switch_on="{{item.total}}",
+                cases={
+                    "high": "priority_shipping",  # > $500
+                    "medium": "standard_shipping",  # $100-500
+                    "low": "economy_shipping"  # < $100
+                },
+                default="standard_shipping"
+            )
+        )
+    )
+
+    # Emit completion event for analytics workflow
+    .emit_event(
+        "notify_analytics",
+        event_name="orders_processed_{{ds}}",
+        payload={"count": "{{orders.length}}", "timestamp": "{{run.started_at}}"}
+    )
+
+    .build()
+)
+```
+
+This workflow demonstrates:
+- Scheduled execution every 5 minutes
+- Default retry policy for all tasks
+- ForEach loop processing multiple orders
+- Payment failure callbacks
+- Switch/case routing based on order amount
+- Event emission for cross-workflow coordination
 
 ## Advanced Usage
 
@@ -167,15 +385,27 @@ builder.task(
 )
 ```
 
-## What's New in Version 1.0.2
+## Version History
 
-### Bug Fixes
-* **Fixed ForEach Operator Bug**: Resolved issue where foreach loops were incorrectly getting "grandparent" dependencies from containing parallel operators. Loop body tasks are now properly encapsulated and only depend on their parent loop operator and internal chain dependencies.
+### Version 1.1.0 - Feature Release (Current)
 
-### Enhancements
-* **Improved Loop Dependency Management**: While loops and ForEach loops now properly encapsulate their internal dependencies without being affected by containing parallel operators.
-* **Better Error Handling**: Enhanced error handling throughout the DSL.
-* **Comprehensive Test Suite**: Added functional tests for all example workflows to ensure consistency.
+**Airflow-Parity Features:**
+- Scheduling metadata (cron, start_date, catchup, tags, max_active_runs)
+- Workflow-level default retry policy
+
+**Event-Driven Features:**
+- EmitEventOperator for cross-workflow coordination
+- WaitForEventOperator with timeout support
+
+**Production Features:**
+- Durable callback hooks (on_success, on_failure)
+- SwitchOperator for multi-branch routing
+- Task descriptions for documentation
+- RFC-style specification document (3,215 lines)
+
+### Version 1.0.3 - Stable Release
+
+This is a stable release with important bug fixes and enhancements, including a critical fix for the ForEach operator dependency management issue.
 
 ## Development
 
@@ -183,7 +413,7 @@ To set up the development environment:
 
 ```bash
 git clone https://github.com/your-username/highway.git
-cd highway
+cd highway/dsl
 python -m venv .venv
 source .venv/bin/activate
 pip install -e .[dev]
@@ -200,6 +430,12 @@ pytest
 ```bash
 mypy .
 ```
+
+## Documentation
+
+- **README.md** (this file) - Getting started and examples
+- **spec.txt** - RFC-style formal specification (3,215 lines)
+- **examples/** - Comprehensive workflow examples
 
 ## License
 

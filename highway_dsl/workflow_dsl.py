@@ -17,6 +17,8 @@ class OperatorType(Enum):
     SWITCH = "switch"
     TRY_CATCH = "try_catch"
     WHILE = "while"
+    EMIT_EVENT = "emit_event"
+    WAIT_FOR_EVENT = "wait_for_event"
 
 
 class RetryPolicy(BaseModel):
@@ -39,6 +41,10 @@ class BaseOperator(BaseModel, ABC):
     retry_policy: Optional[RetryPolicy] = None
     timeout_policy: Optional[TimeoutPolicy] = None
     metadata: Dict[str, Any] = Field(default_factory=dict)
+    description: str = Field(default="", description="Task description")
+    # Phase 3: Callback hooks
+    on_success_task_id: Optional[str] = Field(None, description="Task to run on success")
+    on_failure_task_id: Optional[str] = Field(None, description="Task to run on failure")
     is_internal_loop_task: bool = Field(
         default=False, exclude=True
     )  # Mark if task is internal to a loop
@@ -77,7 +83,7 @@ class WaitOperator(BaseOperator):
                     data["wait_for"] = datetime.fromisoformat(wait_for.split(":", 1)[1])
         return data
 
-    def model_dump(self, **kwargs) -> Dict[str, Any]:
+    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
         data = super().model_dump(**kwargs)
         wait_for = data["wait_for"]
         if isinstance(wait_for, timedelta):
@@ -103,6 +109,9 @@ class ForEachOperator(BaseOperator):
             ParallelOperator,
             "ForEachOperator",
             "WhileOperator",
+            "EmitEventOperator",
+            "WaitForEventOperator",
+            "SwitchOperator",
         ]
     ] = Field(default_factory=list)
     operator_type: OperatorType = Field(OperatorType.FOREACH, frozen=True)
@@ -118,14 +127,39 @@ class WhileOperator(BaseOperator):
             ParallelOperator,
             ForEachOperator,
             "WhileOperator",
+            "EmitEventOperator",
+            "WaitForEventOperator",
+            "SwitchOperator",
         ]
     ] = Field(default_factory=list)
     operator_type: OperatorType = Field(OperatorType.WHILE, frozen=True)
 
 
+class EmitEventOperator(BaseOperator):
+    """Phase 2: Emit an event that other workflows can wait for."""
+    event_name: str = Field(..., description="Name of the event to emit")
+    payload: Dict[str, Any] = Field(default_factory=dict, description="Event payload data")
+    operator_type: OperatorType = Field(OperatorType.EMIT_EVENT, frozen=True)
+
+
+class WaitForEventOperator(BaseOperator):
+    """Phase 2: Wait for an external event with optional timeout."""
+    event_name: str = Field(..., description="Name of the event to wait for")
+    timeout_seconds: Optional[int] = Field(None, description="Timeout in seconds (None = wait forever)")
+    operator_type: OperatorType = Field(OperatorType.WAIT_FOR_EVENT, frozen=True)
+
+
+class SwitchOperator(BaseOperator):
+    """Phase 4: Multi-branch switch/case operator."""
+    switch_on: str = Field(..., description="Expression to evaluate for switch")
+    cases: Dict[str, str] = Field(default_factory=dict, description="Map of case values to task IDs")
+    default: Optional[str] = Field(None, description="Default task ID if no case matches")
+    operator_type: OperatorType = Field(OperatorType.SWITCH, frozen=True)
+
+
 class Workflow(BaseModel):
     name: str
-    version: str = "1.0.0"
+    version: str = "1.1.0"
     description: str = ""
     tasks: Dict[
         str,
@@ -136,10 +170,22 @@ class Workflow(BaseModel):
             ParallelOperator,
             ForEachOperator,
             WhileOperator,
+            EmitEventOperator,
+            WaitForEventOperator,
+            SwitchOperator,
         ],
     ] = Field(default_factory=dict)
     variables: Dict[str, Any] = Field(default_factory=dict)
     start_task: Optional[str] = None
+
+    # Phase 1: Scheduling metadata
+    schedule: Optional[str] = Field(None, description="Cron expression for scheduled execution")
+    start_date: Optional[datetime] = Field(None, description="When the schedule becomes active")
+    catchup: bool = Field(False, description="Whether to backfill missed runs")
+    is_paused: bool = Field(False, description="Whether the workflow is paused")
+    tags: List[str] = Field(default_factory=list, description="Workflow categorization tags")
+    max_active_runs: int = Field(1, description="Maximum number of concurrent runs")
+    default_retry_policy: Optional[RetryPolicy] = Field(None, description="Default retry policy for all tasks")
 
     @model_validator(mode="before")
     @classmethod
@@ -153,6 +199,9 @@ class Workflow(BaseModel):
                 OperatorType.PARALLEL.value: ParallelOperator,
                 OperatorType.FOREACH.value: ForEachOperator,
                 OperatorType.WHILE.value: WhileOperator,
+                OperatorType.EMIT_EVENT.value: EmitEventOperator,
+                OperatorType.WAIT_FOR_EVENT.value: WaitForEventOperator,
+                OperatorType.SWITCH.value: SwitchOperator,
             }
             for task_id, task_data in data["tasks"].items():
                 operator_type = task_data.get("operator_type")
@@ -173,6 +222,9 @@ class Workflow(BaseModel):
             ParallelOperator,
             ForEachOperator,
             WhileOperator,
+            EmitEventOperator,
+            WaitForEventOperator,
+            SwitchOperator,
         ],
     ) -> "Workflow":
         self.tasks[task.task_id] = task
@@ -184,6 +236,42 @@ class Workflow(BaseModel):
 
     def set_start_task(self, task_id: str) -> "Workflow":
         self.start_task = task_id
+        return self
+
+    # Phase 1: Scheduling methods
+    def set_schedule(self, cron: str) -> "Workflow":
+        """Set the cron schedule for this workflow."""
+        self.schedule = cron
+        return self
+
+    def set_start_date(self, start_date: datetime) -> "Workflow":
+        """Set when the schedule becomes active."""
+        self.start_date = start_date
+        return self
+
+    def set_catchup(self, enabled: bool) -> "Workflow":
+        """Set whether to backfill missed runs."""
+        self.catchup = enabled
+        return self
+
+    def set_paused(self, paused: bool) -> "Workflow":
+        """Set whether the workflow is paused."""
+        self.is_paused = paused
+        return self
+
+    def add_tags(self, *tags: str) -> "Workflow":
+        """Add tags to the workflow."""
+        self.tags.extend(tags)
+        return self
+
+    def set_max_active_runs(self, count: int) -> "Workflow":
+        """Set maximum number of concurrent runs."""
+        self.max_active_runs = count
+        return self
+
+    def set_default_retry_policy(self, policy: RetryPolicy) -> "Workflow":
+        """Set default retry policy for all tasks."""
+        self.default_retry_policy = policy
         return self
 
     def to_yaml(self) -> str:
@@ -209,11 +297,25 @@ class WorkflowBuilder:
         name: str,
         existing_workflow: Optional[Workflow] = None,
         parent: Optional["WorkflowBuilder"] = None,
-    ):
+    ) -> None:
         if existing_workflow:
             self.workflow = existing_workflow
         else:
-            self.workflow = Workflow(name=name)
+            self.workflow = Workflow(
+                name=name,
+                version="1.1.0",
+                description="",
+                tasks={},
+                variables={},
+                start_task=None,
+                schedule=None,
+                start_date=None,
+                catchup=False,
+                is_paused=False,
+                tags=[],
+                max_active_runs=1,
+                default_retry_policy=None,
+            )
         self._current_task: Optional[str] = None
         self.parent = parent
 
@@ -226,8 +328,11 @@ class WorkflowBuilder:
             ParallelOperator,
             ForEachOperator,
             WhileOperator,
+            EmitEventOperator,
+            WaitForEventOperator,
+            SwitchOperator,
         ],
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         dependencies = kwargs.get("dependencies", [])
         if self._current_task and not dependencies:
@@ -249,7 +354,7 @@ class WorkflowBuilder:
         condition: str,
         if_true: Callable[["WorkflowBuilder"], "WorkflowBuilder"],
         if_false: Callable[["WorkflowBuilder"], "WorkflowBuilder"],
-        **kwargs,
+        **kwargs: Any,
     ) -> "WorkflowBuilder":
         true_builder = if_true(WorkflowBuilder(f"{task_id}_true", parent=self))
         false_builder = if_false(WorkflowBuilder(f"{task_id}_false", parent=self))
@@ -292,7 +397,7 @@ class WorkflowBuilder:
         self,
         task_id: str,
         branches: Dict[str, Callable[["WorkflowBuilder"], "WorkflowBuilder"]],
-        **kwargs,
+        **kwargs: Any,
     ) -> "WorkflowBuilder":
         branch_builders = {}
         for name, branch_func in branches.items():
@@ -329,7 +434,7 @@ class WorkflowBuilder:
         task_id: str,
         items: str,
         loop_body: Callable[["WorkflowBuilder"], "WorkflowBuilder"],
-        **kwargs,
+        **kwargs: Any,
     ) -> "WorkflowBuilder":
         # Create a temporary builder for the loop body.
         temp_builder = WorkflowBuilder(f"{task_id}_loop", parent=self)
@@ -370,7 +475,7 @@ class WorkflowBuilder:
         task_id: str,
         condition: str,
         loop_body: Callable[["WorkflowBuilder"], "WorkflowBuilder"],
-        **kwargs,
+        **kwargs: Any,
     ) -> "WorkflowBuilder":
         loop_builder = loop_body(WorkflowBuilder(f"{task_id}_loop", parent=self))
         loop_tasks = list(loop_builder.workflow.tasks.values())
@@ -425,6 +530,88 @@ class WorkflowBuilder:
             self.workflow.tasks[self._current_task].timeout_policy = TimeoutPolicy(
                 timeout=timeout, kill_on_timeout=kill_on_timeout
             )
+        return self
+
+    # Phase 2: Event-based operators
+    def emit_event(self, task_id: str, event_name: str, **kwargs) -> "WorkflowBuilder":
+        """Emit an event that other workflows can wait for."""
+        task = EmitEventOperator(task_id=task_id, event_name=event_name, **kwargs)
+        self._add_task(task, **kwargs)
+        return self
+
+    def wait_for_event(
+        self, task_id: str, event_name: str, timeout_seconds: Optional[int] = None, **kwargs: Any
+    ) -> "WorkflowBuilder":
+        """Wait for an external event with optional timeout."""
+        task = WaitForEventOperator(
+            task_id=task_id, event_name=event_name, timeout_seconds=timeout_seconds, **kwargs
+        )
+        self._add_task(task, **kwargs)
+        return self
+
+    # Phase 3: Callback hooks (applies to current task)
+    def on_success(self, success_task_id: str) -> "WorkflowBuilder":
+        """Set the task to run when the current task succeeds."""
+        if self._current_task:
+            self.workflow.tasks[self._current_task].on_success_task_id = success_task_id
+        return self
+
+    def on_failure(self, failure_task_id: str) -> "WorkflowBuilder":
+        """Set the task to run when the current task fails."""
+        if self._current_task:
+            self.workflow.tasks[self._current_task].on_failure_task_id = failure_task_id
+        return self
+
+    # Phase 4: Switch operator
+    def switch(
+        self,
+        task_id: str,
+        switch_on: str,
+        cases: Dict[str, str],
+        default: Optional[str] = None,
+        **kwargs: Any,
+    ) -> "WorkflowBuilder":
+        """Multi-branch switch/case operator."""
+        task = SwitchOperator(
+            task_id=task_id, switch_on=switch_on, cases=cases, default=default, **kwargs
+        )
+        self._add_task(task, **kwargs)
+        return self
+
+    # Phase 1: Scheduling methods (delegate to Workflow)
+    def set_schedule(self, cron: str) -> "WorkflowBuilder":
+        """Set the cron schedule for this workflow."""
+        self.workflow.set_schedule(cron)
+        return self
+
+    def set_start_date(self, start_date: datetime) -> "WorkflowBuilder":
+        """Set when the schedule becomes active."""
+        self.workflow.set_start_date(start_date)
+        return self
+
+    def set_catchup(self, enabled: bool) -> "WorkflowBuilder":
+        """Set whether to backfill missed runs."""
+        self.workflow.set_catchup(enabled)
+        return self
+
+    def set_paused(self, paused: bool) -> "WorkflowBuilder":
+        """Set whether the workflow is paused."""
+        self.workflow.set_paused(paused)
+        return self
+
+    def add_tags(self, *tags: str) -> "WorkflowBuilder":
+        """Add tags to the workflow."""
+        self.workflow.add_tags(*tags)
+        return self
+
+    def set_max_active_runs(self, count: int) -> "WorkflowBuilder":
+        """Set maximum number of concurrent runs."""
+        self.workflow.set_max_active_runs(count)
+        return self
+
+    def set_default_retry_policy(self, policy: RetryPolicy) -> "WorkflowBuilder":
+        """Set default retry policy for all tasks."""
+        self.workflow.set_default_retry_policy(policy)
         return self
 
     def build(self) -> Workflow:
