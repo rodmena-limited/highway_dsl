@@ -343,7 +343,7 @@ class WorkflowBuilder:
         self.workflow.add_task(task)
         self._current_task = task.task_id
 
-    def task(self, task_id: str, function: str, **kwargs) -> "WorkflowBuilder":
+    def task(self, task_id: str, function: str, **kwargs: Any) -> "WorkflowBuilder":
         task = TaskOperator(task_id=task_id, function=function, **kwargs)
         self._add_task(task, **kwargs)
         return self
@@ -387,7 +387,7 @@ class WorkflowBuilder:
         return self
 
     def wait(
-        self, task_id: str, wait_for: Union[timedelta, datetime, str], **kwargs
+        self, task_id: str, wait_for: Union[timedelta, datetime, str], **kwargs: Any
     ) -> "WorkflowBuilder":
         task = WaitOperator(task_id=task_id, wait_for=wait_for, **kwargs)
         self._add_task(task, **kwargs)
@@ -533,7 +533,7 @@ class WorkflowBuilder:
         return self
 
     # Phase 2: Event-based operators
-    def emit_event(self, task_id: str, event_name: str, **kwargs) -> "WorkflowBuilder":
+    def emit_event(self, task_id: str, event_name: str, **kwargs: Any) -> "WorkflowBuilder":
         """Emit an event that other workflows can wait for."""
         task = EmitEventOperator(task_id=task_id, event_name=event_name, **kwargs)
         self._add_task(task, **kwargs)
