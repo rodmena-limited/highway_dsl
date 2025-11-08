@@ -89,6 +89,7 @@ class WaitOperator(BaseOperator):
 
 class ParallelOperator(BaseOperator):
     branches: Dict[str, List[str]] = Field(default_factory=dict)
+    timeout: int = Field(..., description="Required timeout in seconds for branch execution")
     operator_type: OperatorType = Field(OperatorType.PARALLEL, frozen=True)
 
 
