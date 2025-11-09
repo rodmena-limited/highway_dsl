@@ -1,19 +1,11 @@
-import yaml
-import json
-from pathlib import Path
 from datetime import timedelta
+from pathlib import Path
 
+import yaml
 from highway_dsl import (
+    RetryPolicy,
     Workflow,
     WorkflowBuilder,
-    TaskOperator,
-    ConditionOperator,
-    ParallelOperator,
-    WaitOperator,
-    WhileOperator,
-    RetryPolicy,
-    TimeoutPolicy,
-    OperatorType,
 )
 
 
@@ -27,7 +19,7 @@ def demonstrate_while_loop():
         "qa_rework_loop",
         condition="{{qa_results.status}} == 'failed'",
         loop_body=lambda b: b.task(
-            "perform_rework", "workflows.tasks.perform_rework"
+            "perform_rework", "workflows.tasks.perform_rework",
         ).task("re_run_qa", "workflows.tasks.run_qa", result_key="qa_results"),
     )
 
@@ -65,7 +57,7 @@ def create_complex_workflow() -> Workflow:
             "workflows.tasks.advanced_processing",
             args=["{{validated_data}}"],
             retry_policy=RetryPolicy(
-                max_retries=5, delay=timedelta(seconds=10), backoff_factor=2.0
+                max_retries=5, delay=timedelta(seconds=10), backoff_factor=2.0,
             ),
         ),
         if_false=lambda b: b.task(
@@ -79,7 +71,7 @@ def create_complex_workflow() -> Workflow:
         "parallel_processing",
         branches={
             "branch_a": lambda b: b.task(
-                "transform_a", "workflows.tasks.transform_a", result_key="transformed_a"
+                "transform_a", "workflows.tasks.transform_a", result_key="transformed_a",
             ).task(
                 "enrich_a",
                 "workflows.tasks.enrich_data",
@@ -87,7 +79,7 @@ def create_complex_workflow() -> Workflow:
                 result_key="enriched_a",
             ),
             "branch_b": lambda b: b.task(
-                "transform_b", "workflows.tasks.transform_b", result_key="transformed_b"
+                "transform_b", "workflows.tasks.transform_b", result_key="transformed_b",
             ).task(
                 "enrich_b",
                 "workflows.tasks.enrich_data",
@@ -106,7 +98,7 @@ def create_complex_workflow() -> Workflow:
     )
     builder.wait("wait_notification", timedelta(hours=1))
     builder.task(
-        "notify", "workflows.tasks.send_notification", args=["{{final_result}}"]
+        "notify", "workflows.tasks.send_notification", args=["{{final_result}}"],
     )
 
     workflow = builder.build()
@@ -116,7 +108,7 @@ def create_complex_workflow() -> Workflow:
             "environment": "production",
             "batch_size": 1000,
             "notify_email": "team@company.com",
-        }
+        },
     )
 
     return workflow
@@ -143,7 +135,7 @@ def demonstrate_basic_workflow():
     )
 
     workflow.set_variables(
-        {"database_url": "postgresql://localhost/mydb", "chunk_size": 1000}
+        {"database_url": "postgresql://localhost/mydb", "chunk_size": 1000},
     )
 
     return workflow
@@ -194,7 +186,7 @@ def extract_yaml_content(content):
             while yaml_end > yaml_start and lines[yaml_end - 1].strip() == "":
                 yaml_end -= 1
             break
-        elif "Successfully generated" in line:
+        if "Successfully generated" in line:
             yaml_end = i
             while yaml_end > yaml_start and (
                 lines[yaml_end - 1].strip() == ""
@@ -217,7 +209,7 @@ def test_example_usage_workflows():
 
     # Load expected output
     expected_file = Path(__file__).parent / "data" / "example_usage.yaml"
-    with open(expected_file, "r") as f:
+    with open(expected_file) as f:
         content = f.read()
         # The example_usage.py output contains multiple workflows combined,
         # so we need to extract the complex workflow portion specifically
@@ -259,7 +251,7 @@ def test_example_usage_workflows():
     task_count = 0
     condition_count = 0
     parallel_count = 0
-    for task_id, task in complex_data["tasks"].items():
+    for task in complex_data["tasks"].values():
         if task["operator_type"] == "task":
             task_count += 1
         elif task["operator_type"] == "condition":
@@ -274,4 +266,3 @@ def test_example_usage_workflows():
 
 if __name__ == "__main__":
     test_example_usage_workflows()
-    print("✅ Example usage workflows test passed!")

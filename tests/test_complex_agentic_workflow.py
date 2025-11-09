@@ -1,18 +1,14 @@
-import yaml
-from pathlib import Path
 from datetime import timedelta
+from pathlib import Path
 
+import yaml
 from highway_dsl import (
-    Workflow,
-    WorkflowBuilder,
-    TaskOperator,
     ConditionOperator,
-    ParallelOperator,
-    WaitOperator,
     ForEachOperator,
-    RetryPolicy,
+    ParallelOperator,
+    TaskOperator,
     TimeoutPolicy,
-    OperatorType,
+    WorkflowBuilder,
 )
 
 
@@ -43,7 +39,7 @@ def demonstrate_complex_agentic_workflow():
             items="{{task_list_obj.tasks}}",
             task_chain=["analyze", "check_review", "route_by_review"],
             dependencies=["get_pending_tasks"],
-        )
+        ),
     )
 
     # --- Define the "process_one_task" sub-workflow ---
@@ -59,7 +55,7 @@ def demonstrate_complex_agentic_workflow():
             args=["{{item.text}}"],  # Assuming 'item' is the loop variable
             result_key="sentiment_analysis",
             # No dependencies, as it's the start of the task_chain
-        )
+        ),
     )
     workflow.add_task(
         TaskOperator(
@@ -68,7 +64,7 @@ def demonstrate_complex_agentic_workflow():
             args=["{{sentiment_analysis.sentiment}}"],
             result_key="review_check",
             dependencies=["analyze"],
-        )
+        ),
     )
     # 3. Add the conditional (if/else) operator
     workflow.add_task(
@@ -78,7 +74,7 @@ def demonstrate_complex_agentic_workflow():
             if_true="human_review_branch_start",  # ID of task to run if true
             if_false="auto_approve_branch_start",  # ID of task to run if false
             dependencies=["check_review"],
-        )
+        ),
     )
 
     # --- Define the "auto-approve" branch ---
@@ -89,7 +85,7 @@ def demonstrate_complex_agentic_workflow():
             args=["{{item.text}}"],
             result_key="auto_response",
             dependencies=["route_by_review"],
-        )
+        ),
     )
     workflow.add_task(
         TaskOperator(
@@ -97,7 +93,7 @@ def demonstrate_complex_agentic_workflow():
             function="agent.send_final_response",
             args=["{{item.id}}", "{{auto_response.response}}"],
             dependencies=["auto_approve_branch_start"],
-        )
+        ),
     )
 
     # --- Define the "human review" branch (with parallelism) ---
@@ -113,7 +109,7 @@ def demonstrate_complex_agentic_workflow():
                 "branch_docs": ["find_docs"],
             },
             dependencies=["route_by_review"],
-        )
+        ),
     )
     # Define tasks *inside* the parallel branches
     workflow.add_task(
@@ -123,7 +119,7 @@ def demonstrate_complex_agentic_workflow():
             args=["{{item.text}}"],
             result_key="draft_response",
             dependencies=["human_review_branch_start"],
-        )
+        ),
     )
     workflow.add_task(
         TaskOperator(
@@ -132,7 +128,7 @@ def demonstrate_complex_agentic_workflow():
             args=["{{item.text}}"],
             result_key="docs",
             dependencies=["human_review_branch_start"],
-        )
+        ),
     )
 
     # 5. Fan-in: A task that waits for *both* parallel branches
@@ -144,7 +140,7 @@ def demonstrate_complex_agentic_workflow():
             result_key="approval",
             dependencies=["generate_draft", "find_docs"],  # Waits for both
             timeout_policy=TimeoutPolicy(timeout=timedelta(hours=4)),
-        )
+        ),
     )
 
     # 6. Another conditional based on human approval
@@ -155,7 +151,7 @@ def demonstrate_complex_agentic_workflow():
             if_true="send_human_approved_response",
             if_false="archive_rejected_task",
             dependencies=["request_approval"],
-        )
+        ),
     )
     workflow.add_task(
         TaskOperator(
@@ -163,7 +159,7 @@ def demonstrate_complex_agentic_workflow():
             function="agent.send_final_response",
             args=["{{item.id}}", "{{approval.final_response}}"],
             dependencies=["process_approval"],
-        )
+        ),
     )
     workflow.add_task(
         TaskOperator(
@@ -171,7 +167,7 @@ def demonstrate_complex_agentic_workflow():
             function="agent.archive_task",
             args=["{{item.id}}", "Rejected by human review"],
             dependencies=["process_approval"],
-        )
+        ),
     )
 
     # 7. Final aggregation task (fan-in for the ForEach loop)
@@ -219,7 +215,7 @@ def extract_yaml_content(content):
             # This is typically the start of the footer, so everything before this is YAML
             yaml_end = i
             break
-        elif "Successfully generated" in line:
+        if "Successfully generated" in line:
             # Sometimes the separator might be missing, so look for the success message
             yaml_end = i
             # Then go backwards to find the actual end of YAML content
@@ -245,7 +241,7 @@ def test_complex_agentic_workflow():
 
     # Load expected output
     expected_file = Path(__file__).parent / "data" / "complex_agentic_workflow.yaml"
-    with open(expected_file, "r") as f:
+    with open(expected_file) as f:
         content = f.read()
         expected_content = extract_yaml_content(content)
         expected_data = yaml.safe_load(expected_content)
@@ -276,4 +272,3 @@ def test_complex_agentic_workflow():
 
 if __name__ == "__main__":
     test_complex_agentic_workflow()
-    print("✅ Complex agentic workflow test passed!")

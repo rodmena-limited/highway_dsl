@@ -1,18 +1,19 @@
-import pytest
 import json
-from datetime import timedelta, datetime
+from datetime import datetime, timedelta
+
+import pytest
 from highway_dsl import (
+    ConditionOperator,
+    ForEachOperator,
+    OperatorType,
+    ParallelOperator,
+    RetryPolicy,
+    TaskOperator,
+    TimeoutPolicy,
+    WaitOperator,
+    WhileOperator,
     Workflow,
     WorkflowBuilder,
-    TaskOperator,
-    ConditionOperator,
-    ParallelOperator,
-    WaitOperator,
-    ForEachOperator,
-    WhileOperator,
-    RetryPolicy,
-    TimeoutPolicy,
-    OperatorType,
 )
 
 
@@ -41,7 +42,7 @@ def sort_dict_recursively(d):
 
 def test_workflow_creation():
     workflow = Workflow(
-        name="test_workflow", version="1.0.0", description="A test workflow"
+        name="test_workflow", version="1.0.0", description="A test workflow",
     )
     assert workflow.name == "test_workflow"
     assert workflow.version == "1.0.0"
@@ -195,12 +196,12 @@ def test_wait_operator_serialization():
 
     # Test parsing of different data types
     assert WaitOperator.model_validate(
-        {"task_id": "t", "wait_for": "duration:60"}
+        {"task_id": "t", "wait_for": "duration:60"},
     ).wait_for == timedelta(seconds=60)
     now_iso = now.isoformat()
     assert (
         WaitOperator.model_validate(
-            {"task_id": "t", "wait_for": f"datetime:{now_iso}"}
+            {"task_id": "t", "wait_for": f"datetime:{now_iso}"},
         ).wait_for
         == now
     )
@@ -307,7 +308,7 @@ def test_workflow_yaml_round_trip():
     yaml_output = original_workflow.to_yaml()
     loaded_workflow = Workflow.from_yaml(yaml_output)
     assert sort_dict_recursively(
-        json.loads(original_workflow.model_dump_json())
+        json.loads(original_workflow.model_dump_json()),
     ) == sort_dict_recursively(json.loads(loaded_workflow.model_dump_json()))
 
 
@@ -330,7 +331,7 @@ def test_workflow_json_round_trip():
     loaded_workflow = Workflow.from_json(json_output)
 
     assert sort_dict_recursively(
-        json.loads(original_workflow.model_dump_json())
+        json.loads(original_workflow.model_dump_json()),
     ) == sort_dict_recursively(json.loads(loaded_workflow.model_dump_json()))
 
 
@@ -367,7 +368,7 @@ def test_complex_workflow_creation_and_serialization():
         "parallel_processing",
         branches={
             "branch_a": lambda b: b.task(
-                "transform_a", "workflows.tasks.transform_a", result_key="transformed_a"
+                "transform_a", "workflows.tasks.transform_a", result_key="transformed_a",
             ).task(
                 "enrich_a",
                 "workflows.tasks.enrich_data",
@@ -375,7 +376,7 @@ def test_complex_workflow_creation_and_serialization():
                 result_key="enriched_a",
             ),
             "branch_b": lambda b: b.task(
-                "transform_b", "workflows.tasks.transform_b", result_key="transformed_b"
+                "transform_b", "workflows.tasks.transform_b", result_key="transformed_b",
             ).task(
                 "enrich_b",
                 "workflows.tasks.enrich_data",
@@ -394,7 +395,7 @@ def test_complex_workflow_creation_and_serialization():
     )
     builder.wait("wait_notification", timedelta(hours=1))
     builder.task(
-        "notify", "workflows.tasks.send_notification", args=["{{final_result}}"]
+        "notify", "workflows.tasks.send_notification", args=["{{final_result}}"],
     )
 
     workflow = builder.build()
@@ -404,20 +405,20 @@ def test_complex_workflow_creation_and_serialization():
             "environment": "production",
             "batch_size": 1000,
             "notify_email": "team@company.com",
-        }
+        },
     )
 
     # Test serialization and deserialization
     yaml_output = workflow.to_yaml()
     loaded_workflow_from_yaml = Workflow.from_yaml(yaml_output)
     assert sort_dict_recursively(
-        json.loads(workflow.model_dump_json())
+        json.loads(workflow.model_dump_json()),
     ) == sort_dict_recursively(json.loads(loaded_workflow_from_yaml.model_dump_json()))
 
     json_output = workflow.to_json()
     loaded_workflow_from_json = Workflow.from_json(json_output)
     assert sort_dict_recursively(
-        json.loads(workflow.model_dump_json())
+        json.loads(workflow.model_dump_json()),
     ) == sort_dict_recursively(json.loads(loaded_workflow_from_json.model_dump_json()))
 
 

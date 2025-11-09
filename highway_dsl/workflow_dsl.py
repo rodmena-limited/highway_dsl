@@ -1,11 +1,12 @@
 # workflow_dsl.py
-from typing import Any, Dict, List, Optional, Union, Callable, Type
-from enum import Enum
+from abc import ABC
+from collections.abc import Callable
 from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any, Optional, Union
+
 import yaml
-import json
-from abc import ABC, abstractmethod
-from pydantic import BaseModel, Field, model_validator, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class OperatorType(Enum):
@@ -30,23 +31,23 @@ class RetryPolicy(BaseModel):
 class TimeoutPolicy(BaseModel):
     timeout: timedelta = Field(..., description="Timeout duration")
     kill_on_timeout: bool = Field(
-        True, description="Whether to kill the task on timeout"
+        True, description="Whether to kill the task on timeout",
     )
 
 
 class BaseOperator(BaseModel, ABC):
     task_id: str
     operator_type: OperatorType
-    dependencies: List[str] = Field(default_factory=list)
-    retry_policy: Optional[RetryPolicy] = None
-    timeout_policy: Optional[TimeoutPolicy] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    dependencies: list[str] = Field(default_factory=list)
+    retry_policy: RetryPolicy | None = None
+    timeout_policy: TimeoutPolicy | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
     description: str = Field(default="", description="Task description")
     # Phase 3: Callback hooks
-    on_success_task_id: Optional[str] = Field(None, description="Task to run on success")
-    on_failure_task_id: Optional[str] = Field(None, description="Task to run on failure")
+    on_success_task_id: str | None = Field(None, description="Task to run on success")
+    on_failure_task_id: str | None = Field(None, description="Task to run on failure")
     is_internal_loop_task: bool = Field(
-        default=False, exclude=True
+        default=False, exclude=True,
     )  # Mark if task is internal to a loop
 
     model_config = ConfigDict(use_enum_values=True, arbitrary_types_allowed=True)
@@ -54,21 +55,21 @@ class BaseOperator(BaseModel, ABC):
 
 class TaskOperator(BaseOperator):
     function: str
-    args: List[Any] = Field(default_factory=list)
-    kwargs: Dict[str, Any] = Field(default_factory=dict)
-    result_key: Optional[str] = None
+    args: list[Any] = Field(default_factory=list)
+    kwargs: dict[str, Any] = Field(default_factory=dict)
+    result_key: str | None = None
     operator_type: OperatorType = Field(OperatorType.TASK, frozen=True)
 
 
 class ConditionOperator(BaseOperator):
     condition: str
-    if_true: Optional[str]
-    if_false: Optional[str]
+    if_true: str | None
+    if_false: str | None
     operator_type: OperatorType = Field(OperatorType.CONDITION, frozen=True)
 
 
 class WaitOperator(BaseOperator):
-    wait_for: Union[timedelta, datetime, str]
+    wait_for: timedelta | datetime | str
     operator_type: OperatorType = Field(OperatorType.WAIT, frozen=True)
 
     @model_validator(mode="before")
@@ -83,7 +84,7 @@ class WaitOperator(BaseOperator):
                     data["wait_for"] = datetime.fromisoformat(wait_for.split(":", 1)[1])
         return data
 
-    def model_dump(self, **kwargs: Any) -> Dict[str, Any]:
+    def model_dump(self, **kwargs: Any) -> dict[str, Any]:
         data = super().model_dump(**kwargs)
         wait_for = data["wait_for"]
         if isinstance(wait_for, timedelta):
@@ -94,14 +95,14 @@ class WaitOperator(BaseOperator):
 
 
 class ParallelOperator(BaseOperator):
-    branches: Dict[str, List[str]] = Field(default_factory=dict)
-    timeout: Optional[int] = Field(None, description="Optional timeout in seconds for branch execution")
+    branches: dict[str, list[str]] = Field(default_factory=dict)
+    timeout: int | None = Field(None, description="Optional timeout in seconds for branch execution")
     operator_type: OperatorType = Field(OperatorType.PARALLEL, frozen=True)
 
 
 class ForEachOperator(BaseOperator):
     items: str
-    loop_body: List[
+    loop_body: list[
         Union[
             TaskOperator,
             ConditionOperator,
@@ -119,7 +120,7 @@ class ForEachOperator(BaseOperator):
 
 class WhileOperator(BaseOperator):
     condition: str
-    loop_body: List[
+    loop_body: list[
         Union[
             TaskOperator,
             ConditionOperator,
@@ -138,22 +139,22 @@ class WhileOperator(BaseOperator):
 class EmitEventOperator(BaseOperator):
     """Phase 2: Emit an event that other workflows can wait for."""
     event_name: str = Field(..., description="Name of the event to emit")
-    payload: Dict[str, Any] = Field(default_factory=dict, description="Event payload data")
+    payload: dict[str, Any] = Field(default_factory=dict, description="Event payload data")
     operator_type: OperatorType = Field(OperatorType.EMIT_EVENT, frozen=True)
 
 
 class WaitForEventOperator(BaseOperator):
     """Phase 2: Wait for an external event with optional timeout."""
     event_name: str = Field(..., description="Name of the event to wait for")
-    timeout_seconds: Optional[int] = Field(None, description="Timeout in seconds (None = wait forever)")
+    timeout_seconds: int | None = Field(None, description="Timeout in seconds (None = wait forever)")
     operator_type: OperatorType = Field(OperatorType.WAIT_FOR_EVENT, frozen=True)
 
 
 class SwitchOperator(BaseOperator):
     """Phase 4: Multi-branch switch/case operator."""
     switch_on: str = Field(..., description="Expression to evaluate for switch")
-    cases: Dict[str, str] = Field(default_factory=dict, description="Map of case values to task IDs")
-    default: Optional[str] = Field(None, description="Default task ID if no case matches")
+    cases: dict[str, str] = Field(default_factory=dict, description="Map of case values to task IDs")
+    default: str | None = Field(None, description="Default task ID if no case matches")
     operator_type: OperatorType = Field(OperatorType.SWITCH, frozen=True)
 
 
@@ -161,38 +162,28 @@ class Workflow(BaseModel):
     name: str
     version: str = "1.1.0"
     description: str = ""
-    tasks: Dict[
+    tasks: dict[
         str,
-        Union[
-            TaskOperator,
-            ConditionOperator,
-            WaitOperator,
-            ParallelOperator,
-            ForEachOperator,
-            WhileOperator,
-            EmitEventOperator,
-            WaitForEventOperator,
-            SwitchOperator,
-        ],
+        TaskOperator | ConditionOperator | WaitOperator | ParallelOperator | ForEachOperator | WhileOperator | EmitEventOperator | WaitForEventOperator | SwitchOperator,
     ] = Field(default_factory=dict)
-    variables: Dict[str, Any] = Field(default_factory=dict)
-    start_task: Optional[str] = None
+    variables: dict[str, Any] = Field(default_factory=dict)
+    start_task: str | None = None
 
     # Phase 1: Scheduling metadata
-    schedule: Optional[str] = Field(None, description="Cron expression for scheduled execution")
-    start_date: Optional[datetime] = Field(None, description="When the schedule becomes active")
+    schedule: str | None = Field(None, description="Cron expression for scheduled execution")
+    start_date: datetime | None = Field(None, description="When the schedule becomes active")
     catchup: bool = Field(False, description="Whether to backfill missed runs")
     is_paused: bool = Field(False, description="Whether the workflow is paused")
-    tags: List[str] = Field(default_factory=list, description="Workflow categorization tags")
+    tags: list[str] = Field(default_factory=list, description="Workflow categorization tags")
     max_active_runs: int = Field(1, description="Maximum number of concurrent runs")
-    default_retry_policy: Optional[RetryPolicy] = Field(None, description="Default retry policy for all tasks")
+    default_retry_policy: RetryPolicy | None = Field(None, description="Default retry policy for all tasks")
 
     @model_validator(mode="before")
     @classmethod
     def validate_tasks(cls, data: Any) -> Any:
         if isinstance(data, dict) and "tasks" in data:
             validated_tasks = {}
-            operator_classes: Dict[str, Type[BaseOperator]] = {
+            operator_classes: dict[str, type[BaseOperator]] = {
                 OperatorType.TASK.value: TaskOperator,
                 OperatorType.CONDITION.value: ConditionOperator,
                 OperatorType.WAIT.value: WaitOperator,
@@ -209,28 +200,19 @@ class Workflow(BaseModel):
                     operator_class = operator_classes[operator_type]
                     validated_tasks[task_id] = operator_class.model_validate(task_data)
                 else:
-                    raise ValueError(f"Unknown operator type: {operator_type}")
+                    msg = f"Unknown operator type: {operator_type}"
+                    raise ValueError(msg)
             data["tasks"] = validated_tasks
         return data
 
     def add_task(
         self,
-        task: Union[
-            TaskOperator,
-            ConditionOperator,
-            WaitOperator,
-            ParallelOperator,
-            ForEachOperator,
-            WhileOperator,
-            EmitEventOperator,
-            WaitForEventOperator,
-            SwitchOperator,
-        ],
+        task: TaskOperator | ConditionOperator | WaitOperator | ParallelOperator | ForEachOperator | WhileOperator | EmitEventOperator | WaitForEventOperator | SwitchOperator,
     ) -> "Workflow":
         self.tasks[task.task_id] = task
         return self
 
-    def set_variables(self, variables: Dict[str, Any]) -> "Workflow":
+    def set_variables(self, variables: dict[str, Any]) -> "Workflow":
         self.variables.update(variables)
         return self
 
@@ -295,7 +277,7 @@ class WorkflowBuilder:
     def __init__(
         self,
         name: str,
-        existing_workflow: Optional[Workflow] = None,
+        existing_workflow: Workflow | None = None,
         parent: Optional["WorkflowBuilder"] = None,
     ) -> None:
         if existing_workflow:
@@ -316,29 +298,19 @@ class WorkflowBuilder:
                 max_active_runs=1,
                 default_retry_policy=None,
             )
-        self._current_task: Optional[str] = None
+        self._current_task: str | None = None
         self.parent = parent
 
     def _add_task(
         self,
-        task: Union[
-            TaskOperator,
-            ConditionOperator,
-            WaitOperator,
-            ParallelOperator,
-            ForEachOperator,
-            WhileOperator,
-            EmitEventOperator,
-            WaitForEventOperator,
-            SwitchOperator,
-        ],
+        task: TaskOperator | ConditionOperator | WaitOperator | ParallelOperator | ForEachOperator | WhileOperator | EmitEventOperator | WaitForEventOperator | SwitchOperator,
         **kwargs: Any,
     ) -> None:
         dependencies = kwargs.get("dependencies", [])
         if self._current_task and not dependencies:
             dependencies.append(self._current_task)
 
-        task.dependencies = sorted(list(set(dependencies)))
+        task.dependencies = sorted(set(dependencies))
 
         self.workflow.add_task(task)
         self._current_task = task.task_id
@@ -387,7 +359,7 @@ class WorkflowBuilder:
         return self
 
     def wait(
-        self, task_id: str, wait_for: Union[timedelta, datetime, str], **kwargs: Any
+        self, task_id: str, wait_for: timedelta | datetime | str, **kwargs: Any,
     ) -> "WorkflowBuilder":
         task = WaitOperator(task_id=task_id, wait_for=wait_for, **kwargs)
         self._add_task(task, **kwargs)
@@ -396,13 +368,13 @@ class WorkflowBuilder:
     def parallel(
         self,
         task_id: str,
-        branches: Dict[str, Callable[["WorkflowBuilder"], "WorkflowBuilder"]],
+        branches: dict[str, Callable[["WorkflowBuilder"], "WorkflowBuilder"]],
         **kwargs: Any,
     ) -> "WorkflowBuilder":
         branch_builders = {}
         for name, branch_func in branches.items():
             branch_builder = branch_func(
-                WorkflowBuilder(f"{task_id}_{name}", parent=self)
+                WorkflowBuilder(f"{task_id}_{name}", parent=self),
             )
             branch_builders[name] = branch_builder
 
@@ -514,21 +486,21 @@ class WorkflowBuilder:
         backoff_factor: float = 2.0,
     ) -> "WorkflowBuilder":
         if self._current_task and isinstance(
-            self.workflow.tasks[self._current_task], TaskOperator
+            self.workflow.tasks[self._current_task], TaskOperator,
         ):
             self.workflow.tasks[self._current_task].retry_policy = RetryPolicy(
-                max_retries=max_retries, delay=delay, backoff_factor=backoff_factor
+                max_retries=max_retries, delay=delay, backoff_factor=backoff_factor,
             )
         return self
 
     def timeout(
-        self, timeout: timedelta, kill_on_timeout: bool = True
+        self, timeout: timedelta, kill_on_timeout: bool = True,
     ) -> "WorkflowBuilder":
         if self._current_task and isinstance(
-            self.workflow.tasks[self._current_task], TaskOperator
+            self.workflow.tasks[self._current_task], TaskOperator,
         ):
             self.workflow.tasks[self._current_task].timeout_policy = TimeoutPolicy(
-                timeout=timeout, kill_on_timeout=kill_on_timeout
+                timeout=timeout, kill_on_timeout=kill_on_timeout,
             )
         return self
 
@@ -540,11 +512,11 @@ class WorkflowBuilder:
         return self
 
     def wait_for_event(
-        self, task_id: str, event_name: str, timeout_seconds: Optional[int] = None, **kwargs: Any
+        self, task_id: str, event_name: str, timeout_seconds: int | None = None, **kwargs: Any,
     ) -> "WorkflowBuilder":
         """Wait for an external event with optional timeout."""
         task = WaitForEventOperator(
-            task_id=task_id, event_name=event_name, timeout_seconds=timeout_seconds, **kwargs
+            task_id=task_id, event_name=event_name, timeout_seconds=timeout_seconds, **kwargs,
         )
         self._add_task(task, **kwargs)
         return self
@@ -567,13 +539,13 @@ class WorkflowBuilder:
         self,
         task_id: str,
         switch_on: str,
-        cases: Dict[str, str],
-        default: Optional[str] = None,
+        cases: dict[str, str],
+        default: str | None = None,
         **kwargs: Any,
     ) -> "WorkflowBuilder":
         """Multi-branch switch/case operator."""
         task = SwitchOperator(
-            task_id=task_id, switch_on=switch_on, cases=cases, default=default, **kwargs
+            task_id=task_id, switch_on=switch_on, cases=cases, default=default, **kwargs,
         )
         self._add_task(task, **kwargs)
         return self

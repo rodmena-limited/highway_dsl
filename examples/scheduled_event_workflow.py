@@ -7,7 +7,9 @@ Example workflow demonstrating Highway DSL v1.1.0 features:
 """
 
 from datetime import datetime, timedelta
-from highway_dsl import WorkflowBuilder, RetryPolicy, Workflow
+
+from highway_dsl import RetryPolicy, Workflow, WorkflowBuilder
+
 
 def create_scheduled_event_workflow() -> Workflow:
     """
@@ -36,7 +38,7 @@ def create_scheduled_event_workflow() -> Workflow:
         "fetch_data",
         "data.fetch",
         result_key="raw_data",
-        description="Fetch data from external source"
+        description="Fetch data from external source",
     )
 
     # Task with failure callback (Phase 3)
@@ -45,7 +47,7 @@ def create_scheduled_event_workflow() -> Workflow:
         "data.process",
         args=["{{raw_data}}"],
         result_key="processed_data",
-        description="Process the fetched data"
+        description="Process the fetched data",
     )
 
     # Define failure handler task
@@ -53,7 +55,7 @@ def create_scheduled_event_workflow() -> Workflow:
         "send_failure_alert",
         "alerts.send",
         args=["Processing failed"],
-        description="Alert on processing failure"
+        description="Alert on processing failure",
     )
 
     # Set up failure callback
@@ -69,7 +71,7 @@ def create_scheduled_event_workflow() -> Workflow:
             "low": "low_quality_path",
         },
         default="unknown_quality_handler",
-        description="Route based on data quality score"
+        description="Route based on data quality score",
     )
 
     # Different paths for different quality levels
@@ -78,7 +80,7 @@ def create_scheduled_event_workflow() -> Workflow:
         "data.publish_premium",
         args=["{{processed_data}}"],
         dependencies=["route_by_quality"],
-        description="Publish to premium channel"
+        description="Publish to premium channel",
     )
 
     builder.task(
@@ -86,7 +88,7 @@ def create_scheduled_event_workflow() -> Workflow:
         "data.publish_standard",
         args=["{{processed_data}}"],
         dependencies=["route_by_quality"],
-        description="Publish to standard channel"
+        description="Publish to standard channel",
     )
 
     builder.task(
@@ -94,14 +96,14 @@ def create_scheduled_event_workflow() -> Workflow:
         "data.publish_basic",
         args=["{{processed_data}}"],
         dependencies=["route_by_quality"],
-        description="Publish to basic channel"
+        description="Publish to basic channel",
     )
 
     builder.task(
         "unknown_quality_handler",
         "errors.log_unknown_quality",
         dependencies=["route_by_quality"],
-        description="Handle unknown quality score"
+        description="Handle unknown quality score",
     )
 
     # Emit event (Phase 2) - notify other workflows
@@ -113,9 +115,9 @@ def create_scheduled_event_workflow() -> Workflow:
             "high_quality_path",
             "medium_quality_path",
             "low_quality_path",
-            "unknown_quality_handler"
+            "unknown_quality_handler",
         ],
-        description="Emit completion event for downstream workflows"
+        description="Emit completion event for downstream workflows",
     )
 
     # Success callback (Phase 3)
@@ -123,7 +125,7 @@ def create_scheduled_event_workflow() -> Workflow:
         "send_success_notification",
         "notifications.send",
         args=["Pipeline completed successfully"],
-        description="Notify on successful completion"
+        description="Notify on successful completion",
     )
 
     builder.on_success("send_success_notification")
@@ -146,7 +148,7 @@ def create_event_waiting_workflow() -> Workflow:
     builder.task(
         "prepare",
         "workflow.prepare",
-        description="Prepare for event"
+        description="Prepare for event",
     )
 
     # Wait for event (Phase 2) with timeout
@@ -154,7 +156,7 @@ def create_event_waiting_workflow() -> Workflow:
         "wait_for_upstream",
         event_name="data_pipeline_completed",
         timeout_seconds=3600,  # 1 hour timeout
-        description="Wait for upstream pipeline to complete"
+        description="Wait for upstream pipeline to complete",
     )
 
     # Process after event received
@@ -162,7 +164,7 @@ def create_event_waiting_workflow() -> Workflow:
         "process_event",
         "workflow.process_event",
         args=["{{wait_for_upstream.payload}}"],
-        description="Process the received event"
+        description="Process the received event",
     )
 
     # Failure handler for timeout
@@ -170,7 +172,7 @@ def create_event_waiting_workflow() -> Workflow:
         "handle_timeout",
         "errors.handle_timeout",
         args=["Upstream pipeline timed out"],
-        description="Handle event timeout"
+        description="Handle event timeout",
     )
 
     builder.on_failure("handle_timeout")
@@ -181,11 +183,6 @@ def create_event_waiting_workflow() -> Workflow:
 if __name__ == "__main__":
     # Example 1: Scheduled workflow with events and callbacks
     workflow1 = create_scheduled_event_workflow()
-    print("=== Scheduled Event Workflow ===")
-    print(workflow1.to_yaml())
-    print("\n")
 
     # Example 2: Event listener workflow
     workflow2 = create_event_waiting_workflow()
-    print("=== Event Listener Workflow ===")
-    print(workflow2.to_yaml())

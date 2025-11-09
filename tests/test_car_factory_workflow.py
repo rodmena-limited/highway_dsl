@@ -1,18 +1,15 @@
-import yaml
-from pathlib import Path
 from datetime import timedelta
+from pathlib import Path
 
+import yaml
 from highway_dsl import (
-    Workflow,
-    WorkflowBuilder,
-    TaskOperator,
     ConditionOperator,
-    ParallelOperator,
-    WaitOperator,
     ForEachOperator,
+    ParallelOperator,
     RetryPolicy,
+    TaskOperator,
     TimeoutPolicy,
-    OperatorType,
+    WorkflowBuilder,
 )
 
 
@@ -42,7 +39,7 @@ def demonstrate_car_factory_workflow():
             items="{{manifest.vehicles}}",  # e.g., [{"vin": "...", "model": "...", "type": "EV"}, ...]
             task_chain=["check_vehicle_specs"],  # Entry point for the sub-workflow
             dependencies=["get_build_manifest"],
-        )
+        ),
     )
 
     # --- Define the "Build One Vehicle" Sub-Workflow ---
@@ -58,7 +55,7 @@ def demonstrate_car_factory_workflow():
             result_key="specs",
             # This task has no dependencies *within the chain*
             # as it is the entry point.
-        )
+        ),
     )
 
     # 4. Conditional: Is this an EV or an ICE car?
@@ -69,7 +66,7 @@ def demonstrate_car_factory_workflow():
             if_true="build_ev_drivetrain",
             if_false="build_ice_drivetrain",
             dependencies=["check_vehicle_specs"],
-        )
+        ),
     )
 
     # --- Drivetrain Branches (mutually exclusive) ---
@@ -80,7 +77,7 @@ def demonstrate_car_factory_workflow():
             args=["{{specs.battery_sku}}", "{{specs.motor_sku}}"],
             result_key="drivetrain_assembly",
             dependencies=["route_by_drivetrain"],
-        )
+        ),
     )
     workflow.add_task(
         TaskOperator(
@@ -89,7 +86,7 @@ def demonstrate_car_factory_workflow():
             args=["{{specs.engine_sku}}", "{{specs.transmission_sku}}"],
             result_key="drivetrain_assembly",
             dependencies=["route_by_drivetrain"],
-        )
+        ),
     )
 
     # 5. Parallel Assembly: Build frame, electronics, and run diagnostics
@@ -110,7 +107,7 @@ def demonstrate_car_factory_workflow():
             # result, which is output by both tasks).
             # For simplicity, we'll depend on the tasks themselves.
             dependencies=["build_ev_drivetrain", "build_ice_drivetrain"],
-        )
+        ),
     )
 
     # --- Tasks inside the Parallel Branches ---
@@ -120,14 +117,14 @@ def demonstrate_car_factory_workflow():
             function="factory.robotics.weld_chassis",
             args=["{{specs.frame_model}}"],
             dependencies=["parallel_main_assembly"],
-        )
+        ),
     )
     workflow.add_task(
         TaskOperator(
             task_id="prime_frame",
             function="factory.robotics.apply_primer",
             dependencies=["weld_frame"],
-        )
+        ),
     )
     workflow.add_task(
         TaskOperator(
@@ -135,7 +132,7 @@ def demonstrate_car_factory_workflow():
             function="factory.assembly.build_electronics",
             args=["{{specs.electronics_package}}"],
             dependencies=["parallel_main_assembly"],
-        )
+        ),
     )
     workflow.add_task(
         TaskOperator(
@@ -143,7 +140,7 @@ def demonstrate_car_factory_workflow():
             function="factory.assembly.prep_drivetrain_for_marriage",
             args=["{{drivetrain_assembly}}"],
             dependencies=["parallel_main_assembly"],
-        )
+        ),
     )
 
     # 6. Synchronization (Fan-In): "Marriage" of parts
@@ -159,7 +156,7 @@ def demonstrate_car_factory_workflow():
                 "mount_drivetrain_subassembly",  # End of drivetrain_prep
             ],
             result_key="assembled_vehicle",
-        )
+        ),
     )
 
     # 7. Paint the fully assembled body
@@ -169,7 +166,7 @@ def demonstrate_car_factory_workflow():
             function="factory.robotics.paint_body",
             args=["{{assembled_vehicle}}", "{{specs.color}}"],
             dependencies=["final_assembly"],
-        )
+        ),
     )
 
     # 8. Human-in-the-Loop Quality Assurance (with timeout)
@@ -181,7 +178,7 @@ def demonstrate_car_factory_workflow():
             result_key="qa_report",
             dependencies=["paint_vehicle"],
             timeout_policy=TimeoutPolicy(timeout=timedelta(hours=2)),
-        )
+        ),
     )
 
     # 9. QA Conditional: Did it pass?
@@ -192,7 +189,7 @@ def demonstrate_car_factory_workflow():
             if_true="mark_vehicle_complete",  # End of this loop
             if_false="perform_rework",  # Go to rework sub-path
             dependencies=["begin_qa_inspection"],
-        )
+        ),
     )
 
     # --- Rework Sub-Path (if QA fails) ---
@@ -203,7 +200,7 @@ def demonstrate_car_factory_workflow():
             args=["{{item.vin}}", "{{qa_report.issues}}"],
             result_key="rework_report",
             dependencies=["check_qa_results"],
-        )
+        ),
     )
     workflow.add_task(
         TaskOperator(
@@ -212,7 +209,7 @@ def demonstrate_car_factory_workflow():
             args=["{{item.vin}}", "{{rework_report}}"],
             result_key="final_qa_status",
             dependencies=["perform_rework"],
-        )
+        ),
     )
 
     # 10. Final check. This demonstrates the "fixed rework attempts"
@@ -224,7 +221,7 @@ def demonstrate_car_factory_workflow():
             if_true="mark_vehicle_complete",  # Pass: End of this loop
             if_false="flag_for_manual_intervention",  # Fail: End of this loop
             dependencies=["final_rework_qa"],
-        )
+        ),
     )
 
     # --- Loop "Sink" (End) Tasks ---
@@ -236,7 +233,7 @@ def demonstrate_car_factory_workflow():
             function="factory.mes.update_status",
             args=["{{item.vin}}", "BUILT"],
             dependencies=["check_qa_results", "check_final_qa"],
-        )
+        ),
     )
     workflow.add_task(
         TaskOperator(
@@ -244,7 +241,7 @@ def demonstrate_car_factory_workflow():
             function="factory.mes.update_status",
             args=["{{item.vin}}", "QA_FAIL_MANUAL_HOLD"],
             dependencies=["check_final_qa"],
-        )
+        ),
     )
 
     # --- End of "Build One Vehicle" Sub-Workflow ---
@@ -271,7 +268,7 @@ def demonstrate_car_factory_workflow():
     )
 
     workflow.set_variables(
-        {"erp_api_key": "secret_abc_123", "mes_endpoint": "http://10.0.0.5/api"}
+        {"erp_api_key": "secret_abc_123", "mes_endpoint": "http://10.0.0.5/api"},
     )
 
     return workflow
@@ -301,7 +298,7 @@ def extract_yaml_content(content):
             # This is typically the start of the footer, so everything before this is YAML
             yaml_end = i
             break
-        elif "Successfully generated" in line:
+        if "Successfully generated" in line:
             # Sometimes the separator might be missing, so look for the success message
             yaml_end = i
             # Then go backwards to find the actual end of YAML content
@@ -327,7 +324,7 @@ def test_car_factory_workflow():
 
     # Load expected output
     expected_file = Path(__file__).parent / "data" / "car_factory_workflow.yaml"
-    with open(expected_file, "r") as f:
+    with open(expected_file) as f:
         content = f.read()
         expected_content = extract_yaml_content(content)
         expected_data = yaml.safe_load(expected_content)
@@ -351,4 +348,3 @@ def test_car_factory_workflow():
 
 if __name__ == "__main__":
     test_car_factory_workflow()
-    print("✅ Car factory workflow test passed!")

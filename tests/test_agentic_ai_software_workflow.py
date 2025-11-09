@@ -1,19 +1,9 @@
-import yaml
-from pathlib import Path
 from datetime import timedelta
+from pathlib import Path
 
+import yaml
 from highway_dsl import (
-    Workflow,
     WorkflowBuilder,
-    TaskOperator,
-    ConditionOperator,
-    ParallelOperator,
-    WaitOperator,
-    ForEachOperator,
-    WhileOperator,
-    RetryPolicy,
-    TimeoutPolicy,
-    OperatorType,
 )
 
 
@@ -241,7 +231,7 @@ def demonstrate_agentic_dev_platform_workflow():
         {
             "project_spec_url": "http://s3.com/specs/my_project.md",
             "ci_runner_pool": "default-pool",
-        }
+        },
     )
 
     return workflow
@@ -271,7 +261,7 @@ def extract_yaml_content(content):
             # This is typically the start of the footer, so everything before this is YAML
             yaml_end = i
             break
-        elif "Successfully generated" in line:
+        if "Successfully generated" in line:
             # Sometimes the separator might be missing, so look for the success message
             yaml_end = i
             # Then go backwards to find the actual end of YAML content
@@ -299,7 +289,7 @@ def test_agentic_ai_software_workflow():
     expected_file = (
         Path(__file__).parent / "data" / "test_driven_agentic_ai_software_workflow.yaml"
     )
-    with open(expected_file, "r") as f:
+    with open(expected_file) as f:
         content = f.read()
         expected_content = extract_yaml_content(content)
         expected_data = yaml.safe_load(expected_content)
@@ -333,4 +323,3 @@ def test_agentic_ai_software_workflow():
 
 if __name__ == "__main__":
     test_agentic_ai_software_workflow()
-    print("✅ Agentic AI software workflow test passed!")

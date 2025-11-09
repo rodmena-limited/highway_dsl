@@ -1,19 +1,11 @@
-import yaml
-from pathlib import Path
 from datetime import timedelta
+from pathlib import Path
 
+import yaml
 from highway_dsl import (
-    Workflow,
-    WorkflowBuilder,
-    TaskOperator,
-    ConditionOperator,
-    ParallelOperator,
-    WaitOperator,
-    ForEachOperator,
-    WhileOperator,  # Import the new operator
     RetryPolicy,
     TimeoutPolicy,
-    OperatorType,
+    WorkflowBuilder,
 )
 
 
@@ -170,7 +162,7 @@ def demonstrate_car_factory_workflow():
 
     workflow = main_builder.build()
     workflow.set_variables(
-        {"erp_api_key": "secret_abc_123", "mes_endpoint": "http://10.0.0.5/api"}
+        {"erp_api_key": "secret_abc_123", "mes_endpoint": "http://10.0.0.5/api"},
     )
 
     return workflow
@@ -200,7 +192,7 @@ def extract_yaml_content(content):
             # This is typically the start of the footer, so everything before this is YAML
             yaml_end = i
             break
-        elif "Successfully generated" in line:
+        if "Successfully generated" in line:
             # Sometimes the separator might be missing, so look for the success message
             yaml_end = i
             # Then go backwards to find the actual end of YAML content
@@ -228,7 +220,7 @@ def test_car_factory_workflow_with_fluent_builder():
     expected_file = (
         Path(__file__).parent / "data" / "car_factory_workflow_with_fluent_builder.yaml"
     )
-    with open(expected_file, "r") as f:
+    with open(expected_file) as f:
         content = f.read()
         expected_content = extract_yaml_content(content)
         expected_data = yaml.safe_load(expected_content)
@@ -257,4 +249,3 @@ def test_car_factory_workflow_with_fluent_builder():
 
 if __name__ == "__main__":
     test_car_factory_workflow_with_fluent_builder()
-    print("✅ Car factory workflow with fluent builder test passed!")

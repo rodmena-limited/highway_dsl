@@ -1,23 +1,23 @@
-import json
-from datetime import timedelta, time, datetime  # Need datetime for the validator
+import contextlib
+import sys
+from datetime import timedelta  # Need datetime for the validator
 
 try:
     from highway_dsl import (
+        ConditionOperator,
+        ForEachOperator,
+        OperatorType,
+        ParallelOperator,
+        RetryPolicy,
+        TaskOperator,
+        TimeoutPolicy,
+        WaitOperator,
+        WhileOperator,
         Workflow,
         WorkflowBuilder,
-        TaskOperator,
-        ConditionOperator,
-        ParallelOperator,
-        WaitOperator,
-        ForEachOperator,
-        WhileOperator,
-        RetryPolicy,
-        TimeoutPolicy,
-        OperatorType,
     )
 except ImportError:
-    print("Error: highway_dsl library not found. Please install it.")
-    exit()
+    sys.exit()
 
 
 def demonstrate_bank_etl_workflow() -> Workflow:
@@ -101,10 +101,10 @@ def demonstrate_bank_etl_workflow() -> Workflow:
         "core_business_processing",
         branches={
             "accounts": lambda b: b.task(
-                "update_account_balances", "etl.accounts.update_all_balances"
+                "update_account_balances", "etl.accounts.update_all_balances",
             ).task("process_overdrafts", "etl.accounts.process_overdrafts"),
             "loans": lambda b: b.task(
-                "calculate_loan_interest", "etl.loans.calculate_eod_interest"
+                "calculate_loan_interest", "etl.loans.calculate_eod_interest",
             ).task("process_loan_payments", "etl.loans.apply_scheduled_payments"),
             "credit_cards": lambda b: b.task(
                 "get_card_accounts_list",
@@ -138,10 +138,10 @@ def demonstrate_bank_etl_workflow() -> Workflow:
         "risk_and_regulatory_reporting",
         branches={
             "credit_risk": lambda b: b.task(
-                "calculate_credit_risk", "etl.risk.calculate_eod_credit_exposure"
+                "calculate_credit_risk", "etl.risk.calculate_eod_credit_exposure",
             ).task("update_risk_dashboards", "etl.risk.load_to_risk_db"),
             "market_risk": lambda b: b.task(
-                "calculate_market_risk", "etl.risk.calculate_value_at_risk"
+                "calculate_market_risk", "etl.risk.calculate_value_at_risk",
             ),
             "regulatory_aml": lambda b: b.task(
                 "get_large_transactions",
@@ -171,7 +171,7 @@ def demonstrate_bank_etl_workflow() -> Workflow:
                 ),
             ),
             "central_bank_reports": lambda b: b.task(
-                "generate_basel_report", "etl.reports.generate_basel_iii_report"
+                "generate_basel_report", "etl.reports.generate_basel_iii_report",
             ).task("generate_ccar_report", "etl.reports.generate_ccar_report"),
         },
         dependencies=["core_business_processing"],
@@ -210,7 +210,7 @@ def demonstrate_bank_etl_workflow() -> Workflow:
             "sftp_host": "sftp.partner.com",
             "db2_connection_string": "...",
             "s3_archive_bucket": "bank-prod-raw-archive-us-east-1",
-        }
+        },
     )
 
     return workflow
@@ -219,11 +219,5 @@ def demonstrate_bank_etl_workflow() -> Workflow:
 if __name__ == "__main__":
     bank_etl_workflow = demonstrate_bank_etl_workflow()
 
-    print("--- BANK ETL WORKFLOW YAML (MASSIVE) ---")
-    try:
-        print(bank_etl_workflow.to_yaml())
-        print("----------------------------------------")
-        print("\n✅ Successfully generated massive bank ETL workflow YAML.")
-        print(f"Total tasks defined: {len(bank_etl_workflow.tasks)}")
-    except Exception as e:
-        print(f"\nAn unexpected error occurred: {e}")
+    with contextlib.suppress(Exception):
+        pass
