@@ -46,9 +46,10 @@ class BaseOperator(BaseModel, ABC):
     # Phase 3: Callback hooks
     on_success_task_id: str | None = Field(None, description="Task to run on success")
     on_failure_task_id: str | None = Field(None, description="Task to run on failure")
+    # Mark if task is internal to a loop (must NOT be excluded for engine to see it)
     is_internal_loop_task: bool = Field(
-        default=False, exclude=True,
-    )  # Mark if task is internal to a loop
+        default=False, description="Task is internal to a loop body"
+    )
 
     model_config = ConfigDict(use_enum_values=True, arbitrary_types_allowed=True)
 
@@ -489,8 +490,10 @@ class WorkflowBuilder:
     ) -> "WorkflowBuilder":
         branch_builders = {}
         for name, branch_func in branches.items():
+            # Normalize branch name to lowercase for sub-workflow name validation
+            normalized_name = name.lower()
             branch_builder = branch_func(
-                WorkflowBuilder(f"{task_id}_{name}", parent=self),
+                WorkflowBuilder(f"{task_id}_{normalized_name}", parent=self),
             )
             branch_builders[name] = branch_builder
 
