@@ -180,6 +180,44 @@ class Workflow(BaseModel):
 
     @model_validator(mode="before")
     @classmethod
+    def validate_workflow_name_and_version(cls, data: Any) -> Any:
+        """Validate workflow name and version don't contain '__' (double underscore).
+
+        The double underscore is reserved as a separator for display purposes:
+        {workflow_name}__{version}__{step_name}
+
+        Workflow names must match: ^[a-z][a-z0-9_]*$ (lowercase, alphanumeric, single underscore)
+        Workflow versions must match: ^[a-zA-Z0-9._-]+$ (semver compatible)
+        """
+        import re
+
+        if isinstance(data, dict):
+            name = data.get("name", "")
+            version = data.get("version", "")
+
+            # Check for double underscore (reserved separator)
+            if "__" in name:
+                msg = f"Workflow name '{name}' cannot contain '__' (double underscore) - it's reserved as a separator"
+                raise ValueError(msg)
+
+            if "__" in version:
+                msg = f"Workflow version '{version}' cannot contain '__' (double underscore) - it's reserved as a separator"
+                raise ValueError(msg)
+
+            # Validate workflow name format
+            if name and not re.match(r"^[a-z][a-z0-9_]*$", name):
+                msg = f"Workflow name '{name}' must start with lowercase letter and contain only lowercase letters, digits, and single underscores"
+                raise ValueError(msg)
+
+            # Validate workflow version format (semver compatible)
+            if version and not re.match(r"^[a-zA-Z0-9._-]+$", version):
+                msg = f"Workflow version '{version}' must contain only alphanumeric characters, dots, hyphens, and underscores (semver compatible)"
+                raise ValueError(msg)
+
+        return data
+
+    @model_validator(mode="before")
+    @classmethod
     def validate_tasks(cls, data: Any) -> Any:
         if isinstance(data, dict) and "tasks" in data:
             validated_tasks = {}
@@ -262,6 +300,68 @@ class Workflow(BaseModel):
 
     def to_json(self) -> str:
         return self.model_dump_json(indent=2)
+
+    def to_mermaid(self) -> str:
+        """ convert to mermaid state diagram format """
+        lines = ["stateDiagram-v2"]
+        
+        all_dependencies = {dep for task in self.tasks.values() for dep in task.dependencies}
+        
+        for task_id, task in self.tasks.items():
+            # Add state with description for regular tasks
+            if task.description and not isinstance(task, (ForEachOperator, WhileOperator)):
+                lines.append(f'    state "{task.description}" as {task_id}')
+            
+            # Add dependencies
+            if not task.dependencies:
+                if self.start_task == task_id or not self.start_task:
+                    lines.append(f'    [*] --> {task_id}')
+            else:
+                for dep in task.dependencies:
+                    lines.append(f'    {dep} --> {task_id}')
+            
+            # Add transitions for conditional operator
+            if isinstance(task, ConditionOperator):
+                if task.if_true:
+                    lines.append(f'    {task_id} --> {task.if_true} : True')
+                if task.if_false:
+                    lines.append(f'    {task_id} --> {task.if_false} : False')
+
+            # Add composite state for parallel operator
+            if isinstance(task, ParallelOperator):
+                lines.append(f'    state {task_id} {{')
+                for i, branch in enumerate(task.branches):
+                    lines.append(f'        state "Branch {i+1}" as {branch}')
+                    if i < len(task.branches) - 1:
+                        lines.append('        --')
+                lines.append('    }')
+
+            # Add composite state for foreach operator
+            if isinstance(task, ForEachOperator):
+                lines.append(f'    state {task_id} {{')
+                for sub_task in task.loop_body:
+                    if sub_task.description:
+                        lines.append(f'        state "{sub_task.description}" as {sub_task.task_id}')
+                    else:
+                        lines.append(f'        {sub_task.task_id}')
+                lines.append('    }')
+
+            # Add composite state for while operator
+            if isinstance(task, WhileOperator):
+                lines.append(f'    state {task_id} {{')
+                for sub_task in task.loop_body:
+                    if sub_task.description:
+                        lines.append(f'        state "{sub_task.description}" as {sub_task.task_id}')
+                    else:
+                        lines.append(f'        {sub_task.task_id}')
+                lines.append('    }')
+
+            # End states
+            if task_id not in all_dependencies:
+                if not (isinstance(task, ConditionOperator) and (task.if_true or task.if_false)):
+                    lines.append(f'    {task_id} --> [*]')
+                
+        return "\n".join(lines)
 
     @classmethod
     def from_yaml(cls, yaml_str: str) -> "Workflow":

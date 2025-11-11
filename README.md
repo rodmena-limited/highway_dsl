@@ -279,6 +279,22 @@ This workflow demonstrates:
 - Switch/case routing based on order amount
 - Event emission for cross-workflow coordination
 
+## Mermaid Diagram Generation
+
+You can generate a Mermaid state diagram of your workflow using the `to_mermaid` method:
+
+```python
+print(workflow.to_mermaid())
+```
+
+This will output a Mermaid diagram in the `stateDiagram-v2` format, which can be used with a variety of tools to visualize your workflow.
+
+## Bank ETL Example
+
+A more complex example of a bank's end-of-day ETL process can be found in `examples/bank_end_of_the_day_etl_workflow.py`.
+
+A mermaid diagram of this workflow can be found [here](docs/bank_etl.mermaid).
+
 ## Advanced Usage
 
 ### Conditional Logic

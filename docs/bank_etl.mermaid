@@ -1,0 +1,101 @@
+stateDiagram-v2
+    [*] --> ingest_source_systems
+    state ingest_source_systems {
+        state "Branch 1" as core_banking
+        --
+        state "Branch 2" as card_transactions
+        --
+        state "Branch 3" as loan_systems
+        --
+        state "Branch 4" as payment_feeds
+    }
+    ingest_source_systems --> ingest_core_banking
+    ingest_core_banking --> [*]
+    ingest_source_systems --> ingest_card_txns
+    ingest_card_txns --> [*]
+    ingest_source_systems --> ingest_loan_systems
+    ingest_loan_systems --> [*]
+    ingest_source_systems --> ingest_payment_feeds
+    ingest_payment_feeds --> [*]
+    ingest_source_systems --> run_pre_reconciliation
+    run_pre_reconciliation --> reconciliation_loop
+    state reconciliation_loop {
+        find_discrepancies
+        apply_auto_adjustments
+        run_reconciliation_check
+    }
+    reconciliation_loop --> find_discrepancies
+    find_discrepancies --> apply_auto_adjustments
+    apply_auto_adjustments --> run_reconciliation_check
+    run_reconciliation_check --> [*]
+    reconciliation_loop --> core_business_processing
+    state core_business_processing {
+        state "Branch 1" as accounts
+        --
+        state "Branch 2" as loans
+        --
+        state "Branch 3" as credit_cards
+    }
+    core_business_processing --> update_account_balances
+    update_account_balances --> process_overdrafts
+    core_business_processing --> process_overdrafts
+    process_overdrafts --> [*]
+    core_business_processing --> calculate_loan_interest
+    calculate_loan_interest --> process_loan_payments
+    core_business_processing --> process_loan_payments
+    process_loan_payments --> [*]
+    core_business_processing --> get_card_accounts_list
+    get_card_accounts_list --> credit_card_batch_loop
+    core_business_processing --> credit_card_batch_loop
+    state credit_card_batch_loop {
+        calc_card_interest
+        apply_card_payments
+        generate_card_statement_data
+    }
+    credit_card_batch_loop --> calc_card_interest
+    calc_card_interest --> apply_card_payments
+    apply_card_payments --> generate_card_statement_data
+    generate_card_statement_data --> [*]
+    core_business_processing --> risk_and_regulatory_reporting
+    state risk_and_regulatory_reporting {
+        state "Branch 1" as credit_risk
+        --
+        state "Branch 2" as market_risk
+        --
+        state "Branch 3" as regulatory_aml
+        --
+        state "Branch 4" as central_bank_reports
+    }
+    risk_and_regulatory_reporting --> calculate_credit_risk
+    calculate_credit_risk --> update_risk_dashboards
+    risk_and_regulatory_reporting --> update_risk_dashboards
+    update_risk_dashboards --> [*]
+    risk_and_regulatory_reporting --> calculate_market_risk
+    calculate_market_risk --> [*]
+    risk_and_regulatory_reporting --> get_large_transactions
+    get_large_transactions --> aml_check_loop
+    risk_and_regulatory_reporting --> aml_check_loop
+    state aml_check_loop {
+        run_aml_check
+        check_aml_flag
+        create_suspicious_activity_report
+        mark_txn_aml_clear
+    }
+    aml_check_loop --> run_aml_check
+    run_aml_check --> check_aml_flag
+    check_aml_flag --> create_suspicious_activity_report : True
+    check_aml_flag --> mark_txn_aml_clear : False
+    check_aml_flag --> create_suspicious_activity_report
+    create_suspicious_activity_report --> [*]
+    check_aml_flag --> mark_txn_aml_clear
+    mark_txn_aml_clear --> [*]
+    risk_and_regulatory_reporting --> generate_basel_report
+    generate_basel_report --> generate_ccar_report
+    risk_and_regulatory_reporting --> generate_ccar_report
+    generate_ccar_report --> [*]
+    risk_and_regulatory_reporting --> load_to_data_warehouse
+    load_to_data_warehouse --> generate_management_dashboards
+    generate_management_dashboards --> [*]
+    load_to_data_warehouse --> wait_for_archive_window
+    wait_for_archive_window --> archive_raw_data
+    archive_raw_data --> [*]
