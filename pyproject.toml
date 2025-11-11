@@ -10,7 +10,7 @@ authors = [
 ]
 description = "A stable domain specific language (DSL) for defining and managing data processing pipelines and workflow engines."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 classifiers = [
     "Programming Language :: Python :: 3",
