@@ -407,7 +407,23 @@ class WorkflowBuilder:
         **kwargs: Any,
     ) -> None:
         dependencies = kwargs.get("dependencies", [])
-        if self._current_task and not dependencies:
+        
+        # Check if this task is intended to be a handler for another task
+        # This can be determined by looking at whether any existing tasks 
+        # reference this task as their on_failure_task_id or on_success_task_id
+        is_handler_task = False
+        for other_task in self.workflow.tasks.values():
+            # Check if any existing task has this task as its handler
+            if (hasattr(other_task, 'on_failure_task_id') and other_task.on_failure_task_id == task.task_id) or \
+               (hasattr(other_task, 'on_success_task_id') and other_task.on_success_task_id == task.task_id):
+                is_handler_task = True
+                break
+        
+        # Only add the current task as dependency if:
+        # 1. There IS a current task (not the first task)
+        # 2. No explicit dependencies were provided
+        # 3. This is NOT a handler task
+        if self._current_task and not dependencies and not is_handler_task:
             dependencies.append(self._current_task)
 
         task.dependencies = sorted(set(dependencies))

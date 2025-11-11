@@ -159,7 +159,11 @@ def create_event_waiting_workflow() -> Workflow:
         description="Wait for upstream pipeline to complete",
     )
 
-    # Process after event received
+    # Set up failure callback for the wait_for_upstream task
+    # This must be called immediately after creating the task that needs the handler
+    builder.on_failure("handle_timeout")
+
+    # Process after event received (only runs if wait_for_event succeeds)
     builder.task(
         "process_event",
         "workflow.process_event",
@@ -167,15 +171,14 @@ def create_event_waiting_workflow() -> Workflow:
         description="Process the received event",
     )
 
-    # Failure handler for timeout
+    # Failure handler for timeout - this task should NOT depend on previous tasks
+    # It's a handler that runs when wait_for_upstream fails
     builder.task(
         "handle_timeout",
         "errors.handle_timeout",
         args=["Upstream pipeline timed out"],
         description="Handle event timeout",
     )
-
-    builder.on_failure("handle_timeout")
 
     return builder.build()
 

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "highway_dsl"
-version = "1.2.0"
+version = "1.2.1"
 authors = [
   { name = "Farseed Ashouri", email = "farseed.ashouri@gmail.com" },
 ]
