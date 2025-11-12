@@ -2,6 +2,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import yaml
+
 from highway_dsl import (
     RetryPolicy,
     Workflow,
@@ -19,7 +20,8 @@ def demonstrate_while_loop():
         "qa_rework_loop",
         condition="{{qa_results.status}} == 'failed'",
         loop_body=lambda b: b.task(
-            "perform_rework", "workflows.tasks.perform_rework",
+            "perform_rework",
+            "workflows.tasks.perform_rework",
         ).task("re_run_qa", "workflows.tasks.run_qa", result_key="qa_results"),
     )
 
@@ -57,7 +59,9 @@ def create_complex_workflow() -> Workflow:
             "workflows.tasks.advanced_processing",
             args=["{{validated_data}}"],
             retry_policy=RetryPolicy(
-                max_retries=5, delay=timedelta(seconds=10), backoff_factor=2.0,
+                max_retries=5,
+                delay=timedelta(seconds=10),
+                backoff_factor=2.0,
             ),
         ),
         if_false=lambda b: b.task(
@@ -71,7 +75,9 @@ def create_complex_workflow() -> Workflow:
         "parallel_processing",
         branches={
             "branch_a": lambda b: b.task(
-                "transform_a", "workflows.tasks.transform_a", result_key="transformed_a",
+                "transform_a",
+                "workflows.tasks.transform_a",
+                result_key="transformed_a",
             ).task(
                 "enrich_a",
                 "workflows.tasks.enrich_data",
@@ -79,7 +85,9 @@ def create_complex_workflow() -> Workflow:
                 result_key="enriched_a",
             ),
             "branch_b": lambda b: b.task(
-                "transform_b", "workflows.tasks.transform_b", result_key="transformed_b",
+                "transform_b",
+                "workflows.tasks.transform_b",
+                result_key="transformed_b",
             ).task(
                 "enrich_b",
                 "workflows.tasks.enrich_data",
@@ -98,7 +106,9 @@ def create_complex_workflow() -> Workflow:
     )
     builder.wait("wait_notification", timedelta(hours=1))
     builder.task(
-        "notify", "workflows.tasks.send_notification", args=["{{final_result}}"],
+        "notify",
+        "workflows.tasks.send_notification",
+        args=["{{final_result}}"],
     )
 
     workflow = builder.build()
@@ -189,8 +199,7 @@ def extract_yaml_content(content):
         if "Successfully generated" in line:
             yaml_end = i
             while yaml_end > yaml_start and (
-                lines[yaml_end - 1].strip() == ""
-                or lines[yaml_end - 1].strip().startswith("---")
+                lines[yaml_end - 1].strip() == "" or lines[yaml_end - 1].strip().startswith("---")
             ):
                 yaml_end -= 1
             break

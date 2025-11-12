@@ -2,6 +2,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import yaml
+
 from highway_dsl import (
     ConditionOperator,
     ForEachOperator,
@@ -259,10 +260,7 @@ def test_complex_agentic_workflow():
     assert generated_data["tasks"]["get_pending_tasks"]["operator_type"] == "task"
     assert generated_data["tasks"]["process_all_tasks"]["operator_type"] == "foreach"
     assert generated_data["tasks"]["route_by_review"]["operator_type"] == "condition"
-    assert (
-        generated_data["tasks"]["human_review_branch_start"]["operator_type"]
-        == "parallel"
-    )
+    assert generated_data["tasks"]["human_review_branch_start"]["operator_type"] == "parallel"
 
     # Validate the generated YAML matches expected (ignoring the header)
     assert generated_data["name"] == expected_data["name"]

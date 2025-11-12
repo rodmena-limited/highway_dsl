@@ -7,6 +7,52 @@
 
 **Highway DSL** is a Python-based domain-specific language for defining complex workflows in a clear, concise, and fluent manner. It is part of the larger **Highway** project, an advanced workflow engine capable of running complex DAG-based workflows.
 
+## Version 1.3.0 - Critical Fixes & Enhancements
+
+This release includes critical bug fixes, validation improvements, and developer experience enhancements:
+
+### New Features & Fixes
+
+#### 1. **Universal Result Storage**
+All operators can now store results in workflow context (not just TaskOperator):
+```python
+# Now works for all operator types
+builder.wait("sleep_5s", wait_for=Duration.seconds(5), result_key="sleep_result")
+builder.emit_event("notify", event_name="done", result_key="emit_result")
+builder.wait_for_event("wait", event_name="start", result_key="event_data")
+```
+
+#### 2. **Callback Validation**
+Prevents runtime errors from typos in callback references:
+```python
+builder.task("main", "func").on_success("handler_task")
+workflow = builder.build()  # Now validates "handler_task" exists!
+```
+
+#### 3. **Duration Helper Class**
+Simplified time duration creation without datetime imports:
+```python
+from highway_dsl import Duration
+
+builder.wait("pause", wait_for=Duration.minutes(30))
+builder.retry(delay=Duration.seconds(5))
+builder.timeout(timeout=Duration.hours(1))
+```
+
+#### 4. **Workflow Metadata**
+Set workflow description and version programmatically:
+```python
+builder = WorkflowBuilder("my_workflow", version="2.0.0")
+builder.set_description("Production ETL pipeline")
+builder.set_version("2.1.0")  # Update version later
+```
+
+### Breaking Changes
+- Default workflow version changed from "1.1.0" to "1.3.0"
+- WaitOperator now serializes durations as ISO 8601 format (`PT<seconds>S`) instead of `duration:<seconds>`
+
+---
+
 ## Version 1.1.0 - Feature Release
 
 This major feature release adds **Airflow-parity** features to enable production-grade workflows:
@@ -107,7 +153,7 @@ Access the specification at `/dsl/spec.txt` in the repository.
 
 ```mermaid
 graph TB
-    subgraph "Highway DSL v1.1.0 Features"
+    subgraph "Highway DSL v1.3.0 Features"
         A[WorkflowBuilder<br/>Fluent API] --> B[Core Operators]
         A --> C[Scheduling]
         A --> D[Events]
@@ -403,7 +449,19 @@ builder.task(
 
 ## Version History
 
-### Version 1.1.0 - Feature Release (Current)
+### Version 1.3.0 - Critical Fixes & Enhancements (Current)
+
+**Critical Fixes:**
+- Universal result_key support for all operators
+- Callback validation in build() prevents typos
+- ISO 8601 duration format for WaitOperator
+
+**Developer Experience:**
+- Duration helper class for time durations
+- Workflow metadata setters (description, version)
+- Improved error messages
+
+### Version 1.1.0 - Feature Release
 
 **Airflow-Parity Features:**
 - Scheduling metadata (cron, start_date, catchup, tags, max_active_runs)

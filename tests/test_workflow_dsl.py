@@ -2,6 +2,7 @@ import json
 from datetime import datetime, timedelta
 
 import pytest
+
 from highway_dsl import (
     ConditionOperator,
     ForEachOperator,
@@ -42,7 +43,9 @@ def sort_dict_recursively(d):
 
 def test_workflow_creation():
     workflow = Workflow(
-        name="test_workflow", version="1.0.0", description="A test workflow",
+        name="test_workflow",
+        version="1.0.0",
+        description="A test workflow",
     )
     assert workflow.name == "test_workflow"
     assert workflow.version == "1.0.0"
@@ -178,16 +181,16 @@ def test_while_operator_model():
 
 
 def test_wait_operator_serialization():
-    # Test with timedelta
+    # Test with timedelta - now uses ISO 8601 duration format (PT<seconds>S)
     wait_duration = WaitOperator(task_id="wait1", wait_for=timedelta(hours=1))
     dump = wait_duration.model_dump()
-    assert dump["wait_for"] == "duration:3600.0"
+    assert dump["wait_for"] == "PT3600.0S"  # ISO 8601 duration format
 
-    # Test with datetime
+    # Test with datetime - uses ISO 8601 datetime format
     now = datetime.now().replace(microsecond=0)
     wait_datetime = WaitOperator(task_id="wait2", wait_for=now)
     dump = wait_datetime.model_dump()
-    assert dump["wait_for"] == f"datetime:{now.isoformat()}"
+    assert dump["wait_for"] == now.isoformat()  # ISO 8601 datetime format
 
     # Test with string (no conversion)
     wait_string = WaitOperator(task_id="wait3", wait_for="event_name")
@@ -205,10 +208,7 @@ def test_wait_operator_serialization():
         ).wait_for
         == now
     )
-    assert (
-        WaitOperator.model_validate({"task_id": "t", "wait_for": "event"}).wait_for
-        == "event"
-    )
+    assert WaitOperator.model_validate({"task_id": "t", "wait_for": "event"}).wait_for == "event"
 
 
 def test_workflow_builder_simple_chain():
@@ -368,7 +368,9 @@ def test_complex_workflow_creation_and_serialization():
         "parallel_processing",
         branches={
             "branch_a": lambda b: b.task(
-                "transform_a", "workflows.tasks.transform_a", result_key="transformed_a",
+                "transform_a",
+                "workflows.tasks.transform_a",
+                result_key="transformed_a",
             ).task(
                 "enrich_a",
                 "workflows.tasks.enrich_data",
@@ -376,7 +378,9 @@ def test_complex_workflow_creation_and_serialization():
                 result_key="enriched_a",
             ),
             "branch_b": lambda b: b.task(
-                "transform_b", "workflows.tasks.transform_b", result_key="transformed_b",
+                "transform_b",
+                "workflows.tasks.transform_b",
+                result_key="transformed_b",
             ).task(
                 "enrich_b",
                 "workflows.tasks.enrich_data",
@@ -395,7 +399,9 @@ def test_complex_workflow_creation_and_serialization():
     )
     builder.wait("wait_notification", timedelta(hours=1))
     builder.task(
-        "notify", "workflows.tasks.send_notification", args=["{{final_result}}"],
+        "notify",
+        "workflows.tasks.send_notification",
+        args=["{{final_result}}"],
     )
 
     workflow = builder.build()

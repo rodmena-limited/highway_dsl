@@ -1,5 +1,6 @@
 from .workflow_dsl import (
     ConditionOperator,
+    Duration,
     EmitEventOperator,
     ForEachOperator,
     OperatorType,
@@ -15,20 +16,22 @@ from .workflow_dsl import (
     WorkflowBuilder,
 )
 
+
 __all__ = [
+    "BaseOperator",
+    "ConditionOperator",
+    "Duration",
+    "EmitEventOperator",
+    "ForEachOperator",
+    "OperatorType",
+    "ParallelOperator",
+    "RetryPolicy",
+    "SwitchOperator",
+    "TaskOperator",
+    "TimeoutPolicy",
+    "WaitForEventOperator",
+    "WaitOperator",
+    "WhileOperator",
     "Workflow",
     "WorkflowBuilder",
-    "BaseOperator",
-    "TaskOperator",
-    "ConditionOperator",
-    "ParallelOperator",
-    "WaitOperator",
-    "ForEachOperator",
-    "WhileOperator",
-    "EmitEventOperator",
-    "WaitForEventOperator",
-    "SwitchOperator",
-    "RetryPolicy",
-    "TimeoutPolicy",
-    "OperatorType",
 ]

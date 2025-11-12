@@ -2,6 +2,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import yaml
+
 from highway_dsl import (
     RetryPolicy,
     TimeoutPolicy,
@@ -199,8 +200,7 @@ def extract_yaml_content(content):
             while yaml_end > yaml_start and (
                 lines[yaml_end - 1].strip() == ""
                 or lines[yaml_end - 1].strip().startswith("---")
-                or lines[yaml_end - 1].strip()
-                == "---------------------------------------------"
+                or lines[yaml_end - 1].strip() == "---------------------------------------------"
             ):
                 yaml_end -= 1
             break
@@ -217,9 +217,7 @@ def test_car_factory_workflow_with_fluent_builder():
     generated_data = yaml.safe_load(generated_yaml)
 
     # Load expected output
-    expected_file = (
-        Path(__file__).parent / "data" / "car_factory_workflow_with_fluent_builder.yaml"
-    )
+    expected_file = Path(__file__).parent / "data" / "car_factory_workflow_with_fluent_builder.yaml"
     with open(expected_file) as f:
         content = f.read()
         expected_content = extract_yaml_content(content)
@@ -237,9 +235,7 @@ def test_car_factory_workflow_with_fluent_builder():
     assert "mark_vehicle_complete" in generated_data["tasks"]
     assert generated_data["tasks"]["get_build_manifest"]["operator_type"] == "task"
     assert generated_data["tasks"]["build_vehicle_loop"]["operator_type"] == "foreach"
-    assert (
-        generated_data["tasks"]["route_by_drivetrain"]["operator_type"] == "condition"
-    )
+    assert generated_data["tasks"]["route_by_drivetrain"]["operator_type"] == "condition"
 
     # Validate the generated YAML matches expected (ignoring the header)
     assert generated_data["name"] == expected_data["name"]

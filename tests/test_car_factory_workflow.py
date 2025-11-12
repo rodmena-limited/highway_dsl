@@ -2,6 +2,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import yaml
+
 from highway_dsl import (
     ConditionOperator,
     ForEachOperator,
@@ -305,8 +306,7 @@ def extract_yaml_content(content):
             while yaml_end > yaml_start and (
                 lines[yaml_end - 1].strip() == ""
                 or lines[yaml_end - 1].strip().startswith("---")
-                or lines[yaml_end - 1].strip()
-                == "---------------------------------------------"
+                or lines[yaml_end - 1].strip() == "---------------------------------------------"
             ):
                 yaml_end -= 1
             break
