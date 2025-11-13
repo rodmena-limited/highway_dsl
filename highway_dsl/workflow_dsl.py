@@ -89,6 +89,10 @@ class BaseOperator(BaseModel, ABC):
     is_internal_loop_task: bool = Field(
         default=False, description="Task is internal to a loop body"
     )
+    # PHASE 2.1: Mark if task is internal to a parallel branch
+    is_internal_parallel_task: bool = Field(
+        default=False, description="Task is internal to a parallel branch"
+    )
 
     model_config = ConfigDict(use_enum_values=True, arbitrary_types_allowed=True)
 
@@ -379,7 +383,9 @@ class Workflow(BaseModel):
     def to_json(self) -> str:
         return self.model_dump_json(indent=2)
 
-    def to_mermaid(self) -> str:  # noqa: PLR0912 - Complex diagram generation requires many branches
+    def to_mermaid(
+        self,
+    ) -> str:
         """convert to mermaid state diagram format"""
         lines = ["stateDiagram-v2"]
 
@@ -439,7 +445,9 @@ class Workflow(BaseModel):
                 lines.append("    }")
 
             # End states
-            if task_id not in all_dependencies and not (isinstance(task, ConditionOperator) and (task.if_true or task.if_false)):
+            if task_id not in all_dependencies and not (
+                isinstance(task, ConditionOperator) and (task.if_true or task.if_false)
+            ):
                 lines.append(f"    {task_id} --> [*]")
 
         return "\n".join(lines)

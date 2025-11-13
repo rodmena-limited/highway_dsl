@@ -6,7 +6,7 @@ Example workflow demonstrating Highway DSL v1.1.0 features:
 - Switch operator (Phase 4)
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from highway_dsl import RetryPolicy, Workflow, WorkflowBuilder
 
@@ -26,7 +26,7 @@ def create_scheduled_event_workflow() -> Workflow:
     builder = (
         WorkflowBuilder("scheduled_event_demo")
         .set_schedule("0 2 * * *")  # Run daily at 2 AM
-        .set_start_date(datetime(2025, 1, 1, tzinfo=None))  # noqa: DTZ001 - Example workflow, timezone not required
+        .set_start_date(datetime(2025, 1, 1, tzinfo=timezone.utc))
         .set_catchup(False)
         .add_tags("demo", "events", "scheduled")
         .set_max_active_runs(1)
