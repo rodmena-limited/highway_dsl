@@ -57,10 +57,20 @@ class OperatorType(Enum):
     WHILE = "while"
     EMIT_EVENT = "emit_event"
     WAIT_FOR_EVENT = "wait_for_event"
+    JOIN = "join"
+
+
+class JoinMode(Enum):
+    """Join operator coordination modes (Temporal-style)."""
+    ALL_OF = "all_of"  # Wait for all branches to complete (success or failure)
+    ANY_OF = "any_of"  # Wait for any branch to complete
+    ALL_SUCCESS = "all_success"  # Wait for all branches to succeed (fail if any fails)
+    ONE_SUCCESS = "one_success"  # Wait for at least one branch to succeed
 
 
 class TriggerRule(Enum):
-    """Dependency trigger rules (Airflow-style smart joins)."""
+    """Dependency trigger rules (Airflow-style smart joins) - DEPRECATED: Use JoinOperator."""
+
     ALL_SUCCESS = "all_success"  # All dependencies must succeed (default)
     ALL_DONE = "all_done"  # All dependencies reached final state (success or failure)
     ONE_SUCCESS = "one_success"  # At least one dependency succeeded
@@ -86,10 +96,14 @@ class BaseOperator(BaseModel, ABC):
     task_id: str
     operator_type: OperatorType
     dependencies: list[str] = Field(default_factory=list)
-    trigger_rule: TriggerRule = Field(TriggerRule.ALL_SUCCESS, description="Dependency trigger rule for smart joins")
+    trigger_rule: TriggerRule = Field(
+        TriggerRule.ALL_SUCCESS, description="Dependency trigger rule for smart joins"
+    )
     retry_policy: RetryPolicy | None = None
     timeout_policy: TimeoutPolicy | None = None
-    idempotency_key: str | None = Field(None, description="Key for idempotent execution (prevents duplicate runs)")
+    idempotency_key: str | None = Field(
+        None, description="Key for idempotent execution (prevents duplicate runs)"
+    )
     metadata: dict[str, Any] = Field(default_factory=dict)
     description: str = Field(default="", description="Task description")
     result_key: str | None = Field(None, description="Key to store result in context")
@@ -183,7 +197,9 @@ class ForEachOperator(BaseOperator):
             "SwitchOperator",
         ]
     ] = Field(default_factory=list)
-    parallel: bool = Field(default=False, description="Execute iterations in parallel (dynamic task mapping)")
+    parallel: bool = Field(
+        default=False, description="Execute iterations in parallel (dynamic task mapping)"
+    )
     operator_type: OperatorType = Field(OperatorType.FOREACH, frozen=True)
 
 
@@ -221,6 +237,20 @@ class WaitForEventOperator(BaseOperator):
         None, description="Timeout in seconds (None = wait forever)"
     )
     operator_type: OperatorType = Field(OperatorType.WAIT_FOR_EVENT, frozen=True)
+
+
+class JoinOperator(BaseOperator):
+    """Temporal-style join operator for coordinating parallel branches.
+
+    Waits for multiple tasks/branches to complete based on join_mode.
+    Replaces brittle dependency-based joins with explicit coordination.
+    """
+
+    join_tasks: list[str] = Field(..., description="List of task IDs to wait for")
+    join_mode: JoinMode = Field(
+        JoinMode.ALL_OF, description="Coordination mode (all_of, any_of, etc.)"
+    )
+    operator_type: OperatorType = Field(OperatorType.JOIN, frozen=True)
 
 
 class SwitchOperator(BaseOperator):
