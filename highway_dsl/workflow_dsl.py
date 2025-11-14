@@ -278,7 +278,8 @@ class Workflow(BaseModel):
         | WhileOperator
         | EmitEventOperator
         | WaitForEventOperator
-        | SwitchOperator,
+        | SwitchOperator
+        | JoinOperator,
     ] = Field(default_factory=dict)
     variables: dict[str, Any] = Field(default_factory=dict)
     start_task: str | None = None
@@ -345,6 +346,7 @@ class Workflow(BaseModel):
                 OperatorType.EMIT_EVENT.value: EmitEventOperator,
                 OperatorType.WAIT_FOR_EVENT.value: WaitForEventOperator,
                 OperatorType.SWITCH.value: SwitchOperator,
+                OperatorType.JOIN.value: JoinOperator,
             }
             for task_id, task_data in data["tasks"].items():
                 operator_type = task_data.get("operator_type")
@@ -579,7 +581,31 @@ class WorkflowBuilder:
         self._current_task = task.task_id
 
     def task(self, task_id: str, function: str, **kwargs: Any) -> "WorkflowBuilder":
-        task = TaskOperator(task_id=task_id, function=function, **kwargs)
+        # Extract args and kwargs if provided, otherwise treat remaining kwargs as task params
+        args = kwargs.pop("args", [])
+        task_kwargs = kwargs.pop("kwargs", {})
+
+        # Operator configuration fields
+        operator_fields = {
+            "dependencies", "retry_policy", "timeout_policy", "idempotency_key",
+            "metadata", "description", "result_key", "on_success_task_id",
+            "on_failure_task_id", "trigger_rule"
+        }
+
+        # Separate operator config from task params
+        operator_config = {k: v for k, v in kwargs.items() if k in operator_fields}
+        task_params = {k: v for k, v in kwargs.items() if k not in operator_fields}
+
+        # Merge task params into kwargs (task execution parameters)
+        task_kwargs.update(task_params)
+
+        task = TaskOperator(
+            task_id=task_id,
+            function=function,
+            args=args,
+            kwargs=task_kwargs,
+            **operator_config
+        )
         self._add_task(task, **kwargs)
         return self
 

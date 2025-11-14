@@ -7,7 +7,7 @@ packages = ["highway_dsl"]
 
 [project]
 name = "highway_dsl"
-version = "1.7.0"
+version = "1.8.0"
 authors = [
   { name = "Farseed Ashouri", email = "farseed.ashouri@gmail.com" },
 ]
