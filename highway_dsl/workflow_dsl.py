@@ -62,6 +62,7 @@ class OperatorType(Enum):
 
 class JoinMode(Enum):
     """Join operator coordination modes (Temporal-style)."""
+
     ALL_OF = "all_of"  # Wait for all branches to complete (success or failure)
     ANY_OF = "any_of"  # Wait for any branch to complete
     ALL_SUCCESS = "all_success"  # Wait for all branches to succeed (fail if any fails)
@@ -587,9 +588,16 @@ class WorkflowBuilder:
 
         # Operator configuration fields
         operator_fields = {
-            "dependencies", "retry_policy", "timeout_policy", "idempotency_key",
-            "metadata", "description", "result_key", "on_success_task_id",
-            "on_failure_task_id", "trigger_rule"
+            "dependencies",
+            "retry_policy",
+            "timeout_policy",
+            "idempotency_key",
+            "metadata",
+            "description",
+            "result_key",
+            "on_success_task_id",
+            "on_failure_task_id",
+            "trigger_rule",
         }
 
         # Separate operator config from task params
@@ -600,11 +608,7 @@ class WorkflowBuilder:
         task_kwargs.update(task_params)
 
         task = TaskOperator(
-            task_id=task_id,
-            function=function,
-            args=args,
-            kwargs=task_kwargs,
-            **operator_config
+            task_id=task_id, function=function, args=args, kwargs=task_kwargs, **operator_config
         )
         self._add_task(task, **kwargs)
         return self
@@ -825,9 +829,7 @@ class WorkflowBuilder:
         Returns:
             WorkflowBuilder for chaining
         """
-        task = JoinOperator(
-            task_id=task_id, join_tasks=join_tasks, join_mode=join_mode, **kwargs
-        )
+        task = JoinOperator(task_id=task_id, join_tasks=join_tasks, join_mode=join_mode, **kwargs)
         self._add_task(task, **kwargs)
         return self
 
