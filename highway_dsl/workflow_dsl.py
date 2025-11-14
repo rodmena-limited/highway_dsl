@@ -59,6 +59,15 @@ class OperatorType(Enum):
     WAIT_FOR_EVENT = "wait_for_event"
 
 
+class TriggerRule(Enum):
+    """Dependency trigger rules (Airflow-style smart joins)."""
+    ALL_SUCCESS = "all_success"  # All dependencies must succeed (default)
+    ALL_DONE = "all_done"  # All dependencies reached final state (success or failure)
+    ONE_SUCCESS = "one_success"  # At least one dependency succeeded
+    ONE_DONE = "one_done"  # At least one dependency reached final state
+    NONE_FAILED = "none_failed"  # No dependencies failed (success or skipped)
+
+
 class RetryPolicy(BaseModel):
     max_retries: int = Field(3, description="Maximum number of retries")
     delay: timedelta = Field(timedelta(seconds=5), description="Delay between retries")
@@ -77,8 +86,10 @@ class BaseOperator(BaseModel, ABC):
     task_id: str
     operator_type: OperatorType
     dependencies: list[str] = Field(default_factory=list)
+    trigger_rule: TriggerRule = Field(TriggerRule.ALL_SUCCESS, description="Dependency trigger rule for smart joins")
     retry_policy: RetryPolicy | None = None
     timeout_policy: TimeoutPolicy | None = None
+    idempotency_key: str | None = Field(None, description="Key for idempotent execution (prevents duplicate runs)")
     metadata: dict[str, Any] = Field(default_factory=dict)
     description: str = Field(default="", description="Task description")
     result_key: str | None = Field(None, description="Key to store result in context")
@@ -172,6 +183,7 @@ class ForEachOperator(BaseOperator):
             "SwitchOperator",
         ]
     ] = Field(default_factory=list)
+    parallel: bool = Field(default=False, description="Execute iterations in parallel (dynamic task mapping)")
     operator_type: OperatorType = Field(OperatorType.FOREACH, frozen=True)
 
 
