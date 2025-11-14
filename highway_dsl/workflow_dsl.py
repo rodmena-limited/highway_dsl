@@ -785,6 +785,26 @@ class WorkflowBuilder:
         self._add_task(task, **kwargs)
         return self
 
+    def join(
+        self, task_id: str, join_tasks: list[str], join_mode: JoinMode, **kwargs: Any
+    ) -> "WorkflowBuilder":
+        """Create a JoinOperator to coordinate multiple branches.
+
+        Args:
+            task_id: Unique task identifier
+            join_tasks: List of task IDs to wait for
+            join_mode: JoinMode (ALL_OF, ANY_OF, ALL_SUCCESS, ONE_SUCCESS)
+            **kwargs: Additional arguments (dependencies, etc.)
+
+        Returns:
+            WorkflowBuilder for chaining
+        """
+        task = JoinOperator(
+            task_id=task_id, join_tasks=join_tasks, join_mode=join_mode, **kwargs
+        )
+        self._add_task(task, **kwargs)
+        return self
+
     def wait_for_event(
         self,
         task_id: str,
