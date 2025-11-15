@@ -1,4 +1,5 @@
 from .workflow_dsl import (
+    ActivityOperator,
     BaseOperator,
     ConditionOperator,
     Duration,
@@ -22,6 +23,7 @@ from .workflow_dsl import (
 
 
 __all__ = [
+    "ActivityOperator",
     "BaseOperator",
     "ConditionOperator",
     "Duration",

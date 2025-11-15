@@ -58,6 +58,7 @@ class OperatorType(Enum):
     EMIT_EVENT = "emit_event"
     WAIT_FOR_EVENT = "wait_for_event"
     JOIN = "join"
+    ACTIVITY = "activity"
 
 
 class JoinMode(Enum):
@@ -128,6 +129,14 @@ class TaskOperator(BaseOperator):
     args: list[Any] = Field(default_factory=list)
     kwargs: dict[str, Any] = Field(default_factory=dict)
     operator_type: OperatorType = Field(OperatorType.TASK, frozen=True)
+
+
+class ActivityOperator(BaseOperator):
+    """Long-running activity that executes outside workflow transaction."""
+    function: str = Field(..., description="Function to execute")
+    args: list[Any] = Field(default_factory=list)
+    kwargs: dict[str, Any] = Field(default_factory=dict)
+    operator_type: OperatorType = Field(OperatorType.ACTIVITY, frozen=True)
 
 
 class ConditionOperator(BaseOperator):
@@ -274,6 +283,7 @@ class Workflow(BaseModel):
     tasks: dict[
         str,
         TaskOperator
+        | ActivityOperator
         | ConditionOperator
         | WaitOperator
         | ParallelOperator
@@ -543,6 +553,7 @@ class WorkflowBuilder:
         self,
         task: (
             TaskOperator
+            | ActivityOperator
             | ConditionOperator
             | WaitOperator
             | ParallelOperator
@@ -612,6 +623,39 @@ class WorkflowBuilder:
         task_kwargs.update(task_params)
 
         task = TaskOperator(
+            task_id=task_id, function=function, args=args, kwargs=task_kwargs, **operator_config
+        )
+        self._add_task(task, **kwargs)
+        return self
+
+    def activity(self, task_id: str, function: str, **kwargs: Any) -> "WorkflowBuilder":
+        """Add a long-running activity task that executes outside workflow transaction."""
+        # Extract args and kwargs if provided
+        args = kwargs.pop("args", [])
+        task_kwargs = kwargs.pop("kwargs", {})
+
+        # Operator configuration fields
+        operator_fields = {
+            "dependencies",
+            "retry_policy",
+            "timeout_policy",
+            "idempotency_key",
+            "metadata",
+            "description",
+            "result_key",
+            "on_success_task_id",
+            "on_failure_task_id",
+            "trigger_rule",
+        }
+
+        # Separate operator config from task params
+        operator_config = {k: v for k, v in kwargs.items() if k in operator_fields}
+        task_params = {k: v for k, v in kwargs.items() if k not in operator_fields}
+
+        # Merge task params into kwargs (task execution parameters)
+        task_kwargs.update(task_params)
+
+        task = ActivityOperator(
             task_id=task_id, function=function, args=args, kwargs=task_kwargs, **operator_config
         )
         self._add_task(task, **kwargs)
