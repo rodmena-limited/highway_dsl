@@ -197,6 +197,7 @@ class ForEachOperator(BaseOperator):
     loop_body: list[
         Union[
             TaskOperator,
+            "ActivityOperator",
             ConditionOperator,
             WaitOperator,
             ParallelOperator,
@@ -219,6 +220,7 @@ class WhileOperator(BaseOperator):
     loop_body: list[
         Union[
             TaskOperator,
+            ActivityOperator,
             ConditionOperator,
             WaitOperator,
             ParallelOperator,
@@ -376,6 +378,7 @@ class Workflow(BaseModel):
         self,
         task: (
             TaskOperator
+            | ActivityOperator
             | ConditionOperator
             | WaitOperator
             | ParallelOperator
