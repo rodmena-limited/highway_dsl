@@ -435,7 +435,7 @@ tasks:
 variables:
   erp_api_key: secret_abc_123
   mes_endpoint: http://10.0.0.5/api
-version: 1.3.0
+version: 2.0.0
 
 -----------------------------------------------------
 

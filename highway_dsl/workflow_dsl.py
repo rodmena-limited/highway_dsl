@@ -267,7 +267,7 @@ class SwitchOperator(BaseOperator):
 
 class Workflow(BaseModel):
     name: str
-    version: str = "1.1.0"
+    version: str = "2.0.0"
     description: str = ""
     tasks: dict[
         str,
@@ -511,7 +511,7 @@ class WorkflowBuilder:
     def __init__(
         self,
         name: str,
-        version: str = "1.3.0",
+        version: str = "2.0.0",
         existing_workflow: Workflow | None = None,
         parent: Optional["WorkflowBuilder"] = None,
     ) -> None:

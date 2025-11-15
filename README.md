@@ -2,18 +2,51 @@
 
 [![PyPI version](https://badge.fury.io/py/highway-dsl.svg)](https://badge.fury.io/py/highway-dsl)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Stable](https://img.shields.io/badge/Status-Stable-brightgreen)](https://pypi.org/project/highway-dsl/)
+[![LTS Stable](https://img.shields.io/badge/Status-LTS%20Stable-blue)](https://pypi.org/project/highway-dsl/)
+[![Version](https://img.shields.io/badge/Version-2.0.0-green)](https://github.com/rodmena-limited/highway_dsl)
 [![Publish to PyPI](https://github.com/rodmena-limited/highway_dsl/actions/workflows/publish.yml/badge.svg)](https://github.com/rodmena-limited/highway_dsl/actions/workflows/publish.yml)
 
-**Highway DSL** is a Python-based domain-specific language for defining complex workflows in a clear, concise, and fluent manner. It is part of the larger **Highway** project, an advanced workflow engine capable of running complex DAG-based workflows.
+**Highway DSL** is a Python-based domain-specific language for defining production-grade workflows with Temporal-style coordination patterns. It is part of the larger **Highway** project, an advanced workflow engine capable of running complex DAG-based workflows with durability guarantees.
 
-## Version 1.3.0 - Critical Fixes & Enhancements
+> **🎯 LTS Stable Release**: Version 2.0.0 is a Long-Term Support release. No breaking changes will be introduced in the 2.x series, making it safe for production deployments. All future 2.x releases will maintain backward compatibility.
 
-This release includes critical bug fixes, validation improvements, and developer experience enhancements:
+## Version 2.0.0 - LTS Stable Release
+
+This is a **Long-Term Support (LTS)** release consolidating all features from the 1.x series into a stable, production-ready API:
 
 ### New Features & Fixes
 
-#### 1. **Universal Result Storage**
+#### 1. **JoinOperator for Explicit Coordination** (Temporal-Style)
+Replaces brittle TriggerRule-based joins with explicit coordination semantics:
+```python
+from highway_dsl import WorkflowBuilder, JoinMode
+
+builder = WorkflowBuilder("data_pipeline")
+builder.task("start", "setup.init")
+
+# Create parallel branches
+builder.task("branch_a", "process.a", dependencies=["start"])
+builder.task("branch_b", "process.b", dependencies=["start"])
+builder.task("branch_c", "process.c", dependencies=["start"])
+
+# Explicit join - wait for all branches to succeed
+builder.join(
+    task_id="sync_gate",
+    join_tasks=["branch_a", "branch_b", "branch_c"],
+    join_mode=JoinMode.ALL_SUCCESS,  # Fail fast if any branch fails
+    description="Wait for all extractions"
+)
+
+builder.task("finalize", "process.merge", dependencies=["sync_gate"])
+```
+
+**Join Modes:**
+- `JoinMode.ALL_OF` - Wait for all tasks to finish (any final state)
+- `JoinMode.ANY_OF` - Complete when first task finishes (race condition)
+- `JoinMode.ALL_SUCCESS` - Wait for all tasks to succeed (fail fast)
+- `JoinMode.ONE_SUCCESS` - Complete when one task succeeds (fallback pattern)
+
+#### 2. **Universal Result Storage**
 All operators can now store results in workflow context (not just TaskOperator):
 ```python
 # Now works for all operator types
@@ -153,7 +186,7 @@ Access the specification at `/dsl/spec.txt` in the repository.
 
 ```mermaid
 graph TB
-    subgraph "Highway DSL v1.3.0 Features"
+    subgraph "Highway DSL v2.0.0 (LTS Stable)"
         A[WorkflowBuilder<br/>Fluent API] --> B[Core Operators]
         A --> C[Scheduling]
         A --> D[Events]
@@ -166,6 +199,7 @@ graph TB
         B --> B5[While]
         B --> B6[Wait]
         B --> B7[Switch]
+        B --> B8[Join]
 
         C --> C1[Cron Schedules]
         C --> C2[Start Date]
@@ -224,6 +258,7 @@ graph TB
     *   **NEW in v1.1:** `EmitEvent` - Emit events for cross-workflow coordination
     *   **NEW in v1.1:** `WaitForEvent` - Wait for external events with timeout
     *   **NEW in v1.1:** `Switch` - Multi-branch routing (switch/case)
+    *   **NEW in v1.3:** `Join` - Temporal-style explicit coordination with join modes (ALL_OF, ANY_OF, ALL_SUCCESS, ONE_SUCCESS)
 *   **Scheduling:** Built-in support for cron-based scheduling, start dates, and catchup configuration
 *   **Event-Driven:** First-class support for event emission and waiting (Absurd integration)
 *   **Callback Hooks:** Durable success/failure handlers as workflow nodes
@@ -449,17 +484,28 @@ builder.task(
 
 ## Version History
 
-### Version 1.3.0 - Critical Fixes & Enhancements (Current)
+### Version 2.0.0 - LTS Stable Release (Current)
 
-**Critical Fixes:**
+**🎯 Long-Term Support Release:**
+- **Stable production API** - No breaking changes in 2.x series
+- **Recommended for all production deployments**
+- **Backward compatibility guaranteed** for all 2.x releases
+
+**Consolidated Features:**
+- JoinOperator for Temporal-style explicit coordination (ALL_OF, ANY_OF, ALL_SUCCESS, ONE_SUCCESS)
+- Event-driven patterns (EmitEvent, WaitForEvent)
+- SwitchOperator for multi-branch routing
+- Scheduling metadata (cron, start_date, catchup, tags)
 - Universal result_key support for all operators
-- Callback validation in build() prevents typos
-- ISO 8601 duration format for WaitOperator
+- Idempotency support across all operators
+- Duration helper class for time durations
+- Callback hooks (on_success, on_failure) with validation
+- Workflow metadata setters (description, version)
 
 **Developer Experience:**
-- Duration helper class for time durations
-- Workflow metadata setters (description, version)
-- Improved error messages
+- Comprehensive RFC-style specification (3,500+ lines)
+- Full Pydantic validation and type safety
+- Clean fluent API for workflow construction
 
 ### Version 1.1.0 - Feature Release
 

@@ -1,4 +1,5 @@
 from .workflow_dsl import (
+    BaseOperator,
     ConditionOperator,
     Duration,
     EmitEventOperator,
@@ -11,6 +12,7 @@ from .workflow_dsl import (
     SwitchOperator,
     TaskOperator,
     TimeoutPolicy,
+    TriggerRule,
     WaitForEventOperator,
     WaitOperator,
     WhileOperator,
@@ -33,6 +35,7 @@ __all__ = [
     "SwitchOperator",
     "TaskOperator",
     "TimeoutPolicy",
+    "TriggerRule",
     "WaitForEventOperator",
     "WaitOperator",
     "WhileOperator",

@@ -1,7 +1,7 @@
 
-Highway DSL                                                     F. Ashouri
-Specification                                               Rodmena Ltd.
-Version: 1.1.0                                            November 2025
+Highway DSL                                               Farshid A.
+Specification                                             Rodmena Ltd.
+Version: 2.0.0                                            November 2025
 Category: Standards Track
 
 
@@ -19,7 +19,7 @@ Status of This Memo
 
 Abstract
 
-   This document describes Highway DSL version 1.1.0, a Python-based
+   This document describes Highway DSL version 2.0.0 (LTS Stable), a Python-based
    domain-specific language for defining Directed Acyclic Graph (DAG)
    workflows with advanced features including conditional branching,
    parallel execution, iterative loops, event-driven coordination,
@@ -60,7 +60,8 @@ Table of Contents
       5.6. WhileOperator .............................................25
       5.7. EmitEventOperator .........................................27
       5.8. WaitForEventOperator ......................................29
-      5.9. SwitchOperator ............................................31
+      5.9. JoinOperator ..............................................30
+      5.10. SwitchOperator ...........................................32
    6. Scheduling Specification .......................................33
       6.1. Cron-Based Scheduling .....................................33
       6.2. Start Date and Catchup ....................................34
@@ -82,8 +83,9 @@ Table of Contents
       9.4. Scheduling Methods ........................................51
       9.5. Event Methods .............................................52
       9.6. Error Handling Methods ....................................53
-      9.7. Build and Finalization ....................................54
-  10. Variable Resolution and Templating .............................55
+      9.7. Coordination Methods ......................................54
+      9.8. Build and Finalization ....................................55
+  10. Variable Resolution and Templating .............................56
       10.1. Template Syntax ..........................................55
       10.2. Context Variables ........................................56
       10.3. Runtime Resolution .......................................57
@@ -114,7 +116,8 @@ Table of Contents
       15.7. Event-Driven Workflows ...................................85
       15.8. Callback Hooks ...........................................87
       15.9. Switch/Case Logic ........................................89
-  16. IANA Considerations ............................................91
+      15.10. Join Coordination .......................................91
+  16. IANA Considerations ............................................93
   17. References .....................................................92
       17.1. Normative References .....................................92
       17.2. Informative References ...................................92
@@ -146,7 +149,7 @@ Table of Contents
       branching, parallel execution, iterative loops, event-driven
       coordination, and callback-based error handling.
 
-   This specification describes version 1.1.0 of the Highway DSL, which
+   This specification describes version 1.3.0 of the Highway DSL, which
    introduces Airflow-parity scheduling features, event-based operators
    for cross-workflow coordination, durable callback hooks, and enhanced
    control flow operators.
@@ -234,6 +237,36 @@ Table of Contents
       - Task descriptions
       - Workflow-level default retry policy
       - Tags and metadata enhancements
+
+   Version 2.0.0 (LTS Stable Release):
+      - LONG-TERM SUPPORT (LTS) release - stable production-ready API
+      - No breaking changes planned for 2.x series
+      - Recommended for all production deployments
+      - Consolidates all features from 1.x series:
+        * JoinOperator for Temporal-style explicit coordination
+        * Event-driven patterns (EmitEvent, WaitForEvent)
+        * SwitchOperator for multi-branch routing
+        * Scheduling metadata (cron, start_date, catchup)
+        * Idempotency support across all operators
+        * Duration helper class
+        * Callback hooks (on_success, on_failure)
+      - Future 2.x releases will only include backward-compatible enhancements
+
+   Version 1.2.0 (Stability Release):
+      - Fixed dependency management for parallel and loop operators
+      - Enhanced loop body isolation with is_internal_loop_task flag
+      - Improved parallel branch handling with is_internal_parallel_task
+      - Bug fixes for conditional operator dependency injection
+      - Validation improvements for callback references
+
+   Version 1.3.0 (Join Operator Release):
+      - JoinOperator for Temporal-style explicit coordination
+      - JoinMode enumeration (ALL_OF, ANY_OF, ALL_SUCCESS, ONE_SUCCESS)
+      - Replaces brittle TriggerRule-based joins with explicit operators
+      - TriggerRule deprecated in favor of JoinOperator
+      - Idempotency key support on all operators (idempotency_key field)
+      - Duration helper class for cleaner time specifications
+      - Parallel execution mode for ForEachOperator (dynamic task mapping)
 
 
 2. Terminology and Conventions
@@ -418,7 +451,7 @@ Table of Contents
       identifier (alphanumeric plus underscore, not starting with a
       digit).
 
-   version: str (DEFAULT: "1.1.0")
+   version: str (DEFAULT: "1.3.0")
       Semantic version string for the workflow specification.
 
    description: str (DEFAULT: "")
@@ -526,10 +559,10 @@ Table of Contents
       Multi-branch routing based on the value of an expression
       (switch/case logic).
 
-   TRY_CATCH = "try_catch" (RESERVED)
-      Reserved for future use. Not implemented in version 1.1.0.
 
-
+   JOIN = "join"
+      Coordinates multiple tasks/branches with explicit join modes
+      (Temporal-style join logic).
 4.3. Base Operator Contract
 
    All operators inherit from BaseOperator, which defines the common
@@ -856,7 +889,7 @@ Table of Contents
    3. The runtime SHOULD use a durable sleep mechanism (e.g., Absurd's
       ctx.sleep) to ensure the wait survives crashes.
 
-   4. Template variables in wait_for are NOT supported in version 1.1.0.
+   4. Template variables in wait_for are NOT supported in version 1.3.0.
 
    Serialization:
 
@@ -1270,7 +1303,115 @@ Table of Contents
      dependencies: []
 
 
-5.9. SwitchOperator
+
+
+5.9. JoinOperator
+
+   The JoinOperator coordinates multiple tasks or parallel branches using
+   explicit join modes (Temporal-style coordination pattern).
+
+   Class: JoinOperator
+   Module: highway_dsl.workflow_dsl
+   Inherits: BaseOperator
+
+   Additional Fields:
+
+   join_tasks: List[str] (REQUIRED)
+      List of task IDs to wait for and coordinate. These tasks are
+      evaluated to determine when the join completes.
+
+   join_mode: JoinMode (DEFAULT: JoinMode.ALL_OF)
+      Coordination mode that determines the join completion criteria.
+
+   Operator Type:
+      OperatorType.JOIN
+
+   Join Modes:
+
+   JoinMode.ALL_OF:
+      Wait for all tasks to reach a final state (success or failure).
+      The join succeeds when all tasks complete, regardless of their
+      individual status. This is useful for ensuring all parallel work
+      has finished before proceeding.
+
+   JoinMode.ANY_OF:
+      Wait for any single task to reach a final state.
+      The join completes as soon as the first task finishes. Useful for
+      race conditions or timeout patterns.
+
+   JoinMode.ALL_SUCCESS:
+      Wait for all tasks to succeed.
+      The join fails immediately if any task fails. This is the strictest
+      join mode and ensures all work completed successfully.
+
+   JoinMode.ONE_SUCCESS:
+      Wait for at least one task to succeed.
+      The join succeeds when the first task succeeds. If all tasks fail,
+      the join fails. Useful for fallback patterns.
+
+   Execution Semantics:
+
+   1. The runtime evaluates the status of all tasks in join_tasks.
+
+   2. Based on join_mode:
+         a. ALL_OF: Waits until all tasks have completed (success or
+            failure). Join succeeds when all are done.
+         b. ANY_OF: Completes when the first task finishes (success or
+            failure). Join inherits that task's status.
+         c. ALL_SUCCESS: Waits for all tasks to succeed. Fails
+            immediately if any task fails.
+         d. ONE_SUCCESS: Completes when one task succeeds. Fails if all
+            tasks fail.
+
+   3. The JoinOperator provides explicit coordination that replaces
+      brittle dependency-based joins and TriggerRule patterns.
+
+   4. Recommended over TriggerRule for all parallel workflow
+      coordination.
+
+   5. Tasks that depend on the JoinOperator wait for the join to
+      complete before executing.
+
+   Example (Python):
+
+   from highway_dsl import WorkflowBuilder, JoinMode
+
+   builder = WorkflowBuilder("parallel_pipeline")
+
+   builder.task("start", "setup.initialize")
+
+   # Create parallel branches
+   builder.task("branch_a", "process.method_a", dependencies=["start"])
+   builder.task("branch_b", "process.method_b", dependencies=["start"])
+   builder.task("branch_c", "process.method_c", dependencies=["start"])
+
+   # Join with ALL_SUCCESS - fail if any branch fails
+   builder.join(
+       task_id="sync_gate",
+       join_tasks=["branch_a", "branch_b", "branch_c"],
+       join_mode=JoinMode.ALL_SUCCESS,
+       description="Wait for all branches to succeed"
+   )
+
+   builder.task("finalize", "cleanup.finish", dependencies=["sync_gate"])
+
+   Example (YAML):
+
+   sync_gate:
+     operator_type: join
+     task_id: sync_gate
+     join_tasks:
+       - branch_a
+       - branch_b
+       - branch_c
+     join_mode: all_success
+     description: Wait for all branches to succeed
+     dependencies: []
+
+
+
+
+5.10. SwitchOperator
 
    The SwitchOperator provides multi-branch routing based on the value
    of an expression (similar to switch/case in programming languages).
@@ -2218,7 +2359,62 @@ Table of Contents
    builder.task("risky_task", "api.call").on_failure("alert_task")
 
 
-9.7. Build and Finalization
+9.7. Coordination Methods
+
+   def join(
+       self,
+       task_id: str,
+       join_tasks: list[str],
+       join_mode: JoinMode,
+       **kwargs
+   ) -> "WorkflowBuilder"
+
+   Create a JoinOperator to coordinate multiple parallel branches.
+
+   Parameters:
+      - task_id: Unique identifier
+      - join_tasks: List of task IDs to wait for and coordinate
+      - join_mode: JoinMode enumeration value (ALL_OF, ANY_OF,
+        ALL_SUCCESS, ONE_SUCCESS)
+      - **kwargs: Additional fields (dependencies, description, etc.)
+
+   Returns: self
+
+   Behavior:
+      - Creates a JoinOperator that waits for the specified tasks based
+        on the join_mode.
+      - Replaces brittle TriggerRule-based coordination with explicit
+        join semantics.
+      - Recommended over dependency-based joins for all parallel work
+        coordination.
+
+   Join Modes:
+      - JoinMode.ALL_OF: Wait for all tasks to finish (any final state)
+      - JoinMode.ANY_OF: Complete when first task finishes
+      - JoinMode.ALL_SUCCESS: Wait for all tasks to succeed (fail fast)
+      - JoinMode.ONE_SUCCESS: Complete when first task succeeds
+
+   Example:
+
+   builder.task("start", "setup.init")
+   builder.task("branch_a", "process.a", dependencies=["start"])
+   builder.task("branch_b", "process.b", dependencies=["start"])
+   builder.task("branch_c", "process.c", dependencies=["start"])
+
+   builder.join(
+       task_id="sync_gate",
+       join_tasks=["branch_a", "branch_b", "branch_c"],
+       join_mode=JoinMode.ALL_SUCCESS,
+       description="Wait for all branches to succeed"
+   )
+
+   builder.task("finalize", "cleanup.finish", dependencies=["sync_gate"])
+
+   This creates a fan-out/fan-in pattern where all three branches must
+   succeed before proceeding to finalize.
+
+
+9.8. Build and Finalization
 
    def build(self) -> Workflow
 
@@ -2447,7 +2643,7 @@ Table of Contents
 
    {
      "name": "simple_etl",
-     "version": "1.1.0",
+     "version": "1.3.0",
      "description": "",
      "tasks": {
        "extract": {
@@ -2885,7 +3081,7 @@ Table of Contents
    YAML Output:
 
    name: simple_etl
-   version: 1.1.0
+   version: 1.3.0
    tasks:
      extract:
        task_id: extract
@@ -3155,6 +3351,161 @@ Table of Contents
              args=["{{order}}"], dependencies=["route_by_status"])
        .build()
    )
+
+
+15.10. Join Coordination
+
+   A workflow demonstrating explicit join coordination for parallel
+   branches.
+
+   Python (ALL_SUCCESS Join):
+
+   from highway_dsl import WorkflowBuilder, JoinMode
+
+   workflow = (
+       WorkflowBuilder("data_pipeline_with_join")
+       .task("start", "setup.initialize", result_key="config")
+
+       # Create parallel branches
+       .task("branch_a", "process.extract_users",
+             args=["{{config}}"], result_key="users",
+             dependencies=["start"])
+       .task("branch_b", "process.extract_products",
+             args=["{{config}}"], result_key="products",
+             dependencies=["start"])
+       .task("branch_c", "process.extract_orders",
+             args=["{{config}}"], result_key="orders",
+             dependencies=["start"])
+
+       # Explicit join - wait for all branches to succeed
+       .join(
+           task_id="sync_gate",
+           join_tasks=["branch_a", "branch_b", "branch_c"],
+           join_mode=JoinMode.ALL_SUCCESS,
+           description="Wait for all extractions to succeed"
+       )
+
+       # Continue after join
+       .task("merge_data", "process.merge_all",
+             args=["{{users}}", "{{products}}", "{{orders}}"],
+             result_key="merged",
+             dependencies=["sync_gate"])
+       .task("finalize", "db.save_results",
+             args=["{{merged}}"])
+       .build()
+   )
+
+   Python (ONE_SUCCESS Join - Fallback Pattern):
+
+   from highway_dsl import WorkflowBuilder, JoinMode
+
+   workflow = (
+       WorkflowBuilder("multi_source_fallback")
+       .task("start", "setup.prepare")
+
+       # Try multiple data sources in parallel
+       .task("fetch_primary", "api.fetch_from_primary",
+             result_key="data", dependencies=["start"])
+       .task("fetch_secondary", "api.fetch_from_secondary",
+             result_key="data", dependencies=["start"])
+       .task("fetch_tertiary", "api.fetch_from_tertiary",
+             result_key="data", dependencies=["start"])
+
+       # Join succeeds when first source succeeds
+       .join(
+           task_id="data_available",
+           join_tasks=["fetch_primary", "fetch_secondary", "fetch_tertiary"],
+           join_mode=JoinMode.ONE_SUCCESS,
+           description="Proceed when any source succeeds"
+       )
+
+       .task("process", "process.handle_data",
+             args=["{{data}}"],
+             dependencies=["data_available"])
+       .build()
+   )
+
+   Python (ANY_OF Join - Race Condition):
+
+   from highway_dsl import WorkflowBuilder, JoinMode
+
+   workflow = (
+       WorkflowBuilder("parallel_race")
+       .task("start", "setup.init")
+
+       # Multiple approaches racing
+       .task("approach_fast", "compute.fast_but_approximate",
+             result_key="result", dependencies=["start"])
+       .task("approach_accurate", "compute.slow_but_accurate",
+             result_key="result", dependencies=["start"])
+
+       # Complete when first approach finishes (any state)
+       .join(
+           task_id="race_complete",
+           join_tasks=["approach_fast", "approach_accurate"],
+           join_mode=JoinMode.ANY_OF,
+           description="Use whichever completes first"
+       )
+
+       .task("use_result", "process.handle",
+             args=["{{result}}"],
+             dependencies=["race_complete"])
+       .build()
+   )
+
+   YAML Output (ALL_SUCCESS example):
+
+   name: data_pipeline_with_join
+   version: 1.3.0
+   tasks:
+     start:
+       task_id: start
+       operator_type: task
+       function: setup.initialize
+       result_key: config
+       dependencies: []
+     branch_a:
+       task_id: branch_a
+       operator_type: task
+       function: process.extract_users
+       args: ["{{config}}"]
+       result_key: users
+       dependencies: [start]
+     branch_b:
+       task_id: branch_b
+       operator_type: task
+       function: process.extract_products
+       args: ["{{config}}"]
+       result_key: products
+       dependencies: [start]
+     branch_c:
+       task_id: branch_c
+       operator_type: task
+       function: process.extract_orders
+       args: ["{{config}}"]
+       result_key: orders
+       dependencies: [start]
+     sync_gate:
+       task_id: sync_gate
+       operator_type: join
+       join_tasks: [branch_a, branch_b, branch_c]
+       join_mode: all_success
+       description: Wait for all extractions to succeed
+       dependencies: []
+     merge_data:
+       task_id: merge_data
+       operator_type: task
+       function: process.merge_all
+       args: ["{{users}}", "{{products}}", "{{orders}}"]
+       result_key: merged
+       dependencies: [sync_gate]
+     finalize:
+       task_id: finalize
+       operator_type: task
+       function: db.save_results
+       args: ["{{merged}}"]
+       dependencies: [merge_data]
+   start_task: start
 
 
 16. IANA Considerations

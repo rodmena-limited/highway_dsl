@@ -7,11 +7,11 @@ packages = ["highway_dsl"]
 
 [project]
 name = "highway_dsl"
-version = "1.9.0"
+version = "2.0.0"
 authors = [
   { name = "Farseed Ashouri", email = "farseed.ashouri@gmail.com" },
 ]
-description = "A stable domain specific language (DSL) for defining and managing data processing pipelines and workflow engines."
+description = "LTS Stable: Domain-specific language (DSL) for defining production-grade workflows with explicit coordination, event-driven patterns, and Temporal-style join operators."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

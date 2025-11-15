@@ -4,16 +4,16 @@ from datetime import timedelta  # Need datetime for the validator
 
 
 try:
-    from highway_dsl import ConditionOperator  # noqa: F401
-    from highway_dsl import ForEachOperator  # noqa: F401
-    from highway_dsl import OperatorType  # noqa: F401
-    from highway_dsl import ParallelOperator  # noqa: F401
-    from highway_dsl import TaskOperator  # noqa: F401
-    from highway_dsl import WaitOperator  # noqa: F401
-    from highway_dsl import WhileOperator  # noqa: F401
     from highway_dsl import (
+        ConditionOperator,  # noqa: F401
+        ForEachOperator,  # noqa: F401
+        OperatorType,  # noqa: F401
+        ParallelOperator,  # noqa: F401
         RetryPolicy,
+        TaskOperator,  # noqa: F401
         TimeoutPolicy,
+        WaitOperator,  # noqa: F401
+        WhileOperator,  # noqa: F401
         Workflow,
         WorkflowBuilder,
     )
