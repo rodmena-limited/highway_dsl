@@ -196,6 +196,7 @@ class ForEachOperator(BaseOperator):
             "EmitEventOperator",
             "WaitForEventOperator",
             "SwitchOperator",
+            "JoinOperator",
         ]
     ] = Field(default_factory=list)
     parallel: bool = Field(
@@ -217,6 +218,7 @@ class WhileOperator(BaseOperator):
             "EmitEventOperator",
             "WaitForEventOperator",
             "SwitchOperator",
+            "JoinOperator",
         ]
     ] = Field(default_factory=list)
     operator_type: OperatorType = Field(OperatorType.WHILE, frozen=True)
@@ -372,6 +374,7 @@ class Workflow(BaseModel):
             | EmitEventOperator
             | WaitForEventOperator
             | SwitchOperator
+            | JoinOperator
         ),
     ) -> "Workflow":
         self.tasks[task.task_id] = task
@@ -548,6 +551,7 @@ class WorkflowBuilder:
             | EmitEventOperator
             | WaitForEventOperator
             | SwitchOperator
+            | JoinOperator
         ),
         **kwargs: Any,
     ) -> None:

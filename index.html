@@ -782,7 +782,7 @@
                         </div>
                         <div class="d-flex justify-content-center gap-4 flex-wrap" style="font-size: 0.95rem;">
                             <span class="text-light opacity-75">
-                                <i class="fas fa-check-circle text-success me-2"></i>Feature Release <strong>v1.1.0</strong>
+                                <i class="fas fa-check-circle text-success me-2"></i>LTS Stable Release <strong>v2.0.0</strong>
                             </span>
                             <span class="text-light opacity-75">
                                 <i class="fas fa-shield-alt text-info me-2"></i>MIT License
@@ -815,9 +815,9 @@
                 <div class="col-lg-3 col-md-6">
                     <div class="stats-card">
                         <i class="fas fa-puzzle-piece mb-3" style="font-size: 2.5rem; color: var(--primary);"></i>
-                        <span class="stats-number">9</span>
+                        <span class="stats-number">10</span>
                         <div class="stats-label">Operator Types</div>
-                        <p class="mt-2 mb-0" style="font-size: 0.8rem; color: var(--gray-600);">Task, Parallel, Condition, Loop, Wait, Event, Switch</p>
+                        <p class="mt-2 mb-0" style="font-size: 0.8rem; color: var(--gray-600);">Task, Parallel, Condition, Loop, Wait, Event, Switch, Join</p>
                     </div>
                 </div>
                 <div class="col-lg-3 col-md-6">
@@ -1041,6 +1041,94 @@
         </div>
     </section>
 
+    <!-- Highway Workflow Engine Promotion -->
+    <section class="section" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; position: relative; overflow: hidden;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: radial-gradient(circle at 20% 30%, rgba(16, 185, 129, 0.12) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(37, 99, 235, 0.12) 0%, transparent 50%); z-index: 0;"></div>
+        <div class="container" style="position: relative; z-index: 1;">
+            <div class="row text-center mb-5">
+                <div class="col-12">
+                    <div style="display: inline-block; background: rgba(16, 185, 129, 0.15); padding: 0.5rem 1.5rem; border-radius: 50px; margin-bottom: 1.5rem; border: 1px solid rgba(16, 185, 129, 0.3);">
+                        <i class="fas fa-rocket me-2"></i>
+                        <span style="font-weight: 600; font-size: 0.9rem;">PRODUCTION-READY RUNTIME</span>
+                    </div>
+                    <h2 class="display-5 fw-bold mb-4" style="color: white;">
+                        Powered by <span class="gradient-text" style="background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Highway Workflow Engine</span>
+                    </h2>
+                    <p class="lead mb-4" style="max-width: 900px; margin: 0 auto; color: rgba(255,255,255,0.9); font-size: 1.25rem;">
+                        Highway DSL workflows execute on <strong>Highway Workflow Engine</strong> - a bank-grade durable execution runtime built on PostgreSQL with crash-resistant semantics, comprehensive audit logging, and DataShard S3 integration for production reliability.
+                    </p>
+                </div>
+            </div>
+            <div class="row g-4 mb-5">
+                <div class="col-lg-3 col-md-6">
+                    <div class="p-4 h-100" style="background: rgba(255,255,255,0.05); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
+                        <div style="font-size: 2.5rem; margin-bottom: 1rem; color: #10b981;">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <h5 class="fw-bold mb-3" style="color: white;">PostgreSQL-Backed Durability</h5>
+                        <p style="color: rgba(255,255,255,0.85); font-size: 0.95rem; margin-bottom: 0;">
+                            Built on Absurd task queue with atomic transaction orchestration. Every workflow step is durably persisted with full crash recovery and exactly-once semantics.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="p-4 h-100" style="background: rgba(255,255,255,0.05); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
+                        <div style="font-size: 2.5rem; margin-bottom: 1rem; color: #06b6d4;">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h5 class="fw-bold mb-3" style="color: white;">Crash-Resistant Execution</h5>
+                        <p style="color: rgba(255,255,255,0.85); font-size: 0.95rem; margin-bottom: 0;">
+                            DurableContext API provides automatic checkpointing and resume. Long-running workflows survive worker crashes, network failures, and infrastructure outages with zero data loss.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="p-4 h-100" style="background: rgba(255,255,255,0.05); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
+                        <div style="font-size: 2.5rem; margin-bottom: 1rem; color: #f59e0b;">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <h5 class="fw-bold mb-3" style="color: white;">Immutable Audit Trail</h5>
+                        <p style="color: rgba(255,255,255,0.85); font-size: 0.95rem; margin-bottom: 0;">
+                            Every state transition logged to absurd_event_log with complete lineage tracking. Meet compliance requirements with full execution history and reproducible workflow replays.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6">
+                    <div class="p-4 h-100" style="background: rgba(255,255,255,0.05); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
+                        <div style="font-size: 2.5rem; margin-bottom: 1rem; color: #8b5cf6;">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <h5 class="fw-bold mb-3" style="color: white;">DataShard S3 Logging</h5>
+                        <p style="color: rgba(255,255,255,0.85); font-size: 0.95rem; margin-bottom: 0;">
+                            Automatic archival of workflow execution logs to S3-compatible storage. Long-term retention, cost-effective storage, and compliance-ready audit archives with compressed JSON logs.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-12">
+                    <div class="p-4" style="background: rgba(16, 185, 129, 0.08); border-radius: 16px; border: 1px solid rgba(16, 185, 129, 0.2);">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h4 class="fw-bold mb-3" style="color: white;">
+                                    <i class="fas fa-cogs me-2" style="color: #10b981;"></i>Enterprise Deployment Options
+                                </h4>
+                                <p class="mb-0" style="color: rgba(255,255,255,0.9);">
+                                    Deploy with <strong>systemd workers</strong> (4+ workers with journald logging) or <strong>Docker Compose</strong> (multi-worker setup with health checks). Both options include PostgreSQL 16+, automatic worker recovery, and production-ready configurations with maximum ulimits and resource controls.
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-center">
+                                <a href="https://github.com/rodmena-limited/highway-workflow-engine" class="btn btn-lg px-5 py-3" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; font-weight: 600; border-radius: 12px; box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3); border: none;" target="_blank">
+                                    <i class="fab fa-github me-2"></i>Explore Highway Engine
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- About RODMEN/A Section -->
     <section id="about" class="section section-alt">
         <div class="container">
@@ -1108,8 +1196,8 @@
                         <div class="feature-icon">
                             <i class="fas fa-project-diagram"></i>
                         </div>
-                        <h4 class="fw-bold mb-3">Rich Operators</h4>
-                        <p>Support for Task, Condition, Parallel, ForEach, While, and Wait operators for complex logic. Enterprise-grade workflow constructs supporting sophisticated orchestration patterns like saga, choreography, and compensation.</p>
+                        <h4 class="fw-bold mb-3">Rich Operators (10 Types)</h4>
+                        <p>Comprehensive operator library: Task, Condition, Parallel, ForEach, While, Wait, EmitEvent, WaitForEvent, Switch, and Join. Enterprise-grade workflow constructs supporting sophisticated orchestration patterns like saga, choreography, event-driven coordination, and Temporal-style join semantics.</p>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-4">
@@ -1146,6 +1234,33 @@
                         </div>
                         <h4 class="fw-bold mb-3">Serialization</h4>
                         <p>YAML and JSON export/import with round-trip validation and full interoperability. Enables GitOps workflows, version control integration, and seamless integration with CI/CD pipelines and infrastructure-as-code tools.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card p-4 bg-white">
+                        <div class="feature-icon">
+                            <i class="fas fa-broadcast-tower"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3">Event-Driven Coordination</h4>
+                        <p>Native EmitEvent and WaitForEvent operators enable decoupled workflow coordination, cross-workflow communication, and reactive patterns. Perfect for microservices orchestration, distributed sagas, and asynchronous event streaming architectures.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card p-4 bg-white">
+                        <div class="feature-icon">
+                            <i class="fas fa-code-branch"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3">JoinOperator (Temporal-Style)</h4>
+                        <p>Explicit coordination with join modes: ALL_OF, ANY_OF, ALL_SUCCESS, ONE_SUCCESS. Wait for multiple tasks/events with fine-grained control over completion semantics. Essential for parallel aggregation, multi-dependency workflows, and distributed coordination patterns.</p>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="feature-card p-4 bg-white">
+                        <div class="feature-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <h4 class="fw-bold mb-3">LTS Stable (v2.0.0)</h4>
+                        <p>Long-Term Support release with guaranteed API stability for the 2.x series. Production-ready with no breaking changes planned. Semantic versioning ensures safe upgrades. Trusted by enterprise teams building mission-critical workflow systems.</p>
                     </div>
                 </div>
             </div>
@@ -1780,9 +1895,9 @@
                 <div class="col-lg-3">
                     <h5 class="fw-bold text-white mb-3">Project</h5>
                     <ul class="list-unstyled">
-                        <li class="mb-2">Version: 1.1.0</li>
+                        <li class="mb-2">Version: 2.0.0 (LTS Stable)</li>
                         <li class="mb-2">License: MIT</li>
-                        <li class="mb-2">Stable Release</li>
+                        <li class="mb-2">Long-Term Support Release</li>
                         <li>Developed by: RODMEN/A</li>
                     </ul>
                 </div>
