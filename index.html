@@ -3,39 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Highway DSL - A sophisticated Domain Specific Language for defining and managing complex workflow engines, durable execution patterns, and data processing pipelines in Python. Compatible with Temporal, Airflow, Prefect, and custom orchestrators. Developed by RODMEN/A for enterprise data infrastructure and distributed systems.">
-    <meta name="keywords" content="workflow engine, DSL, domain specific language, data pipeline, python, automation, orchestration, distributed systems, data infrastructure, cloud solutions, durable execution, temporal, airflow, prefect, BPMN, saga pattern, state machine, workflow orchestration, RODMEN/A">
-    <meta name="author" content="RODMEN/A">
-    <meta name="robots" content="index, follow">
-    <meta name="googlebot" content="index, follow">
-    <meta property="og:title" content="Highway DSL - Python Workflow Engine Framework for Durable Execution">
-    <meta property="og:description" content="A sophisticated Domain Specific Language for defining complex workflow engines and durable execution patterns. Compatible with Temporal, Airflow, Prefect. Developed by RODMEN/A for enterprise data infrastructure and distributed systems.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://rodmena-limited.github.io/highway_dsl/">
-    <title>Highway DSL - Python Workflow Engine Framework for Durable Execution | RODMEN/A</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
+    <title>Highway DSL v2.0.0 - Workflow Specification Language</title>
+    <style><%text>
         :root {
-            --primary: #2563eb;
-            --primary-dark: #1e40af;
-            --primary-light: #3b82f6;
-            --secondary: #0f172a;
-            --secondary-light: #1e293b;
-            --accent: #06b6d4;
-            --accent-purple: #8b5cf6;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --light: #f8fafc;
-            --gray-50: #f9fafb;
-            --gray-100: #f3f4f6;
-            --gray-200: #e5e7eb;
-            --gray-300: #d1d5db;
-            --gray-600: #4b5563;
-            --gray-700: #374151;
-            --gray-800: #1f2937;
-            --gray-900: #111827;
+            --bg-primary: #0a0e14;
+            --bg-secondary: #0d1117;
+            --bg-tertiary: #161b22;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --text-muted: #6e7681;
+            --border-color: #30363d;
+            --accent-green: #3fb950;
+            --accent-blue: #58a6ff;
+            --accent-yellow: #d29922;
+            --accent-red: #f85149;
+            --accent-purple: #bc8cff;
         }
 
         * {
@@ -45,1897 +27,913 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.7;
-            color: var(--gray-800);
-            background-color: var(--light);
-            font-size: 16px;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            font-family: 'Courier New', 'Monaco', 'Consolas', monospace;
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            font-size: 14px;
         }
 
-        .navbar {
-            background: rgba(15, 23, 42, 0.95);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
         }
 
-        .navbar-brand {
-            font-weight: 700;
-            font-size: 1.5rem;
-            letter-spacing: -0.5px;
-        }
-
-        .hero-section {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
-            color: white;
-            padding: 8rem 0 6rem;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hero-section::before {
-            content: '';
-            position: absolute;
+        header {
+            background-color: var(--bg-secondary);
+            border-bottom: 2px solid var(--border-color);
+            padding: 1.5rem 0;
+            position: sticky;
             top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image:
-                radial-gradient(circle at 20% 50%, rgba(37, 99, 235, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
-                radial-gradient(circle at 40% 20%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
-            z-index: 0;
+            z-index: 1000;
         }
 
-        .hero-section::after {
-            content: '';
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
-            opacity: 0.4;
-            z-index: 0;
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .hero-content {
-            position: relative;
-            z-index: 1;
+        .logo {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--accent-green);
         }
 
-        .hero-section h1 {
-            font-weight: 800;
-            font-size: 3.5rem;
-            line-height: 1.1;
-            letter-spacing: -2px;
-            margin-bottom: 1.5rem;
+        .version {
+            color: var(--accent-blue);
+            font-size: 0.9rem;
         }
 
-        .hero-badge {
-            display: inline-block;
-            background: rgba(37, 99, 235, 0.2);
-            border: 1px solid rgba(37, 99, 235, 0.3);
-            padding: 0.5rem 1.5rem;
-            border-radius: 50px;
-            font-size: 0.875rem;
-            font-weight: 600;
+        nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            margin-left: 2rem;
+            transition: color 0.2s;
+        }
+
+        nav a:hover {
+            color: var(--accent-green);
+        }
+
+        .hero {
+            padding: 3rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .hero h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .hero .tagline {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
             margin-bottom: 2rem;
-            backdrop-filter: blur(10px);
         }
 
-        .feature-card {
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            height: 100%;
-            border: 1px solid var(--gray-200);
-            border-radius: 16px;
-            overflow: hidden;
-            background: white;
-            position: relative;
+        .status-bar {
+            background-color: var(--bg-tertiary);
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
         }
 
-        .feature-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary), var(--accent));
-            opacity: 0;
-            transition: opacity 0.4s ease;
+        .status-bar .item {
+            display: inline-block;
+            margin-right: 2rem;
         }
 
-        .feature-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 40px -10px rgba(37, 99, 235, 0.15);
-            border-color: var(--primary-light);
+        .status-bar .label {
+            color: var(--text-muted);
         }
 
-        .feature-card:hover::before {
-            opacity: 1;
-        }
-
-        .code-block {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            border-radius: 12px;
-            padding: 3.5rem 2rem 2rem;
-            margin: 1.5rem 0;
-            overflow-x: auto;
-            font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
-            font-size: 0.875rem;
-            color: #e2e8f0;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            position: relative;
-        }
-
-        .code-block::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.03);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 12px 12px 0 0;
-        }
-
-        .code-block::after {
-            content: '';
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #ef4444;
-            box-shadow: 20px 0 0 #f59e0b, 40px 0 0 #10b981;
-        }
-
-        .highlight-section {
-            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-            color: white;
-            padding: 6rem 0;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .highlight-section::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-image:
-                radial-gradient(circle at 30% 30%, rgba(37, 99, 235, 0.1) 0%, transparent 60%),
-                radial-gradient(circle at 70% 70%, rgba(139, 92, 246, 0.1) 0%, transparent 60%);
+        .status-bar .value {
+            color: var(--accent-green);
         }
 
         .section {
-            padding: 6rem 0;
+            padding: 3rem 0;
+            border-bottom: 1px solid var(--border-color);
         }
 
-        .btn {
-            font-weight: 600;
-            padding: 0.875rem 2rem;
-            border-radius: 10px;
-            transition: all 0.3s ease;
-            border: none;
-            font-size: 1rem;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4);
-        }
-
-        .btn-light, .btn-outline-light {
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-weight: 600;
-        }
-
-        .btn-light {
-            background: white;
-            color: var(--primary);
-        }
-
-        .btn-light:hover, .btn-outline-light:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(255, 255, 255, 0.3);
-        }
-
-        .feature-icon {
-            font-size: 3rem;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        .section h2 {
+            font-size: 1.5rem;
             margin-bottom: 1.5rem;
+            color: var(--accent-blue);
         }
 
-        .footer {
-            background-color: var(--secondary);
-            color: white;
-            padding: 4rem 0 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        .section h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            margin-top: 2rem;
+            color: var(--accent-yellow);
         }
 
-        .terminal {
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            border-radius: 12px;
-            padding: 3.5rem 2rem 2rem;
+        .code-block {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .code-block .comment {
+            color: var(--text-muted);
+        }
+
+        .code-block .keyword {
+            color: var(--accent-purple);
+        }
+
+        .code-block .string {
+            color: var(--accent-green);
+        }
+
+        .code-block .function {
+            color: var(--accent-blue);
+        }
+
+        .operator-table {
+            width: 100%;
+            border-collapse: collapse;
             margin: 1.5rem 0;
-            font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
-            color: var(--success);
-            border: 1px solid rgba(16, 185, 129, 0.2);
-            box-shadow: 0 10px 40px rgba(16, 185, 129, 0.1);
-            font-size: 1.125rem;
-            position: relative;
+            background-color: var(--bg-secondary);
         }
 
-        .terminal::before {
-            content: '';
-            position: absolute;
-            top: 15px;
-            left: 15px;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #ef4444;
-            box-shadow: 20px 0 0 #f59e0b, 40px 0 0 #10b981;
+        .operator-table th,
+        .operator-table td {
+            border: 1px solid var(--border-color);
+            padding: 0.75rem;
+            text-align: left;
         }
 
-        .terminal span {
-            color: #f8fafc;
+        .operator-table th {
+            background-color: var(--bg-tertiary);
+            color: var(--accent-yellow);
+            font-weight: bold;
         }
 
-        .gradient-text {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-weight: 800;
+        .operator-table td:first-child {
+            color: var(--accent-blue);
+            font-weight: bold;
         }
 
-        .stats-card {
-            background: white;
-            border-radius: 16px;
-            padding: 2rem;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-            border: 1px solid var(--gray-200);
+        .spec-section {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            margin: 1rem 0;
         }
 
-        .stats-card:hover {
-            transform: translateY(-5px) scale(1.02);
-            box-shadow: 0 12px 30px rgba(37, 99, 235, 0.15);
-            border-color: var(--primary-light);
-        }
-
-        .stats-number {
-            font-size: 3rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            display: block;
-            line-height: 1;
+        .spec-section h4 {
+            color: var(--accent-green);
             margin-bottom: 0.5rem;
         }
 
-        .stats-label {
-            color: var(--gray-600);
-            font-size: 0.875rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .spec-section p {
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
         }
 
-        .specification-table {
-            background: white;
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-            border: 1px solid var(--gray-200);
+        .spec-section code {
+            color: var(--accent-yellow);
+            background-color: var(--bg-tertiary);
+            padding: 0.2rem 0.4rem;
         }
 
-        .specification-table th {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-            color: white;
-            font-weight: 700;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            letter-spacing: 0.5px;
-            padding: 1.25rem 1rem;
+        .install-box {
+            background-color: var(--bg-tertiary);
+            border: 2px solid var(--accent-green);
+            padding: 1rem;
+            margin: 1.5rem 0;
+            font-size: 1rem;
         }
 
-        .specification-table td {
-            padding: 1.25rem 1rem;
-            border-bottom: 1px solid var(--gray-200);
+        .install-box::before {
+            content: "$ ";
+            color: var(--accent-green);
         }
 
-        .specification-table tr:hover {
-            background-color: var(--gray-50);
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin: 1.5rem 0;
         }
 
-        .roboto {
-            font-family: 'Inter', sans-serif;
+        .card {
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
         }
 
-        h2, h3, h4, h5 {
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            color: var(--gray-900);
+        .card h4 {
+            color: var(--accent-blue);
+            margin-bottom: 0.75rem;
         }
 
-        .display-3, .display-6 {
-            font-weight: 800;
-            letter-spacing: -1.5px;
+        .card ul {
+            list-style: none;
+            color: var(--text-secondary);
         }
 
-        .lead {
-            font-size: 1.25rem;
-            font-weight: 400;
-            line-height: 1.8;
+        .card ul li::before {
+            content: "> ";
+            color: var(--accent-green);
         }
 
-        .bg-light {
-            background: linear-gradient(180deg, #ffffff 0%, var(--gray-50) 100%) !important;
+        footer {
+            padding: 2rem 0;
+            text-align: center;
+            color: var(--text-muted);
+            border-top: 1px solid var(--border-color);
+            margin-top: 3rem;
         }
 
-        .bg-white {
-            background: white !important;
+        a {
+            color: var(--accent-blue);
+            text-decoration: none;
         }
 
-        .section-light {
-            background: white;
+        a:hover {
+            text-decoration: underline;
         }
 
-        .section-alt {
-            background: linear-gradient(180deg, #f9fafb 0%, #ffffff 100%);
+        .yaml-block {
+            background-color: var(--bg-secondary);
+            border-left: 3px solid var(--accent-yellow);
+            padding: 1.5rem;
+            margin: 1rem 0;
+            overflow-x: auto;
+            font-size: 0.85rem;
         }
 
-        @media (prefers-color-scheme: dark) {
-            .section-light {
-                background: var(--bg-secondary) !important;
-            }
-
-            .section-alt {
-                background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%) !important;
-            }
+        .yaml-block .key {
+            color: var(--accent-blue);
         }
 
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
+        .yaml-block .value {
+            color: var(--accent-green);
         }
 
-        .float-animation {
-            animation: float 6s ease-in-out infinite;
+        .note {
+            background-color: var(--bg-tertiary);
+            border-left: 3px solid var(--accent-yellow);
+            padding: 1rem;
+            margin: 1rem 0;
+            color: var(--text-secondary);
         }
 
-        .section-title {
-            position: relative;
-            display: inline-block;
-            padding-bottom: 1rem;
+        .note strong {
+            color: var(--accent-yellow);
         }
-
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary), var(--accent));
-            border-radius: 2px;
-        }
-
-        .hover-opacity-100:hover {
-            opacity: 1 !important;
-        }
-
-        /* Theme Variables */
-        :root {
-            --bg-primary: #ffffff;
-            --bg-secondary: #f8fafc;
-            --bg-tertiary: #f1f5f9;
-            --text-primary: #111827;
-            --text-secondary: #374151;
-            --text-muted: #6b7280;
-            --border-color: #e5e7eb;
-            --card-bg: #ffffff;
-            --card-hover-bg: #ffffff;
-        }
-
-        /* Dark Mode Support */
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg-primary: #0f172a;
-                --bg-secondary: #1e293b;
-                --bg-tertiary: #334155;
-                --text-primary: #f8fafc;
-                --text-secondary: #cbd5e1;
-                --text-muted: #94a3b8;
-                --border-color: rgba(255, 255, 255, 0.1);
-                --card-bg: #1e293b;
-                --card-hover-bg: #334155;
-            }
-
-            body {
-                background-color: var(--bg-primary) !important;
-                color: var(--text-primary) !important;
-            }
-
-            .section {
-                background: var(--bg-primary) !important;
-            }
-
-            .bg-white,
-            section[style*="background: white"],
-            section[style*="background: #ffffff"] {
-                background: var(--bg-secondary) !important;
-            }
-
-            .bg-light,
-            section[style*="background: linear-gradient(180deg, #ffffff"],
-            section[style*="background: linear-gradient(180deg, #f9fafb"] {
-                background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%) !important;
-            }
-
-            .feature-card, .stats-card {
-                background: var(--card-bg) !important;
-                border-color: var(--border-color) !important;
-            }
-
-            .feature-card:hover, .stats-card:hover {
-                background: var(--card-hover-bg) !important;
-            }
-
-            .specification-table {
-                background: var(--card-bg) !important;
-                border-color: var(--border-color) !important;
-            }
-
-            .specification-table table {
-                background: var(--card-bg) !important;
-                color: var(--text-primary) !important;
-            }
-
-            .specification-table td,
-            .specification-table th {
-                border-color: var(--border-color) !important;
-            }
-
-            .specification-table th {
-                color: white !important;
-            }
-
-            .specification-table td {
-                color: var(--text-primary) !important;
-            }
-
-            .specification-table thead {
-                background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%) !important;
-            }
-
-            .specification-table tbody {
-                background: var(--card-bg) !important;
-            }
-
-            .specification-table tbody td {
-                background-color: var(--card-bg) !important;
-                color: var(--text-primary) !important;
-            }
-
-            .specification-table tr:hover {
-                background-color: var(--bg-tertiary) !important;
-            }
-
-            .specification-table tr:hover td {
-                background-color: var(--bg-tertiary) !important;
-                color: var(--text-primary) !important;
-            }
-
-            h1, h2, h3, h4, h5, h6 {
-                color: var(--text-primary) !important;
-            }
-
-            .lead {
-                color: var(--text-secondary) !important;
-            }
-
-            .text-muted,
-            p[style*="color: var(--gray-600)"],
-            p[class*="text-muted"] {
-                color: var(--text-muted) !important;
-            }
-
-            p {
-                color: var(--text-secondary) !important;
-            }
-
-            .navbar {
-                background: rgba(15, 23, 42, 0.98) !important;
-                border-bottom: 1px solid var(--border-color) !important;
-            }
-
-            .stats-label {
-                color: var(--text-muted) !important;
-            }
-
-            /* Fix gradient text to remain visible */
-            .gradient-text {
-                background: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                background-clip: text;
-            }
-
-            /* Hero and dark sections adjustments */
-            .hero-section,
-            .highlight-section,
-            section[style*="background: linear-gradient(135deg, #1e293b"],
-            section[style*="background: linear-gradient(135deg, #0f172a"] {
-                background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
-            }
-
-            /* Ensure proper contrast in all sections */
-            .section p,
-            .section span,
-            .section div {
-                color: var(--text-secondary);
-            }
-
-            /* Fix inline color styles */
-            [style*="color: var(--gray-600)"] {
-                color: var(--text-muted) !important;
-            }
-
-            .stats-card p,
-            .stats-card span {
-                color: var(--text-muted) !important;
-            }
-
-            .feature-card p {
-                color: var(--text-secondary) !important;
-            }
-
-            /* Ensure checkmarks and icons in lists are visible */
-            .text-success {
-                color: #10b981 !important;
-            }
-
-            .text-info {
-                color: #06b6d4 !important;
-            }
-
-            .text-warning {
-                color: #f59e0b !important;
-            }
-
-            .text-danger {
-                color: #ef4444 !important;
-            }
-
-            .text-cyan {
-                color: #06b6d4 !important;
-            }
-
-            /* Fix any remaining text contrast issues */
-            .section-light p,
-            .section-light h1,
-            .section-light h2,
-            .section-light h3,
-            .section-light h4,
-            .section-light h5,
-            .section-light h6,
-            .section-light span,
-            .section-light div {
-                color: var(--text-primary);
-            }
-
-            .section-light .text-muted,
-            .section-light .lead {
-                color: var(--text-muted) !important;
-            }
-
-            .section-alt p,
-            .section-alt h1,
-            .section-alt h2,
-            .section-alt h3,
-            .section-alt h4,
-            .section-alt h5,
-            .section-alt h6,
-            .section-alt span,
-            .section-alt div {
-                color: var(--text-primary);
-            }
-
-            .section-alt .text-muted,
-            .section-alt .lead {
-                color: var(--text-muted) !important;
-            }
-
-            /* Fix feature card icon backgrounds in dark sections */
-            .feature-card[style*="background: rgba(255,255,255,0.05)"] {
-                background: rgba(255, 255, 255, 0.08) !important;
-                border: 1px solid rgba(255, 255, 255, 0.15) !important;
-            }
-
-            /* Table striping */
-            .table-striped tbody tr:nth-of-type(odd) {
-                background-color: rgba(255, 255, 255, 0.02) !important;
-            }
-
-            .table-striped tbody tr:nth-of-type(odd) td {
-                background-color: rgba(255, 255, 255, 0.02) !important;
-            }
-
-            .table-striped tbody tr:nth-of-type(even) {
-                background-color: var(--card-bg) !important;
-            }
-
-            .table-striped tbody tr:nth-of-type(even) td {
-                background-color: var(--card-bg) !important;
-            }
-
-            /* Bootstrap table overrides */
-            .table {
-                color: var(--text-primary) !important;
-                border-color: var(--border-color) !important;
-            }
-
-            .table > :not(caption) > * > * {
-                background-color: var(--card-bg) !important;
-                color: var(--text-primary) !important;
-                border-bottom-color: var(--border-color) !important;
-            }
-
-            /* Code blocks remain dark */
-            .code-block, .terminal {
-                background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%) !important;
-                border-color: rgba(255, 255, 255, 0.1) !important;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .hero-section h1 {
-                font-size: 2.5rem;
-            }
-        }
-    </style>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    </%text></style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <header>
         <div class="container">
-            <a class="navbar-brand fw-bold" href="#">
-                <i class="fas fa-road me-2"></i>Highway DSL
-            </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
-                    <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#dsl-specification">DSL Spec</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#examples">Examples</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#installation">Install</a></li>
-                    <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
-                </ul>
-                <a href="https://github.com/rodmena-limited/highway_dsl" class="btn btn-outline-light ms-2" target="_blank">
-                    <i class="fab fa-github"></i> GitHub
-                </a>
+            <div class="header-content">
+                <div>
+                    <span class="logo">HIGHWAY-DSL</span>
+                    <span class="version">v2.0.0-LTS</span>
+                </div>
+                <nav>
+                    <a href="#spec">SPECIFICATION</a>
+                    <a href="#operators">OPERATORS</a>
+                    <a href="#examples">EXAMPLES</a>
+                    <a href="#install">INSTALL</a>
+                    <a href="https://github.com/rodmena-limited/highway_dsl">GITHUB</a>
+                </nav>
             </div>
         </div>
-    </nav>
+    </header>
 
-    <!-- Hero Section -->
-    <section class="hero-section text-center">
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h1>Highway DSL v2.0.0</h1>
+                <p class="tagline">Domain-Specific Language for Workflow Definition and Serialization</p>
+
+                <div class="status-bar">
+                    <span class="item"><span class="label">STATUS:</span> <span class="value">LTS-STABLE</span></span>
+                    <span class="item"><span class="label">OPERATORS:</span> <span class="value">10</span></span>
+                    <span class="item"><span class="label">FORMAT:</span> <span class="value">YAML/JSON</span></span>
+                    <span class="item"><span class="label">TYPE-SAFETY:</span> <span class="value">PYDANTIC-V2</span></span>
+                    <span class="item"><span class="label">LICENSE:</span> <span class="value">MIT</span></span>
+                </div>
+
+                <p>Highway DSL is a formal specification language for defining workflow execution graphs. It provides a Python-based fluent API for programmatic workflow construction and serializes to YAML/JSON for storage, versioning, and interchange.</p>
+
+                <div class="note">
+                    <strong>SPECIFICATION NOTICE:</strong> Highway DSL defines the canonical format for workflow representation. Execution engines should implement Highway DSL parsers to achieve workflow portability and interoperability.
+                </div>
+            </div>
+        </section>
+
+        <section id="install" class="section">
+            <div class="container">
+                <h2>INSTALLATION</h2>
+
+                <div class="install-box">
+                    pip install highway-dsl
+                </div>
+
+                <div class="code-block">
+<span class="keyword">from</span> highway_dsl <span class="keyword">import</span> WorkflowBuilder
+
+workflow = (WorkflowBuilder(<span class="string">"my_workflow"</span>, version=<span class="string">"2.0.0"</span>)
+    .task(<span class="string">"task_1"</span>, <span class="string">"module.function"</span>, args=[<span class="string">"arg1"</span>])
+    .task(<span class="string">"task_2"</span>, <span class="string">"module.function2"</span>, dependencies=[<span class="string">"task_1"</span>])
+    .build()
+)
+
+<span class="comment"># Serialize to YAML</span>
+yaml_output = workflow.to_yaml()
+
+<span class="comment"># Serialize to JSON</span>
+json_output = workflow.to_json()
+                </div>
+            </div>
+        </section>
+
+        <section id="spec" class="section">
+            <div class="container">
+                <h2>SPECIFICATION OVERVIEW</h2>
+
+                <p>Highway DSL v2.0.0 is a Long-Term Support (LTS) specification with guaranteed backward compatibility for the 2.x series. The specification defines:</p>
+
+                <div class="grid">
+                    <div class="card">
+                        <h4>WORKFLOW STRUCTURE</h4>
+                        <ul>
+                            <li>name: string (required)</li>
+                            <li>version: string (default: "2.0.0")</li>
+                            <li>description: string (optional)</li>
+                            <li>start_task: string (required)</li>
+                            <li>tasks: dict[str, Operator]</li>
+                            <li>variables: dict[str, Any]</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h4>TYPE SYSTEM</h4>
+                        <ul>
+                            <li>Pydantic v2 data validation</li>
+                            <li>Full Python type hints</li>
+                            <li>Strict schema validation</li>
+                            <li>Round-trip serialization</li>
+                            <li>YAML/JSON interchange</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h4>TEMPLATE SYNTAX</h4>
+                        <ul>
+                            <li>Jinja2-style: {{variable}}</li>
+                            <li>Result references: {{task.result}}</li>
+                            <li>Item iteration: {{item.field}}</li>
+                            <li>Nested access: {{obj.nested.field}}</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3>VERSIONING POLICY</h3>
+
+                <div class="spec-section">
+                    <h4>v2.0.0 LTS (Current)</h4>
+                    <p>• No breaking changes in 2.x series</p>
+                    <p>• Backward-compatible additions only</p>
+                    <p>• Semantic versioning: 2.MINOR.PATCH</p>
+                    <p>• Production stability guarantee</p>
+                </div>
+
+                <h3>CORE CONCEPTS</h3>
+
+                <div class="spec-section">
+                    <h4>OPERATOR</h4>
+                    <p>Base unit of workflow definition. All operators inherit from <code>BaseOperator</code> with common fields:</p>
+                    <p>• <code>task_id</code>: Unique identifier within workflow</p>
+                    <p>• <code>operator_type</code>: Discriminator for operator polymorphism</p>
+                    <p>• <code>dependencies</code>: List of task_ids that must complete first</p>
+                    <p>• <code>metadata</code>: Arbitrary key-value pairs for extensibility</p>
+                </div>
+
+                <div class="spec-section">
+                    <h4>DEPENDENCY GRAPH</h4>
+                    <p>Workflows are directed acyclic graphs (DAGs) where:</p>
+                    <p>• Nodes = Operators (tasks, conditions, loops, etc.)</p>
+                    <p>• Edges = Dependencies (execution order constraints)</p>
+                    <p>• Cycles are prohibited (validation enforced)</p>
+                    <p>• Topological sort determines execution order</p>
+                </div>
+
+                <div class="spec-section">
+                    <h4>EXECUTION SEMANTICS</h4>
+                    <p>Highway DSL specification defines <strong>declarative workflow structure</strong>, not imperative execution logic. Execution engines must implement:</p>
+                    <p>• Dependency resolution and topological ordering</p>
+                    <p>• Template variable interpolation at runtime</p>
+                    <p>• Operator-specific execution handlers</p>
+                    <p>• State management and persistence</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="operators" class="section">
+            <div class="container">
+                <h2>OPERATOR SPECIFICATION</h2>
+
+                <p>Highway DSL v2.0.0 defines 10 operator types for comprehensive workflow modeling:</p>
+
+                <table class="operator-table">
+                    <thead>
+                        <tr>
+                            <th>OPERATOR</th>
+                            <th>TYPE</th>
+                            <th>DESCRIPTION</th>
+                            <th>REQUIRED FIELDS</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>TaskOperator</td>
+                            <td>task</td>
+                            <td>Basic execution unit that calls a function</td>
+                            <td>function, args/kwargs</td>
+                        </tr>
+                        <tr>
+                            <td>ConditionOperator</td>
+                            <td>condition</td>
+                            <td>Binary branch based on condition expression</td>
+                            <td>condition, if_true, if_false</td>
+                        </tr>
+                        <tr>
+                            <td>ParallelOperator</td>
+                            <td>parallel</td>
+                            <td>Concurrent execution of multiple branches</td>
+                            <td>branches (dict of branch_name: [operators])</td>
+                        </tr>
+                        <tr>
+                            <td>ForEachOperator</td>
+                            <td>foreach</td>
+                            <td>Iterate over collection with loop body</td>
+                            <td>items, loop_body</td>
+                        </tr>
+                        <tr>
+                            <td>WhileOperator</td>
+                            <td>while</td>
+                            <td>Conditional loop with condition check</td>
+                            <td>condition, loop_body</td>
+                        </tr>
+                        <tr>
+                            <td>WaitOperator</td>
+                            <td>wait</td>
+                            <td>Delay execution for specified duration</td>
+                            <td>wait_for (ISO 8601 duration)</td>
+                        </tr>
+                        <tr>
+                            <td>EmitEventOperator</td>
+                            <td>emit_event</td>
+                            <td>Publish event to event bus for coordination</td>
+                            <td>event_name</td>
+                        </tr>
+                        <tr>
+                            <td>WaitForEventOperator</td>
+                            <td>wait_for_event</td>
+                            <td>Block until event is received</td>
+                            <td>event_name, timeout (optional)</td>
+                        </tr>
+                        <tr>
+                            <td>SwitchOperator</td>
+                            <td>switch</td>
+                            <td>Multi-way branch with case matching</td>
+                            <td>switch_on, cases, default (optional)</td>
+                        </tr>
+                        <tr>
+                            <td>JoinOperator</td>
+                            <td>join</td>
+                            <td>Explicit coordination with multiple join modes</td>
+                            <td>join_on, join_mode (ALL_OF/ANY_OF/ALL_SUCCESS/ONE_SUCCESS)</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>TaskOperator - Function Execution</h3>
+
+                <div class="code-block">
+<span class="keyword">from</span> highway_dsl <span class="keyword">import</span> TaskOperator, RetryPolicy, TimeoutPolicy
+<span class="keyword">from</span> datetime <span class="keyword">import</span> timedelta
+
+task = TaskOperator(
+    task_id=<span class="string">"process_data"</span>,
+    function=<span class="string">"data.processor.transform"</span>,
+    args=[<span class="string">"{{input_file}}"</span>],
+    kwargs={<span class="string">"mode"</span>: <span class="string">"batch"</span>},
+    result_key=<span class="string">"processed_data"</span>,
+    retry_policy=RetryPolicy(
+        max_retries=3,
+        delay=timedelta(seconds=30),
+        backoff_factor=2.0
+    ),
+    timeout_policy=TimeoutPolicy(
+        timeout=timedelta(minutes=10),
+        kill_on_timeout=<span class="keyword">True</span>
+    )
+)
+                </div>
+
+                <h3>ConditionOperator - Branching Logic</h3>
+
+                <div class="code-block">
+builder.condition(
+    <span class="string">"data_quality_check"</span>,
+    condition=<span class="string">"{{quality_score}} > 0.95"</span>,
+    if_true=<span class="keyword">lambda</span> b: b.task(<span class="string">"advanced_process"</span>, <span class="string">"proc.advanced"</span>),
+    if_false=<span class="keyword">lambda</span> b: b.task(<span class="string">"basic_process"</span>, <span class="string">"proc.basic"</span>)
+)
+                </div>
+
+                <h3>ParallelOperator - Concurrent Execution</h3>
+
+                <div class="code-block">
+builder.parallel(
+    <span class="string">"process_all_data"</span>,
+    branches={
+        <span class="string">"images"</span>: <span class="keyword">lambda</span> b: b.task(<span class="string">"process_img"</span>, <span class="string">"img.process"</span>),
+        <span class="string">"videos"</span>: <span class="keyword">lambda</span> b: b.task(<span class="string">"process_vid"</span>, <span class="string">"vid.process"</span>),
+        <span class="string">"audio"</span>: <span class="keyword">lambda</span> b: b.task(<span class="string">"process_aud"</span>, <span class="string">"aud.process"</span>)
+    }
+)
+                </div>
+
+                <h3>ForEachOperator - Collection Iteration</h3>
+
+                <div class="code-block">
+builder.foreach(
+    <span class="string">"process_items"</span>,
+    items=<span class="string">"{{data.records}}"</span>,
+    loop_body=<span class="keyword">lambda</span> b: (
+        b.task(<span class="string">"validate"</span>, <span class="string">"validate.record"</span>, args=[<span class="string">"{{item}}"</span>])
+         .task(<span class="string">"transform"</span>, <span class="string">"transform.record"</span>, args=[<span class="string">"{{item}}"</span>])
+         .task(<span class="string">"store"</span>, <span class="string">"store.record"</span>, args=[<span class="string">"{{item}}"</span>])
+    )
+)
+                </div>
+
+                <h3>WhileOperator - Conditional Loop</h3>
+
+                <div class="code-block">
+builder.while_loop(
+    <span class="string">"retry_until_success"</span>,
+    condition=<span class="string">"{{result.status}} == 'failed'"</span>,
+    loop_body=<span class="keyword">lambda</span> b: (
+        b.task(<span class="string">"attempt"</span>, <span class="string">"processor.attempt"</span>)
+         .task(<span class="string">"check"</span>, <span class="string">"processor.check_result"</span>, result_key=<span class="string">"result"</span>)
+    )
+)
+                </div>
+
+                <h3>EmitEvent / WaitForEvent - Event Coordination</h3>
+
+                <div class="code-block">
+<span class="comment"># Branch 1: Emit event after processing</span>
+builder.task(<span class="string">"process"</span>, <span class="string">"processor.run"</span>)
+       .emit_event(<span class="string">"emit_ready"</span>, event_name=<span class="string">"processing_complete"</span>)
+
+<span class="comment"># Branch 2: Wait for event before continuing</span>
+builder.wait_for_event(
+    <span class="string">"wait_ready"</span>,
+    event_name=<span class="string">"processing_complete"</span>,
+    timeout=timedelta(hours=1)
+)
+       .task(<span class="string">"downstream"</span>, <span class="string">"processor.downstream"</span>)
+                </div>
+
+                <h3>SwitchOperator - Multi-Way Branch</h3>
+
+                <div class="code-block">
+builder.switch(
+    <span class="string">"route_by_priority"</span>,
+    switch_on=<span class="string">"{{task.priority}}"</span>,
+    cases={
+        <span class="string">"critical"</span>: <span class="string">"handle_critical"</span>,
+        <span class="string">"high"</span>: <span class="string">"handle_high"</span>,
+        <span class="string">"medium"</span>: <span class="string">"handle_medium"</span>,
+        <span class="string">"low"</span>: <span class="string">"handle_low"</span>
+    },
+    default=<span class="string">"handle_default"</span>
+)
+                </div>
+
+                <h3>JoinOperator - Explicit Coordination</h3>
+
+                <div class="code-block">
+<span class="keyword">from</span> highway_dsl <span class="keyword">import</span> JoinMode
+
+<span class="comment"># Wait for all tasks to complete (regardless of success/failure)</span>
+builder.join(
+    <span class="string">"wait_all"</span>,
+    join_on=[<span class="string">"task_1"</span>, <span class="string">"task_2"</span>, <span class="string">"task_3"</span>],
+    join_mode=JoinMode.ALL_OF
+)
+
+<span class="comment"># Wait for all tasks to succeed (fail if any fails)</span>
+builder.join(
+    <span class="string">"wait_all_success"</span>,
+    join_on=[<span class="string">"task_1"</span>, <span class="string">"task_2"</span>, <span class="string">"task_3"</span>],
+    join_mode=JoinMode.ALL_SUCCESS
+)
+
+<span class="comment"># Wait for any one task to complete</span>
+builder.join(
+    <span class="string">"wait_any"</span>,
+    join_on=[<span class="string">"task_1"</span>, <span class="string">"task_2"</span>, <span class="string">"task_3"</span>],
+    join_mode=JoinMode.ANY_OF
+)
+
+<span class="comment"># Wait for first successful completion</span>
+builder.join(
+    <span class="string">"wait_first_success"</span>,
+    join_on=[<span class="string">"task_1"</span>, <span class="string">"task_2"</span>, <span class="string">"task_3"</span>],
+    join_mode=JoinMode.ONE_SUCCESS
+)
+                </div>
+            </div>
+        </section>
+
+        <section id="examples" class="section">
+            <div class="container">
+                <h2>COMPLETE WORKFLOW EXAMPLES</h2>
+
+                <h3>Example 1: Data Processing Pipeline</h3>
+
+                <div class="code-block">
+<span class="keyword">from</span> highway_dsl <span class="keyword">import</span> WorkflowBuilder
+<span class="keyword">from</span> datetime <span class="keyword">import</span> timedelta
+
+workflow = (
+    WorkflowBuilder(<span class="string">"data_pipeline"</span>, version=<span class="string">"2.0.0"</span>)
+
+    <span class="comment"># Extract data from multiple sources in parallel</span>
+    .parallel(
+        <span class="string">"extract_data"</span>,
+        branches={
+            <span class="string">"database"</span>: <span class="keyword">lambda</span> b: b.task(<span class="string">"extract_db"</span>, <span class="string">"extract.from_db"</span>),
+            <span class="string">"api"</span>: <span class="keyword">lambda</span> b: b.task(<span class="string">"extract_api"</span>, <span class="string">"extract.from_api"</span>),
+            <span class="string">"files"</span>: <span class="keyword">lambda</span> b: b.task(<span class="string">"extract_files"</span>, <span class="string">"extract.from_files"</span>)
+        }
+    )
+
+    <span class="comment"># Wait for all extractions to complete successfully</span>
+    .join(
+        <span class="string">"wait_extractions"</span>,
+        join_on=[<span class="string">"extract_db"</span>, <span class="string">"extract_api"</span>, <span class="string">"extract_files"</span>],
+        join_mode=<span class="string">"ALL_SUCCESS"</span>
+    )
+
+    <span class="comment"># Merge and transform</span>
+    .task(<span class="string">"merge"</span>, <span class="string">"transform.merge_sources"</span>, result_key=<span class="string">"merged_data"</span>)
+    .task(<span class="string">"validate"</span>, <span class="string">"transform.validate"</span>, args=[<span class="string">"{{merged_data}}"</span>])
+
+    <span class="comment"># Branch based on data quality</span>
+    .condition(
+        <span class="string">"quality_check"</span>,
+        condition=<span class="string">"{{validate.score}} >= 0.95"</span>,
+        if_true=<span class="keyword">lambda</span> b: b.task(<span class="string">"load_prod"</span>, <span class="string">"load.to_production"</span>),
+        if_false=<span class="keyword">lambda</span> b: b.task(<span class="string">"load_staging"</span>, <span class="string">"load.to_staging"</span>)
+    )
+
+    .build()
+)
+                </div>
+
+                <h3>Example 2: Event-Driven Workflow</h3>
+
+                <div class="code-block">
+workflow = (
+    WorkflowBuilder(<span class="string">"event_driven"</span>, version=<span class="string">"2.0.0"</span>)
+
+    .parallel(
+        <span class="string">"process_branches"</span>,
+        branches={
+            <span class="string">"producer"</span>: <span class="keyword">lambda</span> b: (
+                b.task(<span class="string">"generate"</span>, <span class="string">"producer.generate_data"</span>)
+                 .emit_event(<span class="string">"notify"</span>, event_name=<span class="string">"data_ready"</span>)
+            ),
+            <span class="string">"consumer"</span>: <span class="keyword">lambda</span> b: (
+                b.wait_for_event(<span class="string">"wait"</span>, event_name=<span class="string">"data_ready"</span>,
+                                 timeout=timedelta(minutes=5))
+                 .task(<span class="string">"process"</span>, <span class="string">"consumer.process_data"</span>)
+            )
+        }
+    )
+
+    .build()
+)
+                </div>
+
+                <h3>YAML Serialization Output</h3>
+
+                <div class="yaml-block">
+<span class="key">name:</span> <span class="value">data_pipeline</span>
+<span class="key">version:</span> <span class="value">"2.0.0"</span>
+<span class="key">description:</span> <span class="value">""</span>
+<span class="key">start_task:</span> <span class="value">extract_data</span>
+<span class="key">tasks:</span>
+  <span class="key">extract_data:</span>
+    <span class="key">task_id:</span> <span class="value">extract_data</span>
+    <span class="key">operator_type:</span> <span class="value">parallel</span>
+    <span class="key">branches:</span>
+      <span class="key">database:</span>
+        - <span class="key">task_id:</span> <span class="value">extract_db</span>
+          <span class="key">operator_type:</span> <span class="value">task</span>
+          <span class="key">function:</span> <span class="value">extract.from_db</span>
+      <span class="key">api:</span>
+        - <span class="key">task_id:</span> <span class="value">extract_api</span>
+          <span class="key">operator_type:</span> <span class="value">task</span>
+          <span class="key">function:</span> <span class="value">extract.from_api</span>
+  <span class="key">wait_extractions:</span>
+    <span class="key">task_id:</span> <span class="value">wait_extractions</span>
+    <span class="key">operator_type:</span> <span class="value">join</span>
+    <span class="key">join_on:</span> <span class="value">[extract_db, extract_api, extract_files]</span>
+    <span class="key">join_mode:</span> <span class="value">ALL_SUCCESS</span>
+    <span class="key">dependencies:</span> <span class="value">[extract_data]</span>
+  <span class="key">merge:</span>
+    <span class="key">task_id:</span> <span class="value">merge</span>
+    <span class="key">operator_type:</span> <span class="value">task</span>
+    <span class="key">function:</span> <span class="value">transform.merge_sources</span>
+    <span class="key">result_key:</span> <span class="value">merged_data</span>
+    <span class="key">dependencies:</span> <span class="value">[wait_extractions]</span>
+<span class="key">variables:</span> {}
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="container">
+                <h2>TECHNICAL SPECIFICATIONS</h2>
+
+                <div class="grid">
+                    <div class="card">
+                        <h4>SERIALIZATION</h4>
+                        <ul>
+                            <li>Format: YAML 1.2 / JSON</li>
+                            <li>Encoding: UTF-8</li>
+                            <li>Schema: Pydantic v2</li>
+                            <li>Validation: Strict mode</li>
+                            <li>Round-trip: Lossless</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h4>DEPENDENCIES</h4>
+                        <ul>
+                            <li>Python: >= 3.8</li>
+                            <li>pydantic: >= 2.0</li>
+                            <li>pyyaml: >= 6.0</li>
+                            <li>python-dateutil: >= 2.8</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h4>VALIDATION RULES</h4>
+                        <ul>
+                            <li>No cyclic dependencies (DAG)</li>
+                            <li>Unique task_id per workflow</li>
+                            <li>Valid dependency references</li>
+                            <li>Type-safe field validation</li>
+                            <li>ISO 8601 duration format</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3>DURATION FORMAT (ISO 8601)</h3>
+
+                <div class="code-block">
+<span class="keyword">from</span> highway_dsl <span class="keyword">import</span> Duration
+
+<span class="comment"># String format: "P[n]Y[n]M[n]DT[n]H[n]M[n]S"</span>
+Duration(<span class="string">"PT30S"</span>)      <span class="comment"># 30 seconds</span>
+Duration(<span class="string">"PT5M"</span>)       <span class="comment"># 5 minutes</span>
+Duration(<span class="string">"PT2H"</span>)       <span class="comment"># 2 hours</span>
+Duration(<span class="string">"P1D"</span>)        <span class="comment"># 1 day</span>
+Duration(<span class="string">"PT1H30M"</span>)    <span class="comment"># 1 hour 30 minutes</span>
+
+<span class="comment"># Programmatic (timedelta)</span>
+<span class="keyword">from</span> datetime <span class="keyword">import</span> timedelta
+Duration(timedelta(seconds=30))
+                </div>
+
+                <h3>IDEMPOTENCY</h3>
+
+                <div class="spec-section">
+                    <h4>IDEMPOTENCY KEY</h4>
+                    <p>All operators support optional <code>idempotency_key</code> field for deterministic re-execution:</p>
+                    <code>task.idempotency_key = "unique-key-{date}-{id}"</code>
+                    <p>Execution engines should use idempotency keys to prevent duplicate execution of tasks when workflows are retried or resumed.</p>
+                </div>
+
+                <h3>CALLBACK HOOKS</h3>
+
+                <div class="code-block">
+<span class="comment"># Define callback tasks that execute on success/failure</span>
+builder.task(<span class="string">"risky_task"</span>, <span class="string">"processor.risky"</span>)
+       .on_success(<span class="string">"notify_success"</span>)
+       .on_failure(<span class="string">"notify_failure"</span>)
+
+<span class="comment"># Define the callback handlers</span>
+builder.task(<span class="string">"notify_success"</span>, <span class="string">"notify.send_success"</span>)
+builder.task(<span class="string">"notify_failure"</span>, <span class="string">"notify.send_failure"</span>)
+                </div>
+
+                <h3>SCHEDULING METADATA</h3>
+
+                <div class="code-block">
+<span class="keyword">from</span> datetime <span class="keyword">import</span> datetime
+
+workflow = (
+    WorkflowBuilder(<span class="string">"scheduled_workflow"</span>)
+    .set_schedule(<span class="string">"0 */6 * * *"</span>)        <span class="comment"># Cron: every 6 hours</span>
+    .set_start_date(datetime(2025, 1, 1))
+    .set_catchup(<span class="keyword">False</span>)                    <span class="comment"># Don't backfill</span>
+    .add_tags(<span class="string">"production"</span>, <span class="string">"critical"</span>)
+
+    <span class="comment"># ... define tasks ...</span>
+
+    .build()
+)
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="container">
+                <h2>IMPLEMENTATION NOTES</h2>
+
+                <div class="note">
+                    <strong>FOR EXECUTION ENGINE DEVELOPERS:</strong> Highway DSL is a specification language, not an execution runtime. To implement a Highway DSL-compliant execution engine, you must provide:
+                </div>
+
+                <div class="grid">
+                    <div class="card">
+                        <h4>PARSER</h4>
+                        <ul>
+                            <li>YAML/JSON deserialization</li>
+                            <li>Schema validation</li>
+                            <li>Operator type dispatch</li>
+                            <li>DAG construction</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h4>EXECUTOR</h4>
+                        <ul>
+                            <li>Topological sort</li>
+                            <li>Dependency resolution</li>
+                            <li>Template interpolation</li>
+                            <li>Operator handlers</li>
+                            <li>State persistence</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h4>RUNTIME</h4>
+                        <ul>
+                            <li>Function registry/loader</li>
+                            <li>Result storage</li>
+                            <li>Event bus (for events)</li>
+                            <li>Retry/timeout handling</li>
+                            <li>Checkpoint/resume logic</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3>REFERENCE IMPLEMENTATION</h3>
+
+                <div class="spec-section">
+                    <p>Highway Workflow Engine provides a production-grade reference implementation of the Highway DSL specification. It demonstrates:</p>
+                    <p>• PostgreSQL-backed durable execution</p>
+                    <p>• Crash-resistant state management</p>
+                    <p>• Atomic transaction orchestration</p>
+                    <p>• Complete operator support (all 10 types)</p>
+                    <p>• Event coordination and join semantics</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
         <div class="container">
-            <div class="hero-content">
-                <div class="row justify-content-center">
-                    <div class="col-lg-10">
-                        <div class="hero-badge">
-                            <i class="fas fa-rocket me-2"></i>Enterprise Workflow Engine DSL
-                        </div>
-                        <div class="roboto mb-4">
-                            <h1 class="display-3 fw-bold mb-4">
-                                Highway DSL
-                            </h1>
-                            <p class="lead mb-4" style="font-size: 1.5rem; font-weight: 300; opacity: 0.95;">
-                                A sophisticated <strong>Domain Specific Language</strong> for defining and orchestrating<br/>
-                                complex workflow engines, durable execution patterns, and data processing pipelines
-                            </p>
-                            <p class="mb-4" style="font-size: 1rem; opacity: 0.8;">
-                                <i class="fas fa-building me-2"></i>Engineered by <strong>RODMEN/A</strong> for enterprise data infrastructure and distributed systems<br/>
-                                <i class="fas fa-code-branch me-2 mt-2 d-inline-block"></i>Compatible with Temporal, Airflow, Prefect, and custom workflow orchestrators
-                            </p>
-                        </div>
-                        <div class="d-flex justify-content-center gap-3 mb-5">
-                            <a href="#installation" class="btn btn-light btn-lg px-5 py-3">
-                                <i class="fas fa-download me-2"></i>Get Started
-                            </a>
-                            <a href="https://github.com/rodmena-limited/highway_dsl" class="btn btn-outline-light btn-lg px-5 py-3" target="_blank">
-                                <i class="fab fa-github me-2"></i>View on GitHub
-                            </a>
-                        </div>
-                        <div class="terminal mb-4">
-                            <span style="color: var(--warning); font-weight: bold;">$</span> pip install highway-dsl
-                        </div>
-                        <div class="d-flex justify-content-center gap-4 flex-wrap" style="font-size: 0.95rem;">
-                            <span class="text-light opacity-75">
-                                <i class="fas fa-check-circle text-success me-2"></i>LTS Stable Release <strong>v2.0.0</strong>
-                            </span>
-                            <span class="text-light opacity-75">
-                                <i class="fas fa-shield-alt text-info me-2"></i>MIT License
-                            </span>
-                            <span class="text-light opacity-75">
-                                <i class="fab fa-python text-warning me-2"></i>Python 3.8+
-                            </span>
-                            <span class="text-light opacity-75">
-                                <i class="fas fa-cube text-cyan me-2"></i>Durable Execution Ready
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Stats Section -->
-    <section class="section section-light">
-        <div class="container">
-            <div class="row text-center mb-5">
-                <div class="col-12">
-                    <h2 class="display-6 fw-bold mb-3 section-title">Enterprise-Grade Workflow Capabilities</h2>
-                    <p class="lead text-muted" style="max-width: 800px; margin: 0 auto;">
-                        Built for complex data processing, distributed systems, and mission-critical workflows
-                    </p>
-                </div>
-            </div>
-            <div class="row g-4">
-                <div class="col-lg-3 col-md-6">
-                    <div class="stats-card">
-                        <i class="fas fa-puzzle-piece mb-3" style="font-size: 2.5rem; color: var(--primary);"></i>
-                        <span class="stats-number">10</span>
-                        <div class="stats-label">Operator Types</div>
-                        <p class="mt-2 mb-0" style="font-size: 0.8rem; color: var(--gray-600);">Task, Parallel, Condition, Loop, Wait, Event, Switch, Join</p>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="stats-card">
-                        <i class="fab fa-python mb-3" style="font-size: 2.5rem; color: var(--accent);"></i>
-                        <span class="stats-number">100%</span>
-                        <div class="stats-label">Type Safety</div>
-                        <p class="mt-2 mb-0" style="font-size: 0.8rem; color: var(--gray-600);">Full Python type hints</p>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="stats-card">
-                        <i class="fas fa-file-code mb-3" style="font-size: 2.5rem; color: var(--accent-purple);"></i>
-                        <span class="stats-number" style="font-size: 2rem;">YAML/JSON</span>
-                        <div class="stats-label">Serialization</div>
-                        <p class="mt-2 mb-0" style="font-size: 0.8rem; color: var(--gray-600);">Full round-trip support</p>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="stats-card">
-                        <i class="fas fa-infinity mb-3" style="font-size: 2.5rem; color: var(--success);"></i>
-                        <span class="stats-number">∞</span>
-                        <div class="stats-label">Scalability</div>
-                        <p class="mt-2 mb-0" style="font-size: 0.8rem; color: var(--gray-600);">Unlimited workflow nodes</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Real-World Example Showcase -->
-    <section class="section section-alt">
-        <div class="container">
-            <div class="row text-center mb-5">
-                <div class="col-12">
-                    <h2 class="display-6 fw-bold mb-3 section-title">Real-World Power: E-Commerce Order Processing</h2>
-                    <p class="lead text-muted" style="max-width: 900px; margin: 0 auto;">
-                        See Highway DSL in action with a production-ready workflow that handles orders, payments, and shipping
-                    </p>
-                </div>
-            </div>
-            <div class="row align-items-center">
-                <div class="col-lg-6 mb-4 mb-lg-0">
-                    <div class="code-block" style="font-size: 0.8rem;">
-                        <div class="text-warning">from</div> highway_dsl <div class="text-warning">import</div> WorkflowBuilder, RetryPolicy<br>
-                        <div class="text-warning">from</div> datetime <div class="text-warning">import</div> datetime, timedelta<br><br>
-
-                        workflow = (WorkflowBuilder(<span class="text-danger">"order_processing"</span>)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;.set_schedule(<span class="text-danger">"*/5 * * * *"</span>)&nbsp;&nbsp;<div class="text-success"># Every 5 min</div><br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;.set_start_date(datetime(2025, 1, 1))<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;.add_tags(<span class="text-danger">"production"</span>, <span class="text-danger">"orders"</span>, <span class="text-danger">"critical"</span>)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;.set_default_retry_policy(<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;RetryPolicy(max_retries=3, delay=timedelta(seconds=30))<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;)<br><br>
-
-                        &nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"fetch_orders"</span>, <span class="text-danger">"orders.get_pending"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;result_key=<span class="text-danger">"orders"</span>)<br><br>
-
-                        &nbsp;&nbsp;&nbsp;&nbsp;.foreach(<span class="text-danger">"process_each_order"</span>, items=<span class="text-danger">"{{orders}}"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;loop_body=<span class="text-warning">lambda</span> b: (<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;b.task(<span class="text-danger">"validate"</span>, <span class="text-danger">"orders.validate"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;args=[<span class="text-danger">"{{item}}"</span>])<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"charge_payment"</span>, <span class="text-danger">"payments.charge"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;args=[<span class="text-danger">"{{item}}"</span>])<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"send_failure_email"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"email.send_failure"</span>)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.on_failure(<span class="text-danger">"send_failure_email"</span>)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.switch(<span class="text-danger">"route_by_amount"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;switch_on=<span class="text-danger">"{{item.total}}"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cases={<span class="text-danger">"high"</span>: <span class="text-danger">"priority_shipping"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"medium"</span>: <span class="text-danger">"standard_shipping"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"low"</span>: <span class="text-danger">"economy_shipping"</span>})<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;)<br><br>
-
-                        &nbsp;&nbsp;&nbsp;&nbsp;.emit_event(<span class="text-danger">"notify_analytics"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;event_name=<span class="text-danger">"orders_processed_{{ds}}"</span>)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;.build()<br>
-                        )
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="mb-4">
-                        <div class="d-flex align-items-start mb-3">
-                            <div style="background: linear-gradient(135deg, #10b981, #059669); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
-                                <i class="fas fa-calendar-alt" style="font-size: 1.3rem; color: white;"></i>
-                            </div>
-                            <div>
-                                <h5 class="fw-bold mb-1">Automated Scheduling</h5>
-                                <p class="text-muted mb-0">Runs every 5 minutes with cron scheduling</p>
-                            </div>
-                        </div>
-                        <div class="d-flex align-items-start mb-3">
-                            <div style="background: linear-gradient(135deg, #2563eb, #1e40af); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
-                                <i class="fas fa-redo" style="font-size: 1.3rem; color: white;"></i>
-                            </div>
-                            <div>
-                                <h5 class="fw-bold mb-1">Smart Retry Logic</h5>
-                                <p class="text-muted mb-0">Default retry policy with exponential backoff</p>
-                            </div>
-                        </div>
-                        <div class="d-flex align-items-start mb-3">
-                            <div style="background: linear-gradient(135deg, #f59e0b, #d97706); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
-                                <i class="fas fa-bell" style="font-size: 1.3rem; color: white;"></i>
-                            </div>
-                            <div>
-                                <h5 class="fw-bold mb-1">Failure Callbacks</h5>
-                                <p class="text-muted mb-0">Automatic alerts on payment failures</p>
-                            </div>
-                        </div>
-                        <div class="d-flex align-items-start mb-3">
-                            <div style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
-                                <i class="fas fa-random" style="font-size: 1.3rem; color: white;"></i>
-                            </div>
-                            <div>
-                                <h5 class="fw-bold mb-1">Dynamic Routing</h5>
-                                <p class="text-muted mb-0">Switch/case shipping based on order amount</p>
-                            </div>
-                        </div>
-                        <div class="d-flex align-items-start">
-                            <div style="background: linear-gradient(135deg, #06b6d4, #0891b2); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
-                                <i class="fas fa-broadcast-tower" style="font-size: 1.3rem; color: white;"></i>
-                            </div>
-                            <div>
-                                <h5 class="fw-bold mb-1">Event-Driven</h5>
-                                <p class="text-muted mb-0">Emits events for downstream analytics workflows</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Durable Execution Engines Section -->
-    <section class="section" style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: white; position: relative; overflow: hidden;">
-        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: radial-gradient(circle at 30% 50%, rgba(37, 99, 235, 0.15) 0%, transparent 50%), radial-gradient(circle at 70% 50%, rgba(6, 182, 212, 0.15) 0%, transparent 50%); z-index: 0;"></div>
-        <div class="container" style="position: relative; z-index: 1;">
-            <div class="row text-center mb-5">
-                <div class="col-12">
-                    <h2 class="display-6 fw-bold mb-4" style="color: white;">
-                        <i class="fas fa-cube me-3"></i>Durable Execution Engine Compatible
-                    </h2>
-                    <p class="lead mb-4" style="max-width: 900px; margin: 0 auto; color: rgba(255,255,255,0.9);">
-                        Highway DSL produces workflow specifications that seamlessly integrate with modern durable execution engines and advanced workflow orchestration platforms
-                    </p>
-                </div>
-            </div>
-            <div class="row g-4">
-                <div class="col-lg-3 col-md-6">
-                    <div class="feature-card p-4" style="background: rgba(255,255,255,0.05) !important; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);">
-                        <div class="feature-icon" style="color: #10b981;">
-                            <i class="fas fa-layer-group"></i>
-                        </div>
-                        <h5 class="fw-bold mb-3" style="color: white;">Temporal</h5>
-                        <p style="color: rgba(255,255,255,0.8); font-size: 0.9rem;">Generate workflows compatible with Temporal's durable execution model for long-running business processes</p>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="feature-card p-4" style="background: rgba(255,255,255,0.05) !important; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);">
-                        <div class="feature-icon" style="color: #06b6d4;">
-                            <i class="fas fa-project-diagram"></i>
-                        </div>
-                        <h5 class="fw-bold mb-3" style="color: white;">Airflow</h5>
-                        <p style="color: rgba(255,255,255,0.8); font-size: 0.9rem;">Export to Apache Airflow DAGs for data pipeline orchestration and scheduling</p>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="feature-card p-4" style="background: rgba(255,255,255,0.05) !important; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);">
-                        <div class="feature-icon" style="color: #8b5cf6;">
-                            <i class="fas fa-stream"></i>
-                        </div>
-                        <h5 class="fw-bold mb-3" style="color: white;">Prefect</h5>
-                        <p style="color: rgba(255,255,255,0.8); font-size: 0.9rem;">Integrate with Prefect workflows for modern data orchestration and observability</p>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="feature-card p-4" style="background: rgba(255,255,255,0.05) !important; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1);">
-                        <div class="feature-icon" style="color: #f59e0b;">
-                            <i class="fas fa-cogs"></i>
-                        </div>
-                        <h5 class="fw-bold mb-3" style="color: white;">Custom Engines</h5>
-                        <p style="color: rgba(255,255,255,0.8); font-size: 0.9rem;">YAML/JSON output enables integration with any workflow engine or orchestrator</p>
-                    </div>
-                </div>
-            </div>
-            <div class="row mt-5">
-                <div class="col-12">
-                    <div class="p-4" style="background: rgba(255,255,255,0.03); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1);">
-                        <div class="row align-items-center">
-                            <div class="col-md-8">
-                                <h4 class="fw-bold mb-3" style="color: white;">
-                                    <i class="fas fa-check-double text-success me-2"></i>Enterprise Workflow Standards
-                                </h4>
-                                <p class="mb-0" style="color: rgba(255,255,255,0.85);">
-                                    Highway DSL adheres to industry-standard workflow patterns including BPMN concepts, state machines,
-                                    saga patterns, and distributed transaction coordination. The DSL's declarative nature makes it ideal
-                                    for code generation, AI-assisted workflow design, and infrastructure-as-code approaches.
-                                </p>
-                            </div>
-                            <div class="col-md-4 text-center">
-                                <div class="d-flex flex-column gap-2 mt-3 mt-md-0">
-                                    <span style="color: rgba(255,255,255,0.7); font-size: 0.85rem;">
-                                        <i class="fas fa-check text-success me-2"></i>BPMN Compatible
-                                    </span>
-                                    <span style="color: rgba(255,255,255,0.7); font-size: 0.85rem;">
-                                        <i class="fas fa-check text-success me-2"></i>State Machine Support
-                                    </span>
-                                    <span style="color: rgba(255,255,255,0.7); font-size: 0.85rem;">
-                                        <i class="fas fa-check text-success me-2"></i>Saga Pattern Ready
-                                    </span>
-                                    <span style="color: rgba(255,255,255,0.7); font-size: 0.85rem;">
-                                        <i class="fas fa-check text-success me-2"></i>Event-Driven Architecture
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Highway Workflow Engine Promotion -->
-    <section class="section" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; position: relative; overflow: hidden;">
-        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: radial-gradient(circle at 20% 30%, rgba(16, 185, 129, 0.12) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(37, 99, 235, 0.12) 0%, transparent 50%); z-index: 0;"></div>
-        <div class="container" style="position: relative; z-index: 1;">
-            <div class="row text-center mb-5">
-                <div class="col-12">
-                    <div style="display: inline-block; background: rgba(16, 185, 129, 0.15); padding: 0.5rem 1.5rem; border-radius: 50px; margin-bottom: 1.5rem; border: 1px solid rgba(16, 185, 129, 0.3);">
-                        <i class="fas fa-rocket me-2"></i>
-                        <span style="font-weight: 600; font-size: 0.9rem;">PRODUCTION-READY RUNTIME</span>
-                    </div>
-                    <h2 class="display-5 fw-bold mb-4" style="color: white;">
-                        Powered by <span class="gradient-text" style="background: linear-gradient(135deg, #10b981 0%, #06b6d4 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Highway Workflow Engine</span>
-                    </h2>
-                    <p class="lead mb-4" style="max-width: 900px; margin: 0 auto; color: rgba(255,255,255,0.9); font-size: 1.25rem;">
-                        Highway DSL workflows execute on <strong>Highway Workflow Engine</strong> - a bank-grade durable execution runtime built on PostgreSQL with crash-resistant semantics, comprehensive audit logging, and DataShard S3 integration for production reliability.
-                    </p>
-                </div>
-            </div>
-            <div class="row g-4 mb-5">
-                <div class="col-lg-3 col-md-6">
-                    <div class="p-4 h-100" style="background: rgba(255,255,255,0.05); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
-                        <div style="font-size: 2.5rem; margin-bottom: 1rem; color: #10b981;">
-                            <i class="fas fa-database"></i>
-                        </div>
-                        <h5 class="fw-bold mb-3" style="color: white;">PostgreSQL-Backed Durability</h5>
-                        <p style="color: rgba(255,255,255,0.85); font-size: 0.95rem; margin-bottom: 0;">
-                            Built on Absurd task queue with atomic transaction orchestration. Every workflow step is durably persisted with full crash recovery and exactly-once semantics.
-                        </p>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="p-4 h-100" style="background: rgba(255,255,255,0.05); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
-                        <div style="font-size: 2.5rem; margin-bottom: 1rem; color: #06b6d4;">
-                            <i class="fas fa-shield-alt"></i>
-                        </div>
-                        <h5 class="fw-bold mb-3" style="color: white;">Crash-Resistant Execution</h5>
-                        <p style="color: rgba(255,255,255,0.85); font-size: 0.95rem; margin-bottom: 0;">
-                            DurableContext API provides automatic checkpointing and resume. Long-running workflows survive worker crashes, network failures, and infrastructure outages with zero data loss.
-                        </p>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="p-4 h-100" style="background: rgba(255,255,255,0.05); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
-                        <div style="font-size: 2.5rem; margin-bottom: 1rem; color: #f59e0b;">
-                            <i class="fas fa-file-alt"></i>
-                        </div>
-                        <h5 class="fw-bold mb-3" style="color: white;">Immutable Audit Trail</h5>
-                        <p style="color: rgba(255,255,255,0.85); font-size: 0.95rem; margin-bottom: 0;">
-                            Every state transition logged to absurd_event_log with complete lineage tracking. Meet compliance requirements with full execution history and reproducible workflow replays.
-                        </p>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="p-4 h-100" style="background: rgba(255,255,255,0.05); border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);">
-                        <div style="font-size: 2.5rem; margin-bottom: 1rem; color: #8b5cf6;">
-                            <i class="fas fa-cloud-upload-alt"></i>
-                        </div>
-                        <h5 class="fw-bold mb-3" style="color: white;">DataShard S3 Logging</h5>
-                        <p style="color: rgba(255,255,255,0.85); font-size: 0.95rem; margin-bottom: 0;">
-                            Automatic archival of workflow execution logs to S3-compatible storage. Long-term retention, cost-effective storage, and compliance-ready audit archives with compressed JSON logs.
-                        </p>
-                    </div>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-12">
-                    <div class="p-4" style="background: rgba(16, 185, 129, 0.08); border-radius: 16px; border: 1px solid rgba(16, 185, 129, 0.2);">
-                        <div class="row align-items-center">
-                            <div class="col-md-8">
-                                <h4 class="fw-bold mb-3" style="color: white;">
-                                    <i class="fas fa-cogs me-2" style="color: #10b981;"></i>Enterprise Deployment Options
-                                </h4>
-                                <p class="mb-0" style="color: rgba(255,255,255,0.9);">
-                                    Deploy with <strong>systemd workers</strong> (4+ workers with journald logging) or <strong>Docker Compose</strong> (multi-worker setup with health checks). Both options include PostgreSQL 16+, automatic worker recovery, and production-ready configurations with maximum ulimits and resource controls.
-                                </p>
-                            </div>
-                            <div class="col-md-4 text-center">
-                                <a href="https://github.com/rodmena-limited/highway-workflow-engine" class="btn btn-lg px-5 py-3" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; font-weight: 600; border-radius: 12px; box-shadow: 0 8px 25px rgba(16, 185, 129, 0.3); border: none;" target="_blank">
-                                    <i class="fab fa-github me-2"></i>Explore Highway Engine
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- About RODMEN/A Section -->
-    <section id="about" class="section section-alt">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-6 mb-4 mb-lg-0">
-                    <h2 class="display-6 fw-bold mb-4">About <span class="gradient-text">RODMEN/A</span></h2>
-                    <p class="lead">Software development company specializing in data infrastructure, distributed systems, and cloud-based solutions.</p>
-                    <p>Highway DSL is developed by RODMEN/A to provide robust, scalable workflow management for complex data processing pipelines. Our expertise in distributed systems ensures Highway DSL is designed for enterprise-grade reliability and performance.</p>
-                    <div class="d-flex flex-column gap-2">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-check-circle text-success me-2"></i>
-                            <span>Specialized in data infrastructure solutions</span>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-check-circle text-success me-2"></i>
-                            <span>Expertise in distributed systems architecture</span>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-check-circle text-success me-2"></i>
-                            <span>Cloud-native workflow solutions</span>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-check-circle text-success me-2"></i>
-                            <span>Reliable and scalable implementations</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="feature-card p-4 bg-white h-100">
-                        <div class="feature-icon">
-                            <i class="fas fa-globe"></i>
-                        </div>
-                        <h4 class="fw-bold mb-3">Enterprise Focus</h4>
-                        <p>Highway DSL is engineered specifically for enterprise environments requiring high availability, robust error handling, and complex dependency management.</p>
-                        <p>Developed with RODMEN/A's deep expertise in distributed systems, Highway DSL ensures your workflows can scale efficiently while maintaining consistency and reliability.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Features Section -->
-    <section id="features" class="section section-alt">
-        <div class="container">
-            <div class="row text-center mb-5">
-                <div class="col-12">
-                    <h2 class="display-6 fw-bold mb-3 section-title">Core Features</h2>
-                    <p class="lead text-muted" style="max-width: 800px; margin: 0 auto;">
-                        Comprehensive workflow engine capabilities designed for enterprise-scale orchestration
-                    </p>
-                </div>
-            </div>
-            <div class="row g-4">
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card p-4 bg-white">
-                        <div class="feature-icon">
-                            <i class="fas fa-code"></i>
-                        </div>
-                        <h4 class="fw-bold mb-3">Fluent API</h4>
-                        <p>Intuitive, chainable methods for building complex workflows with clean, readable code. Designed for developers familiar with Python. Perfect for programmatic workflow generation and dynamic orchestration scenarios.</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card p-4 bg-white">
-                        <div class="feature-icon">
-                            <i class="fas fa-project-diagram"></i>
-                        </div>
-                        <h4 class="fw-bold mb-3">Rich Operators (10 Types)</h4>
-                        <p>Comprehensive operator library: Task, Condition, Parallel, ForEach, While, Wait, EmitEvent, WaitForEvent, Switch, and Join. Enterprise-grade workflow constructs supporting sophisticated orchestration patterns like saga, choreography, event-driven coordination, and Temporal-style join semantics.</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card p-4 bg-white">
-                        <div class="feature-icon">
-                            <i class="fas fa-bolt"></i>
-                        </div>
-                        <h4 class="fw-bold mb-3">Error Handling</h4>
-                        <p>Retry and timeout policies with configurable exponential backoff strategies for resilient workflows. Handles transient failures, network partitions, and service degradation in distributed systems.</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card p-4 bg-white">
-                        <div class="feature-icon">
-                            <i class="fas fa-sync-alt"></i>
-                        </div>
-                        <h4 class="fw-bold mb-3">Loop Management</h4>
-                        <p>Advanced ForEach and While loops with proper dependency encapsulation and no unwanted "grandparent" dependencies. Supports nested loops, dynamic iteration, and conditional loop termination for complex data processing workflows.</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card p-4 bg-white">
-                        <div class="feature-icon">
-                            <i class="fas fa-sitemap"></i>
-                        </div>
-                        <h4 class="fw-bold mb-3">Parallel Execution</h4>
-                        <p>Fan-in/fan-out parallel processing with proper synchronization and dependency management for maximum throughput. Ideal for map-reduce patterns, batch processing, and concurrent microservice orchestration in distributed systems.</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card p-4 bg-white">
-                        <div class="feature-icon">
-                            <i class="fas fa-file-export"></i>
-                        </div>
-                        <h4 class="fw-bold mb-3">Serialization</h4>
-                        <p>YAML and JSON export/import with round-trip validation and full interoperability. Enables GitOps workflows, version control integration, and seamless integration with CI/CD pipelines and infrastructure-as-code tools.</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card p-4 bg-white">
-                        <div class="feature-icon">
-                            <i class="fas fa-broadcast-tower"></i>
-                        </div>
-                        <h4 class="fw-bold mb-3">Event-Driven Coordination</h4>
-                        <p>Native EmitEvent and WaitForEvent operators enable decoupled workflow coordination, cross-workflow communication, and reactive patterns. Perfect for microservices orchestration, distributed sagas, and asynchronous event streaming architectures.</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card p-4 bg-white">
-                        <div class="feature-icon">
-                            <i class="fas fa-code-branch"></i>
-                        </div>
-                        <h4 class="fw-bold mb-3">JoinOperator (Temporal-Style)</h4>
-                        <p>Explicit coordination with join modes: ALL_OF, ANY_OF, ALL_SUCCESS, ONE_SUCCESS. Wait for multiple tasks/events with fine-grained control over completion semantics. Essential for parallel aggregation, multi-dependency workflows, and distributed coordination patterns.</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-4">
-                    <div class="feature-card p-4 bg-white">
-                        <div class="feature-icon">
-                            <i class="fas fa-shield-alt"></i>
-                        </div>
-                        <h4 class="fw-bold mb-3">LTS Stable (v2.0.0)</h4>
-                        <p>Long-Term Support release with guaranteed API stability for the 2.x series. Production-ready with no breaking changes planned. Semantic versioning ensures safe upgrades. Trusted by enterprise teams building mission-critical workflow systems.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Examples Section -->
-    <section id="examples" class="section section-alt">
-        <div class="container">
-            <div class="row text-center mb-5">
-                <div class="col-12">
-                    <h2 class="display-6 fw-bold mb-3 section-title">Advanced Examples</h2>
-                    <p class="lead text-muted" style="max-width: 800px; margin: 0 auto;">
-                        See Highway DSL in action with real-world workflow patterns and enterprise use cases
-                    </p>
-                </div>
-            </div>
-            <div class="row g-4">
-                <div class="col-lg-6">
-                    <h4><i class="fas fa-exchange-alt me-2 text-primary"></i>Parallel Processing</h4>
-                    <div class="code-block">
-                        <div class="text-success"># Process data in parallel branches</div>
-                        builder.parallel(<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"process_data"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;branches={<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"branch_a"</span>: <span class="text-warning">lambda</span> b: b.task(<span class="text-danger">"task_a1"</span>, <span class="text-danger">"processor.task_a1"</span>)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"task_a2"</span>, <span class="text-danger">"processor.task_a2"</span>),<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"branch_b"</span>: <span class="text-warning">lambda</span> b: b.task(<span class="text-danger">"task_b1"</span>, <span class="text-danger">"processor.task_b1"</span>)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"task_b2"</span>, <span class="text-danger">"processor.task_b2"</span>),<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;}<br>
-                        )
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <h4><i class="fas fa-retweet me-2 text-primary"></i>Loop with Fixed Dependencies</h4>
-                    <div class="code-block">
-                        <div class="text-success"># ForEach loop with proper dependency management</div>
-                        builder.foreach(<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"process_items"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;items=<span class="text-danger">"{{data.items}}"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;loop_body=<span class="text-warning">lambda</span> fb: fb.task(<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"process_item"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"processor.handle_item"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;args=[<span class="text-danger">"{{item.id}}"</span>]<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;)<br>
-                        <div class="text-success"># Fixed: Loop body tasks no longer get</div>
-                        <div class="text-success"># unwanted "grandparent" dependencies</div>
-                        )
-                    </div>
-                </div>
-            </div>
-            <div class="row g-4 mt-4">
-                <div class="col-lg-6">
-                    <h4><i class="fas fa-random me-2 text-primary"></i>Conditional Logic</h4>
-                    <div class="code-block">
-                        <div class="text-success"># Branch based on runtime conditions</div>
-                        builder.condition(<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"data_quality_check"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;condition=<span class="text-danger">"{{data.quality_score}} > 0.8"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;if_true=<span class="text-warning">lambda</span> b: b.task(<span class="text-danger">"advanced_processing"</span>, <span class="text-danger">"processor.advanced"</span>),<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;if_false=<span class="text-warning">lambda</span> b: b.task(<span class="text-danger">"basic_processing"</span>, <span class="text-danger">"processor.basic"</span>),<br>
-                        )
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <h4><i class="fas fa-redo me-2 text-primary"></i>While Loop with Retry</h4>
-                    <div class="code-block">
-                        <div class="text-success"># Retry processing until success</div>
-                        builder.while_loop(<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"retry_processing"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;condition=<span class="text-danger">"{{result.status}} == 'failed'"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;loop_body=<span class="text-warning">lambda</span> wb: wb.task(<span class="text-danger">"retry_task"</span>, <span class="text-danger">"processor.process"</span>)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"check_result"</span>, <span class="text-danger">"processor.validate_result"</span>)<br>
-                        )
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- DSL Specification Section -->
-    <section id="dsl-specification" class="section section-alt">
-        <div class="container">
-            <div class="row text-center mb-5">
-                <div class="col-12">
-                    <h2 class="display-6 fw-bold mb-3 section-title">DSL Specification</h2>
-                    <p class="lead text-muted" style="max-width: 900px; margin: 0 auto;">
-                        Comprehensive domain-specific language for defining complex workflow architectures with precision and clarity
-                    </p>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-12">
-                    <div class="specification-table">
-                        <table class="table table-striped mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Component</th>
-                                    <th>Type</th>
-                                    <th>Description</th>
-                                    <th>Usage</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Workflow</td>
-                                    <td>Core Object</td>
-                                    <td>Top-level container for all workflow tasks and definitions</td>
-                                    <td>Contains tasks, dependencies, variables, and serialization methods</td>
-                                </tr>
-                                <tr>
-                                    <td>WorkflowBuilder</td>
-                                    <td>Fluent Interface</td>
-                                    <td>Chainable API for constructing workflows programmatically</td>
-                                    <td>Used to fluently define tasks, operators, and dependencies</td>
-                                </tr>
-                                <tr>
-                                    <td>TaskOperator</td>
-                                    <td>Execution Unit</td>
-                                    <td>Basic building block representing a single workflow operation</td>
-                                    <td>Executes functions, can have dependencies, retries, and timeouts</td>
-                                </tr>
-                                <tr>
-                                    <td>ConditionOperator</td>
-                                    <td>Control Flow</td>
-                                    <td>Implements conditional branching (if/else logic)</td>
-                                    <td>Directs workflow execution based on runtime conditions</td>
-                                </tr>
-                                <tr>
-                                    <td>ParallelOperator</td>
-                                    <td>Concurrency</td>
-                                    <td>Executes multiple branches simultaneously</td>
-                                    <td>Enables parallel processing with fan-in/fan-out patterns</td>
-                                </tr>
-                                <tr>
-                                    <td>ForEachOperator</td>
-                                    <td>Iteration</td>
-                                    <td>Iterates over collections with proper dependency management</td>
-                                    <td>Processes each item in a collection with encapsulated dependencies</td>
-                                </tr>
-                                <tr>
-                                    <td>WhileOperator</td>
-                                    <td>Looping</td>
-                                    <td>Executes loops based on runtime conditions</td>
-                                    <td>Continues execution until specified condition is met</td>
-                                </tr>
-                                <tr>
-                                    <td>WaitOperator</td>
-                                    <td>Scheduling</td>
-                                    <td>Pauses execution until specified time or duration</td>
-                                    <td>Introduces delays or schedules execution for later</td>
-                                </tr>
-                                <tr>
-                                    <td>RetryPolicy</td>
-                                    <td>Error Handling</td>
-                                    <td>Configurable retry strategy with backoff</td>
-                                    <td>Defines how failed tasks should be retried</td>
-                                </tr>
-                                <tr>
-                                    <td>TimeoutPolicy</td>
-                                    <td>Error Handling</td>
-                                    <td>Execution time limits with configurable behavior</td>
-                                    <td>Ensures tasks don't run indefinitely</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-            <div class="row mt-4">
-                <div class="col-lg-6">
-                    <h4 class="mb-3">Workflow Definition Syntax</h4>
-                    <div class="code-block">
-                        <div class="text-success"># Core workflow structure</div>
-                        workflow = WorkflowBuilder(name)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;.task(id, function, **options)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;.condition(id, condition, if_true, if_false)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;.parallel(id, branches)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;.foreach(id, items, loop_body)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;.while_loop(id, condition, loop_body)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;.wait(id, duration_or_datetime)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;.build()
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <h4 class="mb-3">Dependency Management</h4>
-                    <div class="code-block">
-                        <div class="text-success"># Explicit dependencies</div>
-                        .task("task_a", "service.operation_a")<br>
-                        .task("task_b", "service.operation_b", dependencies=["task_a"])<br><br>
-                        
-                        <div class="text-success"># Implicit dependencies (fluent)</div>
-                        .task("task_a", "service.operation_a")<br>
-                        .task("task_b", "service.operation_b")&nbsp;&nbsp;<span class="text-warning"># Automatically depends on task_a</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Usage Section -->
-    <section id="usage" class="section section-light">
-        <div class="container">
-            <div class="row align-items-center mb-5">
-                <div class="col-lg-6">
-                    <h2 class="display-6 fw-bold mb-4">Simple Yet Powerful</h2>
-                    <p class="lead text-muted mb-4">Define complex workflows with intuitive Python code that's both readable and maintainable.</p>
-                    <div class="d-flex flex-column gap-2">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-check-circle text-success me-2"></i>
-                            <span>Chain operations fluently</span>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-check-circle text-success me-2"></i>
-                            <span>Define dependencies automatically</span>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-check-circle text-success me-2"></i>
-                            <span>Handle complex branching logic</span>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-check-circle text-success me-2"></i>
-                            <span>Serialize to multiple formats</span>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-check-circle text-success me-2"></i>
-                            <span>Enterprise-grade error handling</span>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-check-circle text-success me-2"></i>
-                            <span>Scale to complex distributed workflows</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="code-block">
-                        <div class="text-success"># Enterprise ETL Workflow</div>
-                        <div class="text-warning">from</div> highway_dsl <div class="text-warning">import</div> WorkflowBuilder, RetryPolicy<br>
-                        <div class="text-warning">from</div> datetime <div class="text-warning">import</div> timedelta<br><br>
-                        
-                        workflow = (WorkflowBuilder(<span class="text-danger">"enterprise_etl"</span>)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"extract"</span>, <span class="text-danger">"etl.extract_from_source"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;result_key=<span class="text-danger">"raw_data"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;retry_policy=RetryPolicy(max_retries=3, delay=timedelta(seconds=30)))<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"transform"</span>, <span class="text-danger">"etl.transform_data"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;args=[<span class="text-danger">"{{raw_data}}"</span>], result_key=<span class="text-danger">"transformed_data"</span>)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"load"</span>, <span class="text-danger">"etl.load_to_target"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;args=[<span class="text-danger">"{{transformed_data}}"</span>])<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;.build())
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Examples Section -->
-    <section id="examples" class="section section-alt">
-        <div class="container">
-            <div class="row text-center mb-5">
-                <div class="col-12">
-                    <h2 class="display-6 fw-bold mb-3 section-title">Advanced Examples</h2>
-                    <p class="lead text-muted" style="max-width: 800px; margin: 0 auto;">
-                        See Highway DSL in action with real-world workflow patterns and enterprise use cases
-                    </p>
-                </div>
-            </div>
-            <div class="row g-4">
-                <div class="col-lg-6">
-                    <h4><i class="fas fa-exchange-alt me-2 text-primary"></i>Parallel Processing</h4>
-                    <div class="code-block">
-                        <div class="text-success"># Process data in parallel branches</div>
-                        builder.parallel(<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"process_data"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;branches={<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"branch_a"</span>: <span class="text-warning">lambda</span> b: b.task(<span class="text-danger">"task_a1"</span>, <span class="text-danger">"processor.task_a1"</span>)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"task_a2"</span>, <span class="text-danger">"processor.task_a2"</span>),<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"branch_b"</span>: <span class="text-warning">lambda</span> b: b.task(<span class="text-danger">"task_b1"</span>, <span class="text-danger">"processor.task_b1"</span>)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"task_b2"</span>, <span class="text-danger">"processor.task_b2"</span>),<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;}<br>
-                        )
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <h4><i class="fas fa-retweet me-2 text-primary"></i>Loop with Fixed Dependencies</h4>
-                    <div class="code-block">
-                        <div class="text-success"># ForEach loop with proper dependency management</div>
-                        builder.foreach(<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"process_items"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;items=<span class="text-danger">"{{data.items}}"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;loop_body=<span class="text-warning">lambda</span> fb: fb.task(<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"process_item"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"processor.handle_item"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;args=[<span class="text-danger">"{{item.id}}"</span>]<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;)<br>
-                        <div class="text-success"># Fixed: Loop body tasks no longer get</div>
-                        <div class="text-success"># unwanted "grandparent" dependencies</div>
-                        )
-                    </div>
-                </div>
-            </div>
-            <div class="row g-4 mt-4">
-                <div class="col-lg-6">
-                    <h4><i class="fas fa-random me-2 text-primary"></i>Conditional Logic</h4>
-                    <div class="code-block">
-                        <div class="text-success"># Branch based on runtime conditions</div>
-                        builder.condition(<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"data_quality_check"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;condition=<span class="text-danger">"{{data.quality_score}} > 0.8"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;if_true=<span class="text-warning">lambda</span> b: b.task(<span class="text-danger">"advanced_processing"</span>, <span class="text-danger">"processor.advanced"</span>),<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;if_false=<span class="text-warning">lambda</span> b: b.task(<span class="text-danger">"basic_processing"</span>, <span class="text-danger">"processor.basic"</span>),<br>
-                        )
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <h4><i class="fas fa-redo me-2 text-primary"></i>While Loop with Retry</h4>
-                    <div class="code-block">
-                        <div class="text-success"># Retry processing until success</div>
-                        builder.while_loop(<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;<span class="text-danger">"retry_processing"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;condition=<span class="text-danger">"{{result.status}} == 'failed'"</span>,<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;loop_body=<span class="text-warning">lambda</span> wb: wb.task(<span class="text-danger">"retry_task"</span>, <span class="text-danger">"processor.process"</span>)<br>
-                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.task(<span class="text-danger">"check_result"</span>, <span class="text-danger">"processor.validate_result"</span>)<br>
-                        )
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Installation Section -->
-    <section id="installation" class="section section-alt">
-        <div class="container">
-            <div class="row text-center mb-5">
-                <div class="col-12">
-                    <h2 class="display-6 fw-bold mb-3 section-title">Get Started in Seconds</h2>
-                    <p class="lead text-muted" style="max-width: 700px; margin: 0 auto;">
-                        Install Highway DSL and start building enterprise-grade workflows today
-                    </p>
-                </div>
-            </div>
-            <div class="row justify-content-center">
-                <div class="col-lg-8">
-                    <div class="terminal">
-                        <span style="color: var(--warning); font-weight: bold;">$</span> pip install highway-dsl
-                    </div>
-                    <div class="text-center mt-4">
-                        <a href="https://pypi.org/project/highway-dsl/" class="btn btn-primary btn-lg me-3" target="_blank">
-                            <i class="fab fa-python me-2"></i>PyPI Package
-                        </a>
-                        <a href="https://github.com/rodmena-limited/highway_dsl" class="btn btn-outline-primary btn-lg" target="_blank">
-                            <i class="fab fa-github me-2"></i>GitHub Repo
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Use Cases Section -->
-    <section class="section section-light">
-        <div class="container">
-            <div class="row text-center mb-5">
-                <div class="col-12">
-                    <h2 class="display-6 fw-bold mb-3 section-title">Real-World Use Cases</h2>
-                    <p class="lead text-muted" style="max-width: 900px; margin: 0 auto;">
-                        Highway DSL powers mission-critical workflows across diverse enterprise applications
-                    </p>
-                </div>
-            </div>
-            <div class="row g-4">
-                <div class="col-lg-6">
-                    <div class="feature-card p-4 bg-white h-100">
-                        <div class="d-flex align-items-start mb-3">
-                            <div style="background: linear-gradient(135deg, #2563eb, #06b6d4); width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
-                                <i class="fas fa-database" style="font-size: 1.5rem; color: white;"></i>
-                            </div>
-                            <div>
-                                <h4 class="fw-bold mb-2">ETL & Data Pipelines</h4>
-                                <p class="text-muted mb-0" style="font-size: 0.9rem;">Extract, transform, and load workflows for big data processing</p>
-                            </div>
-                        </div>
-                        <p>Orchestrate complex data pipelines with parallel processing, error recovery, and data quality checks. Perfect for batch processing, streaming analytics, and data warehouse population across distributed cloud infrastructure.</p>
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="feature-card p-4 bg-white h-100">
-                        <div class="d-flex align-items-start mb-3">
-                            <div style="background: linear-gradient(135deg, #8b5cf6, #ec4899); width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
-                                <i class="fas fa-server" style="font-size: 1.5rem; color: white;"></i>
-                            </div>
-                            <div>
-                                <h4 class="fw-bold mb-2">Microservices Orchestration</h4>
-                                <p class="text-muted mb-0" style="font-size: 0.9rem;">Coordinate complex interactions across distributed services</p>
-                            </div>
-                        </div>
-                        <p>Manage saga patterns, distributed transactions, and service choreography. Handle compensation logic, circuit breakers, and graceful degradation in microservices architectures with hundreds of services.</p>
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="feature-card p-4 bg-white h-100">
-                        <div class="d-flex align-items-start mb-3">
-                            <div style="background: linear-gradient(135deg, #10b981, #06b6d4); width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
-                                <i class="fas fa-robot" style="font-size: 1.5rem; color: white;"></i>
-                            </div>
-                            <div>
-                                <h4 class="fw-bold mb-2">AI/ML Pipeline Automation</h4>
-                                <p class="text-muted mb-0" style="font-size: 0.9rem;">Machine learning workflow orchestration and MLOps</p>
-                            </div>
-                        </div>
-                        <p>Automate model training, validation, deployment, and monitoring. Coordinate data preprocessing, feature engineering, hyperparameter tuning, A/B testing, and model versioning in production ML systems.</p>
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="feature-card p-4 bg-white h-100">
-                        <div class="d-flex align-items-start mb-3">
-                            <div style="background: linear-gradient(135deg, #f59e0b, #ef4444); width: 60px; height: 60px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 1rem;">
-                                <i class="fas fa-shopping-cart" style="font-size: 1.5rem; color: white;"></i>
-                            </div>
-                            <div>
-                                <h4 class="fw-bold mb-2">E-commerce & Order Processing</h4>
-                                <p class="text-muted mb-0" style="font-size: 0.9rem;">End-to-end order fulfillment and payment workflows</p>
-                            </div>
-                        </div>
-                        <p>Manage order validation, inventory checks, payment processing, shipping coordination, and notification delivery. Handle refunds, cancellations, and customer service workflows with full auditability and compliance tracking.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Benefits Section -->
-    <section class="highlight-section">
-        <div class="container">
-            <div class="row text-center">
-                <div class="col-12">
-                    <h2 class="display-6 fw-bold mb-4" style="position: relative; z-index: 1;">Why Highway DSL?</h2>
-                    <div class="row mt-5">
-                        <div class="col-md-4 mb-4">
-                            <div class="text-center">
-                                <i class="fas fa-bolt fa-3x mb-3 text-white"></i>
-                                <h5 class="text-white fw-bold">Enterprise Performance</h5>
-                                <p class="text-light">Built with performance in mind, supporting parallel execution, concurrent workflows, and optimized dependency management for large-scale distributed systems processing millions of tasks.</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-4">
-                            <div class="text-center">
-                                <i class="fas fa-shield-alt fa-3x mb-3 text-white"></i>
-                                <h5 class="text-white fw-bold">Reliable by Design</h5>
-                                <p class="text-light">Stable release with comprehensive error handling, exponential backoff retry mechanisms, timeout policies, and sophisticated dependency resolution for production-grade durable execution engines.</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-4">
-                            <div class="text-center">
-                                <i class="fas fa-rocket fa-3x mb-3 text-white"></i>
-                                <h5 class="text-white fw-bold">Industrial Strength</h5>
-                                <p class="text-light">Developed by RODMEN/A for enterprise data infrastructure and distributed systems. Proven reliability in complex orchestration scenarios including microservices choreography and saga patterns.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- AI Agent Example Section -->
-    <section id="ai-agent-example" class="section section-alt">
-        <div class="container">
-            <div class="row text-center mb-5">
-                <div class="col-12">
-                    <h2 class="display-6 fw-bold mb-3 section-title">AI Agent Workflow Example</h2>
-                    <p class="lead text-muted" style="max-width: 900px; margin: 0 auto;">
-                        Real-world example: AI agent that builds, tests, and deploys a full software platform using TDD methodology
-                    </p>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col-lg-6 mb-4 mb-lg-0">
-                    <h4 class="text-center mb-3">Generated YAML Output</h4>
-                    <div class="code-block p-0" style="height: 500px; overflow-y: auto;">
-                        <script src="https://gist.github.com/ourway/8cbf00827ece4117e8f41e959fdb2f0f.js"></script>
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <h4 class="text-center mb-3">Python DSL Code</h4>
-                    <div class="code-block p-0" style="height: 500px; overflow-y: auto;">
-                        <script src="https://gist.github.com/ourway/6e228a6e65576b3a2b3970e243e69c8e.js"></script>
-                    </div>
-                </div>
-            </div>
-            <div class="row mt-5">
-                <div class="col-12">
-                    <h4 class="text-center mb-4">Workflow Breakdown</h4>
-                    <div class="row">
-                        <div class="col-md-4 mb-4">
-                            <div class="feature-card p-4 bg-white h-100">
-                                <div class="feature-icon">
-                                    <i class="fas fa-project-diagram"></i>
-                                </div>
-                                <h5 class="fw-bold">Phase 1: Setup & Test Generation</h5>
-                                <p>AI analyzes requirements and sets up Git repository, then generates test suites for all microservices in parallel.</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-4">
-                            <div class="feature-card p-4 bg-white h-100">
-                                <div class="feature-icon">
-                                    <i class="fas fa-sync-alt"></i>
-                                </div>
-                                <h5 class="fw-bold">Phase 2: TDD Loop</h5>
-                                <p>Continuous implementation and refactoring loop that continues until all tests pass, with conditional logic for implementation vs. refactoring.</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-4">
-                            <div class="feature-card p-4 bg-white h-100">
-                                <div class="feature-icon">
-                                    <i class="fas fa-cloud-upload-alt"></i>
-                                </div>
-                                <h5 class="fw-bold">Phase 3: Deployment & Observability</h5>
-                                <p>Infrastructure provisioning, parallel deployments, health checks, and observability setup with automated verification.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- About RODMEN/A Section -->
-    <section id="about" class="section section-alt">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-lg-6 mb-4 mb-lg-0">
-                    <h2 class="display-6 fw-bold mb-4">About <span class="gradient-text">RODMEN/A</span></h2>
-                    <p class="lead">Software development company specializing in data infrastructure, distributed systems, and cloud-based solutions.</p>
-                    <p>Highway DSL is developed by RODMEN/A to provide robust, scalable workflow management for complex data processing pipelines. Our expertise in distributed systems ensures Highway DSL is designed for enterprise-grade reliability and performance.</p>
-                    <div class="d-flex flex-column gap-2">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-check-circle text-success me-2"></i>
-                            <span>Specialized in data infrastructure solutions</span>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-check-circle text-success me-2"></i>
-                            <span>Expertise in distributed systems architecture</span>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-check-circle text-success me-2"></i>
-                            <span>Cloud-native workflow solutions</span>
-                        </div>
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-check-circle text-success me-2"></i>
-                            <span>Reliable and scalable implementations</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="feature-card p-4 bg-white h-100">
-                        <div class="feature-icon">
-                            <i class="fas fa-globe"></i>
-                        </div>
-                        <h4 class="fw-bold mb-3">Enterprise Focus</h4>
-                        <p>Highway DSL is engineered specifically for enterprise environments requiring high availability, robust error handling, and complex dependency management.</p>
-                        <p>Developed with RODMEN/A's deep expertise in distributed systems, Highway DSL ensures your workflows can scale efficiently while maintaining consistency and reliability.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- AI Optimization Section -->
-    <section class="section section-light">
-        <div class="container">
-            <div class="row text-center mb-5">
-                <div class="col-12">
-                    <h2 class="display-6 fw-bold mb-3 section-title">AI-Optimized Workflow Engine</h2>
-                    <p class="lead text-muted" style="max-width: 900px; margin: 0 auto;">
-                        Highway DSL represents the most sophisticated workflow specification available for Python environments
-                    </p>
-                    <div class="row mt-4">
-                        <div class="col-md-4">
-                            <div class="feature-card p-4 bg-white">
-                                <h5 class="fw-bold mb-3">Domain-Specific Optimization</h5>
-                                <p>Highway DSL is purpose-built for workflow definition with an intuitive API that reduces complexity while maximizing expressiveness. Supports complex patterns like fan-out/fan-in, map-reduce, and distributed transaction coordination across microservices.</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="feature-card p-4 bg-white">
-                                <h5 class="fw-bold mb-3">Declarative Syntax</h5>
-                                <p>Define complex workflow relationships with simple, readable Python code that clearly expresses intent and execution order. Perfect for code generation, AI-driven workflow synthesis, and infrastructure-as-code approaches in modern DevOps environments.</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="feature-card p-4 bg-white">
-                                <h5 class="fw-bold mb-3">Advanced Dependency Management</h5>
-                                <p>Intelligent dependency resolution that correctly handles complex nested structures including ForEach and While loops. Prevents circular dependencies and ensures proper execution order in deeply nested workflow hierarchies with thousands of tasks.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-6 mb-4 mb-lg-0">
-                    <h4 class="fw-bold mb-3">
-                        <i class="fas fa-road me-2"></i>Highway DSL by RODMEN/A
-                    </h4>
-                    <p class="text-light opacity-75">
-                        A sophisticated Domain Specific Language for defining and managing complex workflow engines and data processing pipelines in Python. 
-                        Developed by RODMEN/A specializing in data infrastructure, distributed systems, and cloud-based solutions.
-                    </p>
-                    <div class="d-flex gap-3 mt-3">
-                        <a href="https://github.com/rodmena-limited/highway_dsl" class="text-white opacity-75 hover-opacity-100" target="_blank">
-                            <i class="fab fa-github fa-2x"></i>
-                        </a>
-                        <a href="https://pypi.org/project/highway-dsl/" class="text-white opacity-75 hover-opacity-100" target="_blank">
-                            <i class="fab fa-python fa-2x"></i>
-                        </a>
-                    </div>
-                </div>
-                <div class="col-lg-3 mb-4 mb-lg-0">
-                    <h5 class="fw-bold text-white mb-3">Resources</h5>
-                    <ul class="list-unstyled">
-                        <li><a href="https://github.com/rodmena-limited/highway_dsl/blob/main/README.md" class="text-light opacity-75 text-decoration-none hover-opacity-100" target="_blank">Documentation</a></li>
-                        <li><a href="https://github.com/rodmena-limited/highway_dsl/issues" class="text-light opacity-75 text-decoration-none hover-opacity-100" target="_blank">Issues</a></li>
-                        <li><a href="https://github.com/rodmena-limited/highway_dsl/blob/main/LICENSE" class="text-light opacity-75 text-decoration-none hover-opacity-100" target="_blank">License</a></li>
-                        <li><a href="https://rodmena.co.uk" class="text-light opacity-75 text-decoration-none hover-opacity-100" target="_blank">RODMEN/A Website</a></li>
-                    </ul>
-                </div>
-                <div class="col-lg-3">
-                    <h5 class="fw-bold text-white mb-3">Project</h5>
-                    <ul class="list-unstyled">
-                        <li class="mb-2">Version: 2.0.0 (LTS Stable)</li>
-                        <li class="mb-2">License: MIT</li>
-                        <li class="mb-2">Long-Term Support Release</li>
-                        <li>Developed by: RODMEN/A</li>
-                    </ul>
-                </div>
-            </div>
-            <hr class="my-4 opacity-25">
-            <div class="row">
-                <div class="col-12 text-center">
-                    <p class="text-light opacity-75 mb-0">&copy; 2025 Highway DSL by RODMEN/A. Built for enterprise workflow automation.</p>
-                </div>
-            </div>
+            <p>Highway DSL v2.0.0 (LTS) | MIT License | Specification maintained by RODMEN/A</p>
+            <p>Python 3.8+ | Pydantic v2 | YAML/JSON Serialization</p>
+            <p><a href="https://github.com/rodmena-limited/highway_dsl">github.com/rodmena-limited/highway_dsl</a></p>
         </div>
     </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Smooth scrolling for navigation links
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-
-        // Add hover effect for cards
-        document.querySelectorAll('.feature-card, .stats-card').forEach(card => {
-            card.addEventListener('mouseenter', function() {
-                this.style.transform = 'translateY(-10px)';
-            });
-            card.addEventListener('mouseleave', function() {
-                this.style.transform = 'translateY(0)';
-            });
-        });
-    </script>
 </body>
 </html>
