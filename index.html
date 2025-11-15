@@ -47,6 +47,7 @@
             position: sticky;
             top: 0;
             z-index: 1000;
+            opacity: 1;
         }
 
         .header-content {
@@ -142,6 +143,15 @@
             font-family: 'Courier New', monospace;
             font-size: 0.9rem;
             line-height: 1.5;
+        }
+
+        .code-block pre {
+            margin: 0;
+            padding: 0;
+            white-space: pre;
+            font-family: inherit;
+            font-size: inherit;
+            line-height: inherit;
         }
 
         .code-block .comment {
@@ -275,6 +285,15 @@
             font-size: 0.85rem;
         }
 
+        .yaml-block pre {
+            margin: 0;
+            padding: 0;
+            white-space: pre;
+            font-family: 'Courier New', monospace;
+            font-size: inherit;
+            line-height: 1.5;
+        }
+
         .yaml-block .key {
             color: var(--accent-blue);
         }
@@ -345,8 +364,7 @@
                     pip install highway-dsl
                 </div>
 
-                <div class="code-block">
-<span class="keyword">from</span> highway_dsl <span class="keyword">import</span> WorkflowBuilder
+                <div class="code-block"><pre><span class="keyword">from</span> highway_dsl <span class="keyword">import</span> WorkflowBuilder
 
 workflow = (WorkflowBuilder(<span class="string">"my_workflow"</span>, version=<span class="string">"2.0.0"</span>)
     .task(<span class="string">"task_1"</span>, <span class="string">"module.function"</span>, args=[<span class="string">"arg1"</span>])
@@ -358,8 +376,7 @@ workflow = (WorkflowBuilder(<span class="string">"my_workflow"</span>, version=<
 yaml_output = workflow.to_yaml()
 
 <span class="comment"># Serialize to JSON</span>
-json_output = workflow.to_json()
-                </div>
+json_output = workflow.to_json()</pre></div>
             </div>
         </section>
 
@@ -526,7 +543,7 @@ json_output = workflow.to_json()
 
                 <h3>TaskOperator - Function Execution</h3>
 
-                <div class="code-block">
+                <div class="code-block"><pre>
 <span class="keyword">from</span> highway_dsl <span class="keyword">import</span> TaskOperator, RetryPolicy, TimeoutPolicy
 <span class="keyword">from</span> datetime <span class="keyword">import</span> timedelta
 
@@ -545,23 +562,23 @@ task = TaskOperator(
         timeout=timedelta(minutes=10),
         kill_on_timeout=<span class="keyword">True</span>
     )
-)
+)</pre>
                 </div>
 
                 <h3>ConditionOperator - Branching Logic</h3>
 
-                <div class="code-block">
+                <div class="code-block"><pre>
 builder.condition(
     <span class="string">"data_quality_check"</span>,
     condition=<span class="string">"{{quality_score}} > 0.95"</span>,
     if_true=<span class="keyword">lambda</span> b: b.task(<span class="string">"advanced_process"</span>, <span class="string">"proc.advanced"</span>),
     if_false=<span class="keyword">lambda</span> b: b.task(<span class="string">"basic_process"</span>, <span class="string">"proc.basic"</span>)
-)
+)</pre>
                 </div>
 
                 <h3>ParallelOperator - Concurrent Execution</h3>
 
-                <div class="code-block">
+                <div class="code-block"><pre>
 builder.parallel(
     <span class="string">"process_all_data"</span>,
     branches={
@@ -569,12 +586,12 @@ builder.parallel(
         <span class="string">"videos"</span>: <span class="keyword">lambda</span> b: b.task(<span class="string">"process_vid"</span>, <span class="string">"vid.process"</span>),
         <span class="string">"audio"</span>: <span class="keyword">lambda</span> b: b.task(<span class="string">"process_aud"</span>, <span class="string">"aud.process"</span>)
     }
-)
+)</pre>
                 </div>
 
                 <h3>ForEachOperator - Collection Iteration</h3>
 
-                <div class="code-block">
+                <div class="code-block"><pre>
 builder.foreach(
     <span class="string">"process_items"</span>,
     items=<span class="string">"{{data.records}}"</span>,
@@ -583,12 +600,12 @@ builder.foreach(
          .task(<span class="string">"transform"</span>, <span class="string">"transform.record"</span>, args=[<span class="string">"{{item}}"</span>])
          .task(<span class="string">"store"</span>, <span class="string">"store.record"</span>, args=[<span class="string">"{{item}}"</span>])
     )
-)
+)</pre>
                 </div>
 
                 <h3>WhileOperator - Conditional Loop</h3>
 
-                <div class="code-block">
+                <div class="code-block"><pre>
 builder.while_loop(
     <span class="string">"retry_until_success"</span>,
     condition=<span class="string">"{{result.status}} == 'failed'"</span>,
@@ -596,12 +613,12 @@ builder.while_loop(
         b.task(<span class="string">"attempt"</span>, <span class="string">"processor.attempt"</span>)
          .task(<span class="string">"check"</span>, <span class="string">"processor.check_result"</span>, result_key=<span class="string">"result"</span>)
     )
-)
+)</pre>
                 </div>
 
                 <h3>EmitEvent / WaitForEvent - Event Coordination</h3>
 
-                <div class="code-block">
+                <div class="code-block"><pre>
 <span class="comment"># Branch 1: Emit event after processing</span>
 builder.task(<span class="string">"process"</span>, <span class="string">"processor.run"</span>)
        .emit_event(<span class="string">"emit_ready"</span>, event_name=<span class="string">"processing_complete"</span>)
@@ -612,12 +629,12 @@ builder.wait_for_event(
     event_name=<span class="string">"processing_complete"</span>,
     timeout=timedelta(hours=1)
 )
-       .task(<span class="string">"downstream"</span>, <span class="string">"processor.downstream"</span>)
+       .task(<span class="string">"downstream"</span>, <span class="string">"processor.downstream"</span>)</pre>
                 </div>
 
                 <h3>SwitchOperator - Multi-Way Branch</h3>
 
-                <div class="code-block">
+                <div class="code-block"><pre>
 builder.switch(
     <span class="string">"route_by_priority"</span>,
     switch_on=<span class="string">"{{task.priority}}"</span>,
@@ -628,12 +645,12 @@ builder.switch(
         <span class="string">"low"</span>: <span class="string">"handle_low"</span>
     },
     default=<span class="string">"handle_default"</span>
-)
+)</pre>
                 </div>
 
                 <h3>JoinOperator - Explicit Coordination</h3>
 
-                <div class="code-block">
+                <div class="code-block"><pre>
 <span class="keyword">from</span> highway_dsl <span class="keyword">import</span> JoinMode
 
 <span class="comment"># Wait for all tasks to complete (regardless of success/failure)</span>
@@ -662,7 +679,7 @@ builder.join(
     <span class="string">"wait_first_success"</span>,
     join_on=[<span class="string">"task_1"</span>, <span class="string">"task_2"</span>, <span class="string">"task_3"</span>],
     join_mode=JoinMode.ONE_SUCCESS
-)
+)</pre>
                 </div>
             </div>
         </section>
@@ -673,7 +690,7 @@ builder.join(
 
                 <h3>Example 1: Data Processing Pipeline</h3>
 
-                <div class="code-block">
+                <div class="code-block"><pre>
 <span class="keyword">from</span> highway_dsl <span class="keyword">import</span> WorkflowBuilder
 <span class="keyword">from</span> datetime <span class="keyword">import</span> timedelta
 
@@ -710,12 +727,12 @@ workflow = (
     )
 
     .build()
-)
+)</pre>
                 </div>
 
                 <h3>Example 2: Event-Driven Workflow</h3>
 
-                <div class="code-block">
+                <div class="code-block"><pre>
 workflow = (
     WorkflowBuilder(<span class="string">"event_driven"</span>, version=<span class="string">"2.0.0"</span>)
 
@@ -735,12 +752,12 @@ workflow = (
     )
 
     .build()
-)
+)</pre>
                 </div>
 
                 <h3>YAML Serialization Output</h3>
 
-                <div class="yaml-block">
+                <div class="yaml-block"><pre>
 <span class="key">name:</span> <span class="value">data_pipeline</span>
 <span class="key">version:</span> <span class="value">"2.0.0"</span>
 <span class="key">description:</span> <span class="value">""</span>
@@ -770,7 +787,7 @@ workflow = (
     <span class="key">function:</span> <span class="value">transform.merge_sources</span>
     <span class="key">result_key:</span> <span class="value">merged_data</span>
     <span class="key">dependencies:</span> <span class="value">[wait_extractions]</span>
-<span class="key">variables:</span> {}
+<span class="key">variables:</span> {}</pre>
                 </div>
             </div>
         </section>
@@ -815,7 +832,7 @@ workflow = (
 
                 <h3>DURATION FORMAT (ISO 8601)</h3>
 
-                <div class="code-block">
+                <div class="code-block"><pre>
 <span class="keyword">from</span> highway_dsl <span class="keyword">import</span> Duration
 
 <span class="comment"># String format: "P[n]Y[n]M[n]DT[n]H[n]M[n]S"</span>
@@ -827,7 +844,7 @@ Duration(<span class="string">"PT1H30M"</span>)    <span class="comment"># 1 hou
 
 <span class="comment"># Programmatic (timedelta)</span>
 <span class="keyword">from</span> datetime <span class="keyword">import</span> timedelta
-Duration(timedelta(seconds=30))
+Duration(timedelta(seconds=30))</pre>
                 </div>
 
                 <h3>IDEMPOTENCY</h3>
@@ -841,7 +858,7 @@ Duration(timedelta(seconds=30))
 
                 <h3>CALLBACK HOOKS</h3>
 
-                <div class="code-block">
+                <div class="code-block"><pre>
 <span class="comment"># Define callback tasks that execute on success/failure</span>
 builder.task(<span class="string">"risky_task"</span>, <span class="string">"processor.risky"</span>)
        .on_success(<span class="string">"notify_success"</span>)
@@ -849,12 +866,12 @@ builder.task(<span class="string">"risky_task"</span>, <span class="string">"pro
 
 <span class="comment"># Define the callback handlers</span>
 builder.task(<span class="string">"notify_success"</span>, <span class="string">"notify.send_success"</span>)
-builder.task(<span class="string">"notify_failure"</span>, <span class="string">"notify.send_failure"</span>)
+builder.task(<span class="string">"notify_failure"</span>, <span class="string">"notify.send_failure"</span>)</pre>
                 </div>
 
                 <h3>SCHEDULING METADATA</h3>
 
-                <div class="code-block">
+                <div class="code-block"><pre>
 <span class="keyword">from</span> datetime <span class="keyword">import</span> datetime
 
 workflow = (
@@ -867,7 +884,7 @@ workflow = (
     <span class="comment"># ... define tasks ...</span>
 
     .build()
-)
+)</pre>
                 </div>
             </div>
         </section>
