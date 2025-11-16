@@ -186,6 +186,10 @@ class WaitOperator(BaseOperator):
 
 class ParallelOperator(BaseOperator):
     branches: dict[str, list[str]] = Field(default_factory=dict)
+    branch_workflows: dict[str, dict[str, Any]] = Field(
+        default_factory=dict,
+        description="Complete workflow definitions for each branch (serialized)"
+    )
     timeout: int | None = Field(
         None, description="Optional timeout in seconds for branch execution"
     )
@@ -731,20 +735,24 @@ class WorkflowBuilder:
             name: list(builder.workflow.tasks.keys()) for name, builder in branch_builders.items()
         }
 
-        task = ParallelOperator(task_id=task_id, branches=branch_tasks, **kwargs)
+        # Serialize complete branch workflows for execution
+        branch_workflows = {
+            name: builder.workflow.model_dump(mode="json")
+            for name, builder in branch_builders.items()
+        }
+
+        task = ParallelOperator(
+            task_id=task_id,
+            branches=branch_tasks,
+            branch_workflows=branch_workflows,
+            **kwargs
+        )
 
         self._add_task(task, **kwargs)
 
-        for builder in branch_builders.values():
-            for task_obj in builder.workflow.tasks.values():
-                # Only add the parallel task as dependency to non-internal tasks,
-                # preserve original dependencies
-                if (
-                    not getattr(task_obj, "is_internal_loop_task", False)
-                    and task_id not in task_obj.dependencies
-                ):
-                    task_obj.dependencies.append(task_id)
-                self.workflow.add_task(task_obj)
+        # NOTE: After Nov 16 2025 fork-only fix, branch tasks are NOT added to parent workflow
+        # Branch tasks only execute inside spawned branch workflows via tools.workflow.execute_branch
+        # This prevents double execution (once in parent, once in branch)
 
         self._current_task = task_id
         return self
