@@ -1,7 +1,10 @@
---- AI AGENTIC DEVELOPER WORKFLOW YAML (MASSIVE) ---
+catchup: false
 description: ''
+is_paused: false
+max_active_runs: 1
 name: ai_agent_platform_builder_v1
 start_task: analyze_requirements
+tags: []
 tasks:
   aggregate_test_results:
     args:
@@ -10,62 +13,30 @@ tasks:
     - '{{e2e_results}}'
     dependencies:
     - run_full_test_suite
+    description: ''
     function: ci.aggregate_results
+    is_internal_loop_task: true
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     result_key: test_run_results
     task_id: aggregate_test_results
+    trigger_rule: all_success
   analyze_requirements:
     args:
     - '{{project_spec_url}}'
     dependencies: []
+    description: ''
     function: llm.analyzer.ingest_specification
+    is_internal_loop_task: false
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     result_key: project_plan
     task_id: analyze_requirements
-  ansible_deploy_api:
-    args:
-    - playbooks/api.yml
-    dependencies:
-    - run_ansible_deployments
-    function: deploy.ansible.run_playbook
-    kwargs: {}
-    metadata: {}
-    operator_type: task
-    task_id: ansible_deploy_api
-  ansible_deploy_db:
-    args:
-    - playbooks/database.yml
-    dependencies:
-    - run_ansible_deployments
-    function: deploy.ansible.run_playbook
-    kwargs: {}
-    metadata: {}
-    operator_type: task
-    task_id: ansible_deploy_db
-  ansible_deploy_frontend:
-    args:
-    - playbooks/frontend.yml
-    dependencies:
-    - run_ansible_deployments
-    function: deploy.ansible.run_playbook
-    kwargs: {}
-    metadata: {}
-    operator_type: task
-    task_id: ansible_deploy_frontend
-  ansible_deploy_workers:
-    args:
-    - playbooks/workers.yml
-    dependencies:
-    - run_ansible_deployments
-    function: deploy.ansible.run_playbook
-    kwargs: {}
-    metadata: {}
-    operator_type: task
-    task_id: ansible_deploy_workers
+    trigger_rule: all_success
   apply_and_commit_code:
     args:
     - '{{workspace}}'
@@ -73,60 +44,43 @@ tasks:
     - 'feat: {{coding_plan.target}}'
     dependencies:
     - check_plan_action
+    description: ''
     function: vcs.git.apply_and_commit
+    is_internal_loop_task: true
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     task_id: apply_and_commit_code
+    trigger_rule: all_success
   check_plan_action:
     condition: '{{coding_plan.action}} == ''implement'''
     dependencies:
     - plan_next_coding_step
+    description: ''
     if_false: refactor_code
     if_true: implement_code
+    is_internal_loop_task: true
+    is_internal_parallel_task: false
     metadata: {}
     operator_type: condition
     task_id: check_plan_action
+    trigger_rule: all_success
   commit_tests_to_git:
     args:
     - '{{workspace}}'
     - 'ci(tests): add initial test suite for {{item.service_name}}'
     dependencies:
     - generate_test_stubs
+    description: ''
     function: vcs.git.commit_files
+    is_internal_loop_task: true
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     task_id: commit_tests_to_git
-  configure_loki:
-    args:
-    - '{{infra_outputs.log_streams}}'
-    dependencies:
-    - setup_observability
-    function: observe.loki.apply_config
-    kwargs: {}
-    metadata: {}
-    operator_type: task
-    task_id: configure_loki
-  configure_prometheus:
-    args:
-    - '{{infra_outputs.service_endpoints}}'
-    dependencies:
-    - setup_observability
-    function: observe.prometheus.apply_config
-    kwargs: {}
-    metadata: {}
-    operator_type: task
-    task_id: configure_prometheus
-  configure_tempo:
-    args: []
-    dependencies:
-    - setup_observability
-    function: observe.tempo.apply_config
-    kwargs: {}
-    metadata: {}
-    operator_type: task
-    task_id: configure_tempo
+    trigger_rule: all_success
   generate_test_stubs:
     args:
     - '{{workspace}}'
@@ -134,11 +88,15 @@ tasks:
     - '{{item.api_spec}}'
     dependencies:
     - test_generation_loop
+    description: ''
     function: llm.test_generator.create_e2e_tests
+    is_internal_loop_task: true
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     task_id: generate_test_stubs
+    trigger_rule: all_success
   implement_code:
     args:
     - '{{workspace}}'
@@ -146,72 +104,199 @@ tasks:
     - '{{coding_plan.prompt}}'
     dependencies:
     - check_plan_action
+    description: ''
     function: llm.coder.write_implementation
+    is_internal_loop_task: true
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     result_key: code_diff
     task_id: implement_code
+    trigger_rule: all_success
   main_build_loop:
     condition: '{{test_run_results.all_passed}} == false'
     dependencies:
     - run_initial_test_suite
+    description: ''
+    is_internal_loop_task: false
+    is_internal_parallel_task: false
     loop_body:
     - args:
       - '{{project_plan}}'
       - '{{test_run_results.failing_tests}}'
       dependencies:
       - main_build_loop
+      description: ''
       function: llm.planner.analyze_failing_tests
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       kwargs: {}
       metadata: {}
       operator_type: task
       result_key: coding_plan
       task_id: plan_next_coding_step
+      trigger_rule: all_success
     - condition: '{{coding_plan.action}} == ''implement'''
       dependencies:
       - plan_next_coding_step
+      description: ''
       if_false: refactor_code
       if_true: implement_code
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       metadata: {}
       operator_type: condition
       task_id: check_plan_action
+      trigger_rule: all_success
     - args:
       - '{{workspace}}'
       - '{{coding_plan.target}}'
       - '{{coding_plan.prompt}}'
       dependencies:
       - check_plan_action
+      description: ''
       function: llm.coder.write_implementation
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       kwargs: {}
       metadata: {}
       operator_type: task
       result_key: code_diff
       task_id: implement_code
+      trigger_rule: all_success
     - args:
       - '{{workspace}}'
       - '{{coding_plan.target}}'
       - '{{coding_plan.reason}}'
       dependencies:
       - check_plan_action
+      description: ''
       function: llm.refactor.rewrite_code
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       kwargs: {}
       metadata: {}
       operator_type: task
       result_key: code_diff
       task_id: refactor_code
+      trigger_rule: all_success
     - args:
       - '{{workspace}}'
       - '{{code_diff}}'
       - 'feat: {{coding_plan.target}}'
       dependencies:
       - check_plan_action
+      description: ''
       function: vcs.git.apply_and_commit
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       kwargs: {}
       metadata: {}
       operator_type: task
       task_id: apply_and_commit_code
-    - branches:
+      trigger_rule: all_success
+    - branch_workflows:
+        e2e:
+          catchup: false
+          default_retry_policy: null
+          description: ''
+          is_paused: false
+          max_active_runs: 1
+          name: run_full_test_suite_e2e
+          schedule: null
+          start_date: null
+          start_task: null
+          tags: []
+          tasks:
+            run_e2e_tests:
+              args:
+              - '{{workspace}}'
+              dependencies: []
+              description: ''
+              function: ci.run_e2e_tests
+              idempotency_key: null
+              is_internal_loop_task: false
+              is_internal_parallel_task: false
+              kwargs: {}
+              metadata: {}
+              on_failure_task_id: null
+              on_success_task_id: null
+              operator_type: task
+              result_key: e2e_results
+              retry_policy: null
+              task_id: run_e2e_tests
+              timeout_policy: null
+              trigger_rule: all_success
+          variables: {}
+          version: 2.0.0
+        integration:
+          catchup: false
+          default_retry_policy: null
+          description: ''
+          is_paused: false
+          max_active_runs: 1
+          name: run_full_test_suite_integration
+          schedule: null
+          start_date: null
+          start_task: null
+          tags: []
+          tasks:
+            run_integration_tests:
+              args:
+              - '{{workspace}}'
+              dependencies: []
+              description: ''
+              function: ci.run_integration_tests
+              idempotency_key: null
+              is_internal_loop_task: false
+              is_internal_parallel_task: false
+              kwargs: {}
+              metadata: {}
+              on_failure_task_id: null
+              on_success_task_id: null
+              operator_type: task
+              result_key: int_results
+              retry_policy: null
+              task_id: run_integration_tests
+              timeout_policy: null
+              trigger_rule: all_success
+          variables: {}
+          version: 2.0.0
+        unit:
+          catchup: false
+          default_retry_policy: null
+          description: ''
+          is_paused: false
+          max_active_runs: 1
+          name: run_full_test_suite_unit
+          schedule: null
+          start_date: null
+          start_task: null
+          tags: []
+          tasks:
+            run_unit_tests:
+              args:
+              - '{{workspace}}'
+              dependencies: []
+              description: ''
+              function: ci.run_unit_tests
+              idempotency_key: null
+              is_internal_loop_task: false
+              is_internal_parallel_task: false
+              kwargs: {}
+              metadata: {}
+              on_failure_task_id: null
+              on_success_task_id: null
+              operator_type: task
+              result_key: unit_results
+              retry_policy: null
+              task_id: run_unit_tests
+              timeout_policy: null
+              trigger_rule: all_success
+          variables: {}
+          version: 2.0.0
+      branches:
         e2e:
         - run_e2e_tests
         integration:
@@ -220,87 +305,78 @@ tasks:
         - run_unit_tests
       dependencies:
       - apply_and_commit_code
+      description: ''
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       metadata: {}
       operator_type: parallel
       task_id: run_full_test_suite
-    - args:
-      - '{{workspace}}'
-      dependencies:
-      - run_full_test_suite
-      function: ci.run_unit_tests
-      kwargs: {}
-      metadata: {}
-      operator_type: task
-      result_key: unit_results
-      task_id: run_unit_tests
-    - args:
-      - '{{workspace}}'
-      dependencies:
-      - run_full_test_suite
-      function: ci.run_integration_tests
-      kwargs: {}
-      metadata: {}
-      operator_type: task
-      result_key: int_results
-      task_id: run_integration_tests
-    - args:
-      - '{{workspace}}'
-      dependencies:
-      - run_full_test_suite
-      function: ci.run_e2e_tests
-      kwargs: {}
-      metadata: {}
-      operator_type: task
-      result_key: e2e_results
-      task_id: run_e2e_tests
+      trigger_rule: all_success
     - args:
       - '{{unit_results}}'
       - '{{int_results}}'
       - '{{e2e_results}}'
       dependencies:
       - run_full_test_suite
+      description: ''
       function: ci.aggregate_results
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       kwargs: {}
       metadata: {}
       operator_type: task
       result_key: test_run_results
       task_id: aggregate_test_results
+      trigger_rule: all_success
     metadata: {}
     operator_type: while
     task_id: main_build_loop
+    trigger_rule: all_success
   notify_user_on_slack:
     args:
     - Platform build and deployment complete. Metrics are active.
     dependencies:
     - verify_observability_data
+    description: ''
     function: notify.slack.send_message
+    is_internal_loop_task: false
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     task_id: notify_user_on_slack
+    trigger_rule: all_success
   plan_next_coding_step:
     args:
     - '{{project_plan}}'
     - '{{test_run_results.failing_tests}}'
     dependencies:
     - main_build_loop
+    description: ''
     function: llm.planner.analyze_failing_tests
+    is_internal_loop_task: true
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     result_key: coding_plan
     task_id: plan_next_coding_step
+    trigger_rule: all_success
   provision_infrastructure:
     args:
     - ./terraform
     dependencies:
     - main_build_loop
+    description: ''
     function: iac.terraform.apply
+    is_internal_loop_task: false
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     result_key: infra_outputs
     task_id: provision_infrastructure
+    trigger_rule: all_success
   refactor_code:
     args:
     - '{{workspace}}'
@@ -308,13 +384,150 @@ tasks:
     - '{{coding_plan.reason}}'
     dependencies:
     - check_plan_action
+    description: ''
     function: llm.refactor.rewrite_code
+    is_internal_loop_task: true
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     result_key: code_diff
     task_id: refactor_code
+    trigger_rule: all_success
   run_ansible_deployments:
+    branch_workflows:
+      api:
+        catchup: false
+        default_retry_policy: null
+        description: ''
+        is_paused: false
+        max_active_runs: 1
+        name: run_ansible_deployments_api
+        schedule: null
+        start_date: null
+        start_task: null
+        tags: []
+        tasks:
+          ansible_deploy_api:
+            args:
+            - playbooks/api.yml
+            dependencies: []
+            description: ''
+            function: deploy.ansible.run_playbook
+            idempotency_key: null
+            is_internal_loop_task: false
+            is_internal_parallel_task: false
+            kwargs: {}
+            metadata: {}
+            on_failure_task_id: null
+            on_success_task_id: null
+            operator_type: task
+            result_key: null
+            retry_policy: null
+            task_id: ansible_deploy_api
+            timeout_policy: null
+            trigger_rule: all_success
+        variables: {}
+        version: 2.0.0
+      database:
+        catchup: false
+        default_retry_policy: null
+        description: ''
+        is_paused: false
+        max_active_runs: 1
+        name: run_ansible_deployments_database
+        schedule: null
+        start_date: null
+        start_task: null
+        tags: []
+        tasks:
+          ansible_deploy_db:
+            args:
+            - playbooks/database.yml
+            dependencies: []
+            description: ''
+            function: deploy.ansible.run_playbook
+            idempotency_key: null
+            is_internal_loop_task: false
+            is_internal_parallel_task: false
+            kwargs: {}
+            metadata: {}
+            on_failure_task_id: null
+            on_success_task_id: null
+            operator_type: task
+            result_key: null
+            retry_policy: null
+            task_id: ansible_deploy_db
+            timeout_policy: null
+            trigger_rule: all_success
+        variables: {}
+        version: 2.0.0
+      frontend:
+        catchup: false
+        default_retry_policy: null
+        description: ''
+        is_paused: false
+        max_active_runs: 1
+        name: run_ansible_deployments_frontend
+        schedule: null
+        start_date: null
+        start_task: null
+        tags: []
+        tasks:
+          ansible_deploy_frontend:
+            args:
+            - playbooks/frontend.yml
+            dependencies: []
+            description: ''
+            function: deploy.ansible.run_playbook
+            idempotency_key: null
+            is_internal_loop_task: false
+            is_internal_parallel_task: false
+            kwargs: {}
+            metadata: {}
+            on_failure_task_id: null
+            on_success_task_id: null
+            operator_type: task
+            result_key: null
+            retry_policy: null
+            task_id: ansible_deploy_frontend
+            timeout_policy: null
+            trigger_rule: all_success
+        variables: {}
+        version: 2.0.0
+      workers:
+        catchup: false
+        default_retry_policy: null
+        description: ''
+        is_paused: false
+        max_active_runs: 1
+        name: run_ansible_deployments_workers
+        schedule: null
+        start_date: null
+        start_task: null
+        tags: []
+        tasks:
+          ansible_deploy_workers:
+            args:
+            - playbooks/workers.yml
+            dependencies: []
+            description: ''
+            function: deploy.ansible.run_playbook
+            idempotency_key: null
+            is_internal_loop_task: false
+            is_internal_parallel_task: false
+            kwargs: {}
+            metadata: {}
+            on_failure_task_id: null
+            on_success_task_id: null
+            operator_type: task
+            result_key: null
+            retry_policy: null
+            task_id: ansible_deploy_workers
+            timeout_policy: null
+            trigger_rule: all_success
+        variables: {}
+        version: 2.0.0
     branches:
       api:
       - ansible_deploy_api
@@ -326,21 +539,114 @@ tasks:
       - ansible_deploy_workers
     dependencies:
     - provision_infrastructure
+    description: ''
+    is_internal_loop_task: false
+    is_internal_parallel_task: false
     metadata: {}
     operator_type: parallel
     task_id: run_ansible_deployments
-  run_e2e_tests:
-    args:
-    - '{{workspace}}'
-    dependencies:
-    - run_full_test_suite
-    function: ci.run_e2e_tests
-    kwargs: {}
-    metadata: {}
-    operator_type: task
-    result_key: e2e_results
-    task_id: run_e2e_tests
+    trigger_rule: all_success
   run_full_test_suite:
+    branch_workflows:
+      e2e:
+        catchup: false
+        default_retry_policy: null
+        description: ''
+        is_paused: false
+        max_active_runs: 1
+        name: run_full_test_suite_e2e
+        schedule: null
+        start_date: null
+        start_task: null
+        tags: []
+        tasks:
+          run_e2e_tests:
+            args:
+            - '{{workspace}}'
+            dependencies: []
+            description: ''
+            function: ci.run_e2e_tests
+            idempotency_key: null
+            is_internal_loop_task: false
+            is_internal_parallel_task: false
+            kwargs: {}
+            metadata: {}
+            on_failure_task_id: null
+            on_success_task_id: null
+            operator_type: task
+            result_key: e2e_results
+            retry_policy: null
+            task_id: run_e2e_tests
+            timeout_policy: null
+            trigger_rule: all_success
+        variables: {}
+        version: 2.0.0
+      integration:
+        catchup: false
+        default_retry_policy: null
+        description: ''
+        is_paused: false
+        max_active_runs: 1
+        name: run_full_test_suite_integration
+        schedule: null
+        start_date: null
+        start_task: null
+        tags: []
+        tasks:
+          run_integration_tests:
+            args:
+            - '{{workspace}}'
+            dependencies: []
+            description: ''
+            function: ci.run_integration_tests
+            idempotency_key: null
+            is_internal_loop_task: false
+            is_internal_parallel_task: false
+            kwargs: {}
+            metadata: {}
+            on_failure_task_id: null
+            on_success_task_id: null
+            operator_type: task
+            result_key: int_results
+            retry_policy: null
+            task_id: run_integration_tests
+            timeout_policy: null
+            trigger_rule: all_success
+        variables: {}
+        version: 2.0.0
+      unit:
+        catchup: false
+        default_retry_policy: null
+        description: ''
+        is_paused: false
+        max_active_runs: 1
+        name: run_full_test_suite_unit
+        schedule: null
+        start_date: null
+        start_task: null
+        tags: []
+        tasks:
+          run_unit_tests:
+            args:
+            - '{{workspace}}'
+            dependencies: []
+            description: ''
+            function: ci.run_unit_tests
+            idempotency_key: null
+            is_internal_loop_task: false
+            is_internal_parallel_task: false
+            kwargs: {}
+            metadata: {}
+            on_failure_task_id: null
+            on_success_task_id: null
+            operator_type: task
+            result_key: unit_results
+            retry_policy: null
+            task_id: run_unit_tests
+            timeout_policy: null
+            trigger_rule: all_success
+        variables: {}
+        version: 2.0.0
     branches:
       e2e:
       - run_e2e_tests
@@ -350,65 +656,158 @@ tasks:
       - run_unit_tests
     dependencies:
     - apply_and_commit_code
+    description: ''
+    is_internal_loop_task: true
+    is_internal_parallel_task: false
     metadata: {}
     operator_type: parallel
     task_id: run_full_test_suite
+    trigger_rule: all_success
   run_initial_test_suite:
     args:
     - '{{workspace}}'
     dependencies:
     - test_generation_loop
+    description: ''
     function: ci.run_all_tests
+    is_internal_loop_task: false
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     result_key: test_run_results
     task_id: run_initial_test_suite
-  run_integration_tests:
-    args:
-    - '{{workspace}}'
-    dependencies:
-    - run_full_test_suite
-    function: ci.run_integration_tests
-    kwargs: {}
-    metadata: {}
-    operator_type: task
-    result_key: int_results
-    task_id: run_integration_tests
+    trigger_rule: all_success
   run_production_smoke_tests:
     args:
     - '{{infra_outputs.app_url}}'
     dependencies:
     - setup_observability
+    description: ''
     function: ci.run_smoke_tests
+    is_internal_loop_task: false
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     result_key: smoke_test_results
     task_id: run_production_smoke_tests
-  run_unit_tests:
-    args:
-    - '{{workspace}}'
-    dependencies:
-    - run_full_test_suite
-    function: ci.run_unit_tests
-    kwargs: {}
-    metadata: {}
-    operator_type: task
-    result_key: unit_results
-    task_id: run_unit_tests
+    trigger_rule: all_success
   setup_git_repository:
     args:
     - '{{project_plan.repo_url}}'
     dependencies:
     - analyze_requirements
+    description: ''
     function: vcs.git.clone_and_setup_repo
+    is_internal_loop_task: false
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     result_key: workspace
     task_id: setup_git_repository
+    trigger_rule: all_success
   setup_observability:
+    branch_workflows:
+      logging:
+        catchup: false
+        default_retry_policy: null
+        description: ''
+        is_paused: false
+        max_active_runs: 1
+        name: setup_observability_logging
+        schedule: null
+        start_date: null
+        start_task: null
+        tags: []
+        tasks:
+          configure_loki:
+            args:
+            - '{{infra_outputs.log_streams}}'
+            dependencies: []
+            description: ''
+            function: observe.loki.apply_config
+            idempotency_key: null
+            is_internal_loop_task: false
+            is_internal_parallel_task: false
+            kwargs: {}
+            metadata: {}
+            on_failure_task_id: null
+            on_success_task_id: null
+            operator_type: task
+            result_key: null
+            retry_policy: null
+            task_id: configure_loki
+            timeout_policy: null
+            trigger_rule: all_success
+        variables: {}
+        version: 2.0.0
+      metrics:
+        catchup: false
+        default_retry_policy: null
+        description: ''
+        is_paused: false
+        max_active_runs: 1
+        name: setup_observability_metrics
+        schedule: null
+        start_date: null
+        start_task: null
+        tags: []
+        tasks:
+          configure_prometheus:
+            args:
+            - '{{infra_outputs.service_endpoints}}'
+            dependencies: []
+            description: ''
+            function: observe.prometheus.apply_config
+            idempotency_key: null
+            is_internal_loop_task: false
+            is_internal_parallel_task: false
+            kwargs: {}
+            metadata: {}
+            on_failure_task_id: null
+            on_success_task_id: null
+            operator_type: task
+            result_key: null
+            retry_policy: null
+            task_id: configure_prometheus
+            timeout_policy: null
+            trigger_rule: all_success
+        variables: {}
+        version: 2.0.0
+      tracing:
+        catchup: false
+        default_retry_policy: null
+        description: ''
+        is_paused: false
+        max_active_runs: 1
+        name: setup_observability_tracing
+        schedule: null
+        start_date: null
+        start_task: null
+        tags: []
+        tasks:
+          configure_tempo:
+            args: []
+            dependencies: []
+            description: ''
+            function: observe.tempo.apply_config
+            idempotency_key: null
+            is_internal_loop_task: false
+            is_internal_parallel_task: false
+            kwargs: {}
+            metadata: {}
+            on_failure_task_id: null
+            on_success_task_id: null
+            operator_type: task
+            result_key: null
+            retry_policy: null
+            task_id: configure_tempo
+            timeout_policy: null
+            trigger_rule: all_success
+        variables: {}
+        version: 2.0.0
     branches:
       logging:
       - configure_loki
@@ -418,12 +817,19 @@ tasks:
       - configure_tempo
     dependencies:
     - wait_for_services_health
+    description: ''
+    is_internal_loop_task: false
+    is_internal_parallel_task: false
     metadata: {}
     operator_type: parallel
     task_id: setup_observability
+    trigger_rule: all_success
   test_generation_loop:
     dependencies:
     - setup_git_repository
+    description: ''
+    is_internal_loop_task: false
+    is_internal_parallel_task: false
     items: '{{project_plan.microservices}}'
     loop_body:
     - args:
@@ -432,48 +838,61 @@ tasks:
       - '{{item.api_spec}}'
       dependencies:
       - test_generation_loop
+      description: ''
       function: llm.test_generator.create_e2e_tests
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       kwargs: {}
       metadata: {}
       operator_type: task
       task_id: generate_test_stubs
+      trigger_rule: all_success
     - args:
       - '{{workspace}}'
       - 'ci(tests): add initial test suite for {{item.service_name}}'
       dependencies:
       - generate_test_stubs
+      description: ''
       function: vcs.git.commit_files
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       kwargs: {}
       metadata: {}
       operator_type: task
       task_id: commit_tests_to_git
+      trigger_rule: all_success
     metadata: {}
     operator_type: foreach
+    parallel: false
     task_id: test_generation_loop
+    trigger_rule: all_success
   verify_observability_data:
     args:
     - '{{project_plan.key_metrics}}'
     dependencies:
     - run_production_smoke_tests
+    description: ''
     function: observe.prometheus.query_metrics
+    is_internal_loop_task: false
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     result_key: metrics_check
     task_id: verify_observability_data
+    trigger_rule: all_success
   wait_for_services_health:
     dependencies:
     - run_ansible_deployments
+    description: ''
+    is_internal_loop_task: false
+    is_internal_parallel_task: false
     metadata: {}
     operator_type: wait
     task_id: wait_for_services_health
+    trigger_rule: all_success
     wait_for: PT5M
 variables:
   ci_runner_pool: default-pool
   project_spec_url: http://s3.com/specs/my_project.md
 version: 2.0.0
-
----------------------------------------------------
-
-✅ Successfully generated massive AI agent workflow YAML.
-Total tasks defined: 31

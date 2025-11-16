@@ -1,24 +1,20 @@
---- CAR FACTORY WORKFLOW YAML (FLUENT + WHILE LOOP) ---
+catchup: false
 description: ''
+is_paused: false
+max_active_runs: 1
 name: car_factory_build_v2
 start_task: get_build_manifest
+tags: []
 tasks:
-  assemble_electronics_harness:
-    args:
-    - '{{specs.electronics_package}}'
-    dependencies:
-    - parallel_main_assembly
-    function: factory.assembly.build_electronics
-    kwargs: {}
-    metadata: {}
-    operator_type: task
-    task_id: assemble_electronics_harness
   begin_qa_inspection:
     args:
     - '{{item.vin}}'
     dependencies:
     - paint_vehicle
+    description: ''
     function: human.qa.inspect_vehicle
+    is_internal_loop_task: true
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
@@ -27,76 +23,223 @@ tasks:
     timeout_policy:
       kill_on_timeout: true
       timeout: PT2H
+    trigger_rule: all_success
   build_ev_drivetrain:
     args:
     - '{{specs.battery_sku}}'
     - '{{specs.motor_sku}}'
     dependencies:
     - route_by_drivetrain
+    description: ''
     function: factory.assembly.build_battery_and_motor
+    is_internal_loop_task: true
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     result_key: drivetrain_assembly
     task_id: build_ev_drivetrain
+    trigger_rule: all_success
   build_ice_drivetrain:
     args:
     - '{{specs.engine_sku}}'
     - '{{specs.transmission_sku}}'
     dependencies:
     - route_by_drivetrain
+    description: ''
     function: factory.assembly.build_engine_and_transmission
+    is_internal_loop_task: true
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     result_key: drivetrain_assembly
     task_id: build_ice_drivetrain
+    trigger_rule: all_success
   build_vehicle_loop:
     dependencies:
     - get_build_manifest
+    description: ''
+    is_internal_loop_task: false
+    is_internal_parallel_task: false
     items: '{{manifest.vehicles}}'
     loop_body:
     - args:
       - '{{item.vin}}'
       dependencies:
       - build_vehicle_loop
+      description: ''
       function: factory.mes.get_specs_for_vin
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       kwargs: {}
       metadata: {}
       operator_type: task
       result_key: specs
       task_id: check_vehicle_specs
+      trigger_rule: all_success
     - condition: '{{specs.drivetrain_type}} == ''EV'''
       dependencies:
       - check_vehicle_specs
+      description: ''
       if_false: build_ice_drivetrain
       if_true: build_ev_drivetrain
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       metadata: {}
       operator_type: condition
       task_id: route_by_drivetrain
+      trigger_rule: all_success
     - args:
       - '{{specs.battery_sku}}'
       - '{{specs.motor_sku}}'
       dependencies:
       - route_by_drivetrain
+      description: ''
       function: factory.assembly.build_battery_and_motor
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       kwargs: {}
       metadata: {}
       operator_type: task
       result_key: drivetrain_assembly
       task_id: build_ev_drivetrain
+      trigger_rule: all_success
     - args:
       - '{{specs.engine_sku}}'
       - '{{specs.transmission_sku}}'
       dependencies:
       - route_by_drivetrain
+      description: ''
       function: factory.assembly.build_engine_and_transmission
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       kwargs: {}
       metadata: {}
       operator_type: task
       result_key: drivetrain_assembly
       task_id: build_ice_drivetrain
-    - branches:
+      trigger_rule: all_success
+    - branch_workflows:
+        drivetrain_prep:
+          catchup: false
+          default_retry_policy: null
+          description: ''
+          is_paused: false
+          max_active_runs: 1
+          name: parallel_main_assembly_drivetrain_prep
+          schedule: null
+          start_date: null
+          start_task: null
+          tags: []
+          tasks:
+            mount_drivetrain_subassembly:
+              args:
+              - '{{drivetrain_assembly}}'
+              dependencies: []
+              description: ''
+              function: factory.assembly.prep_drivetrain_for_marriage
+              idempotency_key: null
+              is_internal_loop_task: false
+              is_internal_parallel_task: false
+              kwargs: {}
+              metadata: {}
+              on_failure_task_id: null
+              on_success_task_id: null
+              operator_type: task
+              result_key: null
+              retry_policy: null
+              task_id: mount_drivetrain_subassembly
+              timeout_policy: null
+              trigger_rule: all_success
+          variables: {}
+          version: 2.0.0
+        electronics_build:
+          catchup: false
+          default_retry_policy: null
+          description: ''
+          is_paused: false
+          max_active_runs: 1
+          name: parallel_main_assembly_electronics_build
+          schedule: null
+          start_date: null
+          start_task: null
+          tags: []
+          tasks:
+            assemble_electronics_harness:
+              args:
+              - '{{specs.electronics_package}}'
+              dependencies: []
+              description: ''
+              function: factory.assembly.build_electronics
+              idempotency_key: null
+              is_internal_loop_task: false
+              is_internal_parallel_task: false
+              kwargs: {}
+              metadata: {}
+              on_failure_task_id: null
+              on_success_task_id: null
+              operator_type: task
+              result_key: null
+              retry_policy: null
+              task_id: assemble_electronics_harness
+              timeout_policy: null
+              trigger_rule: all_success
+          variables: {}
+          version: 2.0.0
+        frame_build:
+          catchup: false
+          default_retry_policy: null
+          description: ''
+          is_paused: false
+          max_active_runs: 1
+          name: parallel_main_assembly_frame_build
+          schedule: null
+          start_date: null
+          start_task: null
+          tags: []
+          tasks:
+            prime_frame:
+              args: []
+              dependencies:
+              - weld_frame
+              description: ''
+              function: factory.robotics.apply_primer
+              idempotency_key: null
+              is_internal_loop_task: false
+              is_internal_parallel_task: false
+              kwargs: {}
+              metadata: {}
+              on_failure_task_id: null
+              on_success_task_id: null
+              operator_type: task
+              result_key: null
+              retry_policy: null
+              task_id: prime_frame
+              timeout_policy: null
+              trigger_rule: all_success
+            weld_frame:
+              args:
+              - '{{specs.frame_model}}'
+              dependencies: []
+              description: ''
+              function: factory.robotics.weld_chassis
+              idempotency_key: null
+              is_internal_loop_task: false
+              is_internal_parallel_task: false
+              kwargs: {}
+              metadata: {}
+              on_failure_task_id: null
+              on_success_task_id: null
+              operator_type: task
+              result_key: null
+              retry_policy: null
+              task_id: weld_frame
+              timeout_policy: null
+              trigger_rule: all_success
+          variables: {}
+          version: 2.0.0
+      branches:
         drivetrain_prep:
         - mount_drivetrain_subassembly
         electronics_build:
@@ -106,72 +249,51 @@ tasks:
         - prime_frame
       dependencies:
       - route_by_drivetrain
+      description: ''
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       metadata: {}
       operator_type: parallel
       task_id: parallel_main_assembly
-    - args:
-      - '{{specs.frame_model}}'
-      dependencies:
-      - parallel_main_assembly
-      function: factory.robotics.weld_chassis
-      kwargs: {}
-      metadata: {}
-      operator_type: task
-      task_id: weld_frame
-    - args: []
-      dependencies:
-      - weld_frame
-      - parallel_main_assembly
-      function: factory.robotics.apply_primer
-      kwargs: {}
-      metadata: {}
-      operator_type: task
-      task_id: prime_frame
-    - args:
-      - '{{specs.electronics_package}}'
-      dependencies:
-      - parallel_main_assembly
-      function: factory.assembly.build_electronics
-      kwargs: {}
-      metadata: {}
-      operator_type: task
-      task_id: assemble_electronics_harness
-    - args:
-      - '{{drivetrain_assembly}}'
-      dependencies:
-      - parallel_main_assembly
-      function: factory.assembly.prep_drivetrain_for_marriage
-      kwargs: {}
-      metadata: {}
-      operator_type: task
-      task_id: mount_drivetrain_subassembly
+      trigger_rule: all_success
     - args:
       - '{{item.vin}}'
       dependencies:
       - assemble_electronics_harness
       - mount_drivetrain_subassembly
       - prime_frame
+      description: ''
       function: factory.assembly.final_marriage
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       kwargs: {}
       metadata: {}
       operator_type: task
       result_key: assembled_vehicle
       task_id: final_assembly
+      trigger_rule: all_success
     - args:
       - '{{assembled_vehicle}}'
       - '{{specs.color}}'
       dependencies:
       - final_assembly
+      description: ''
       function: factory.robotics.paint_body
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       kwargs: {}
       metadata: {}
       operator_type: task
       task_id: paint_vehicle
+      trigger_rule: all_success
     - args:
       - '{{item.vin}}'
       dependencies:
       - paint_vehicle
+      description: ''
       function: human.qa.inspect_vehicle
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       kwargs: {}
       metadata: {}
       operator_type: task
@@ -180,81 +302,112 @@ tasks:
       timeout_policy:
         kill_on_timeout: true
         timeout: PT2H
+      trigger_rule: all_success
     - condition: '{{qa_report.passed}} == false'
       dependencies:
       - begin_qa_inspection
+      description: ''
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       loop_body:
       - args:
         - '{{item.vin}}'
         - '{{qa_report.issues}}'
         dependencies:
         - qa_rework_loop
+        description: ''
         function: human.rework.fix_issues
+        is_internal_loop_task: true
+        is_internal_parallel_task: false
         kwargs: {}
         metadata: {}
         operator_type: task
         result_key: rework_report
         task_id: perform_rework
+        trigger_rule: all_success
       - args:
         - '{{item.vin}}'
         - '{{rework_report}}'
         dependencies:
         - perform_rework
+        description: ''
         function: human.qa.inspect_rework
+        is_internal_loop_task: true
+        is_internal_parallel_task: false
         kwargs: {}
         metadata: {}
         operator_type: task
         result_key: qa_report
         task_id: re_inspect_vehicle
+        trigger_rule: all_success
       metadata: {}
       operator_type: while
       task_id: qa_rework_loop
+      trigger_rule: all_success
     - args:
       - '{{item.vin}}'
       - '{{qa_report.issues}}'
       dependencies:
       - qa_rework_loop
+      description: ''
       function: human.rework.fix_issues
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       kwargs: {}
       metadata: {}
       operator_type: task
       result_key: rework_report
       task_id: perform_rework
+      trigger_rule: all_success
     - args:
       - '{{item.vin}}'
       - '{{rework_report}}'
       dependencies:
       - perform_rework
+      description: ''
       function: human.qa.inspect_rework
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       kwargs: {}
       metadata: {}
       operator_type: task
       result_key: qa_report
       task_id: re_inspect_vehicle
+      trigger_rule: all_success
     - args:
       - '{{item.vin}}'
       - BUILT
       dependencies:
       - qa_rework_loop
+      description: ''
       function: factory.mes.update_status
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       kwargs: {}
       metadata: {}
       operator_type: task
       task_id: mark_vehicle_complete
+      trigger_rule: all_success
     metadata: {}
     operator_type: foreach
+    parallel: false
     task_id: build_vehicle_loop
+    trigger_rule: all_success
   check_vehicle_specs:
     args:
     - '{{item.vin}}'
     dependencies:
     - build_vehicle_loop
+    description: ''
     function: factory.mes.get_specs_for_vin
+    is_internal_loop_task: true
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     result_key: specs
     task_id: check_vehicle_specs
+    trigger_rule: all_success
   final_assembly:
     args:
     - '{{item.vin}}'
@@ -262,28 +415,39 @@ tasks:
     - assemble_electronics_harness
     - mount_drivetrain_subassembly
     - prime_frame
+    description: ''
     function: factory.assembly.final_marriage
+    is_internal_loop_task: true
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     result_key: assembled_vehicle
     task_id: final_assembly
+    trigger_rule: all_success
   generate_shipping_labels:
     args:
     - '{{manifest.id}}'
     - '{{build_vehicle_loop_results}}'
     dependencies:
     - build_vehicle_loop
+    description: ''
     function: factory.logistics.print_labels_for_manifest
+    is_internal_loop_task: false
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     result_key: shipping_labels
     task_id: generate_shipping_labels
+    trigger_rule: all_success
   get_build_manifest:
     args: []
     dependencies: []
+    description: ''
     function: factory.erp.get_daily_build_manifest
+    is_internal_loop_task: false
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
@@ -293,49 +457,171 @@ tasks:
       delay: PT1M
       max_retries: 5
     task_id: get_build_manifest
+    trigger_rule: all_success
   mark_vehicle_complete:
     args:
     - '{{item.vin}}'
     - BUILT
     dependencies:
     - qa_rework_loop
+    description: ''
     function: factory.mes.update_status
+    is_internal_loop_task: true
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     task_id: mark_vehicle_complete
-  mount_drivetrain_subassembly:
-    args:
-    - '{{drivetrain_assembly}}'
-    dependencies:
-    - parallel_main_assembly
-    function: factory.assembly.prep_drivetrain_for_marriage
-    kwargs: {}
-    metadata: {}
-    operator_type: task
-    task_id: mount_drivetrain_subassembly
+    trigger_rule: all_success
   notify_logistics:
     args:
     - '{{manifest.id}}'
     dependencies:
     - generate_shipping_labels
+    description: ''
     function: factory.erp.notify_logistics_of_completion
+    is_internal_loop_task: false
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     task_id: notify_logistics
+    trigger_rule: all_success
   paint_vehicle:
     args:
     - '{{assembled_vehicle}}'
     - '{{specs.color}}'
     dependencies:
     - final_assembly
+    description: ''
     function: factory.robotics.paint_body
+    is_internal_loop_task: true
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     task_id: paint_vehicle
+    trigger_rule: all_success
   parallel_main_assembly:
+    branch_workflows:
+      drivetrain_prep:
+        catchup: false
+        default_retry_policy: null
+        description: ''
+        is_paused: false
+        max_active_runs: 1
+        name: parallel_main_assembly_drivetrain_prep
+        schedule: null
+        start_date: null
+        start_task: null
+        tags: []
+        tasks:
+          mount_drivetrain_subassembly:
+            args:
+            - '{{drivetrain_assembly}}'
+            dependencies: []
+            description: ''
+            function: factory.assembly.prep_drivetrain_for_marriage
+            idempotency_key: null
+            is_internal_loop_task: false
+            is_internal_parallel_task: false
+            kwargs: {}
+            metadata: {}
+            on_failure_task_id: null
+            on_success_task_id: null
+            operator_type: task
+            result_key: null
+            retry_policy: null
+            task_id: mount_drivetrain_subassembly
+            timeout_policy: null
+            trigger_rule: all_success
+        variables: {}
+        version: 2.0.0
+      electronics_build:
+        catchup: false
+        default_retry_policy: null
+        description: ''
+        is_paused: false
+        max_active_runs: 1
+        name: parallel_main_assembly_electronics_build
+        schedule: null
+        start_date: null
+        start_task: null
+        tags: []
+        tasks:
+          assemble_electronics_harness:
+            args:
+            - '{{specs.electronics_package}}'
+            dependencies: []
+            description: ''
+            function: factory.assembly.build_electronics
+            idempotency_key: null
+            is_internal_loop_task: false
+            is_internal_parallel_task: false
+            kwargs: {}
+            metadata: {}
+            on_failure_task_id: null
+            on_success_task_id: null
+            operator_type: task
+            result_key: null
+            retry_policy: null
+            task_id: assemble_electronics_harness
+            timeout_policy: null
+            trigger_rule: all_success
+        variables: {}
+        version: 2.0.0
+      frame_build:
+        catchup: false
+        default_retry_policy: null
+        description: ''
+        is_paused: false
+        max_active_runs: 1
+        name: parallel_main_assembly_frame_build
+        schedule: null
+        start_date: null
+        start_task: null
+        tags: []
+        tasks:
+          prime_frame:
+            args: []
+            dependencies:
+            - weld_frame
+            description: ''
+            function: factory.robotics.apply_primer
+            idempotency_key: null
+            is_internal_loop_task: false
+            is_internal_parallel_task: false
+            kwargs: {}
+            metadata: {}
+            on_failure_task_id: null
+            on_success_task_id: null
+            operator_type: task
+            result_key: null
+            retry_policy: null
+            task_id: prime_frame
+            timeout_policy: null
+            trigger_rule: all_success
+          weld_frame:
+            args:
+            - '{{specs.frame_model}}'
+            dependencies: []
+            description: ''
+            function: factory.robotics.weld_chassis
+            idempotency_key: null
+            is_internal_loop_task: false
+            is_internal_parallel_task: false
+            kwargs: {}
+            metadata: {}
+            on_failure_task_id: null
+            on_success_task_id: null
+            operator_type: task
+            result_key: null
+            retry_policy: null
+            task_id: weld_frame
+            timeout_policy: null
+            trigger_rule: all_success
+        variables: {}
+        version: 2.0.0
     branches:
       drivetrain_prep:
       - mount_drivetrain_subassembly
@@ -346,98 +632,101 @@ tasks:
       - prime_frame
     dependencies:
     - route_by_drivetrain
+    description: ''
+    is_internal_loop_task: true
+    is_internal_parallel_task: false
     metadata: {}
     operator_type: parallel
     task_id: parallel_main_assembly
+    trigger_rule: all_success
   perform_rework:
     args:
     - '{{item.vin}}'
     - '{{qa_report.issues}}'
     dependencies:
     - qa_rework_loop
+    description: ''
     function: human.rework.fix_issues
+    is_internal_loop_task: true
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     result_key: rework_report
     task_id: perform_rework
-  prime_frame:
-    args: []
-    dependencies:
-    - weld_frame
-    - parallel_main_assembly
-    function: factory.robotics.apply_primer
-    kwargs: {}
-    metadata: {}
-    operator_type: task
-    task_id: prime_frame
+    trigger_rule: all_success
   qa_rework_loop:
     condition: '{{qa_report.passed}} == false'
     dependencies:
     - begin_qa_inspection
+    description: ''
+    is_internal_loop_task: true
+    is_internal_parallel_task: false
     loop_body:
     - args:
       - '{{item.vin}}'
       - '{{qa_report.issues}}'
       dependencies:
       - qa_rework_loop
+      description: ''
       function: human.rework.fix_issues
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       kwargs: {}
       metadata: {}
       operator_type: task
       result_key: rework_report
       task_id: perform_rework
+      trigger_rule: all_success
     - args:
       - '{{item.vin}}'
       - '{{rework_report}}'
       dependencies:
       - perform_rework
+      description: ''
       function: human.qa.inspect_rework
+      is_internal_loop_task: true
+      is_internal_parallel_task: false
       kwargs: {}
       metadata: {}
       operator_type: task
       result_key: qa_report
       task_id: re_inspect_vehicle
+      trigger_rule: all_success
     metadata: {}
     operator_type: while
     task_id: qa_rework_loop
+    trigger_rule: all_success
   re_inspect_vehicle:
     args:
     - '{{item.vin}}'
     - '{{rework_report}}'
     dependencies:
     - perform_rework
+    description: ''
     function: human.qa.inspect_rework
+    is_internal_loop_task: true
+    is_internal_parallel_task: false
     kwargs: {}
     metadata: {}
     operator_type: task
     result_key: qa_report
     task_id: re_inspect_vehicle
+    trigger_rule: all_success
   route_by_drivetrain:
     condition: '{{specs.drivetrain_type}} == ''EV'''
     dependencies:
     - check_vehicle_specs
+    description: ''
     if_false: build_ice_drivetrain
     if_true: build_ev_drivetrain
+    is_internal_loop_task: true
+    is_internal_parallel_task: false
     metadata: {}
     operator_type: condition
     task_id: route_by_drivetrain
-  weld_frame:
-    args:
-    - '{{specs.frame_model}}'
-    dependencies:
-    - parallel_main_assembly
-    function: factory.robotics.weld_chassis
-    kwargs: {}
-    metadata: {}
-    operator_type: task
-    task_id: weld_frame
+    trigger_rule: all_success
 variables:
   erp_api_key: secret_abc_123
   mes_endpoint: http://10.0.0.5/api
 version: 2.0.0
-
------------------------------------------------------
-
-✅ Successfully generated complex factory workflow YAML.
-Total tasks defined: 20

@@ -273,8 +273,12 @@ def test_workflow_builder_parallel():
     )
     assert "parallel_step" in workflow.tasks
     assert workflow.tasks["parallel_step"].dependencies == ["init"]
-    assert "t1" in workflow.tasks
-    assert "t2" in workflow.tasks
+    # After fork-only fix, branch tasks are stored in branch_workflows, not parent tasks
+    parallel_op = workflow.tasks["parallel_step"]
+    assert "b1" in parallel_op.branch_workflows
+    assert "b2" in parallel_op.branch_workflows
+    assert "t1" in parallel_op.branch_workflows["b1"]["tasks"]
+    assert "t2" in parallel_op.branch_workflows["b2"]["tasks"]
 
 
 def test_workflow_builder_foreach():
