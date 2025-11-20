@@ -1,0 +1,38 @@
+# Requirements for building Highway DSL documentation
+# These are the Python packages required to build the documentation
+
+# Core Sphinx documentation builder
+sphinx>=7.0.0
+
+# Read the Docs theme for Sphinx
+sphinx-rtd-theme>=2.0.0
+
+# MyST parser for Markdown support in Sphinx
+myst-parser>=2.0.0
+
+# Highway DSL dependencies (for autodoc)
+pydantic>=2.12.3
+pyyaml>=6.0
+
+# Development dependencies for testing examples
+pytest>=7.0.0
+pytest-cov>=4.0.0
+mypy>=1.0.0
+
+# Optional: For building PDF documentation
+# sphinxcontrib-pdf>=1.0.0
+
+# Optional: For enhanced search functionality
+# sphinxcontrib-jsmath>=1.0.0
+
+# Optional: For better code highlighting
+# pygments>=2.0.0
+
+# Optional: For plantuml diagrams
+# sphinxcontrib-plantuml>=0.0.0
+
+# Optional: For better table support
+# sphinxcontrib-tables>=1.0.0
+
+# Optional: For better image handling
+# pillow>=9.0.0

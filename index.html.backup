@@ -4,16 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Highway DSL v2.0.0 - Workflow Specification Language</title>
-    <!-- best practices meta tags -->
-    <meta name="description" content="Highway DSL v2.0.0 - Domain-Specific Language for Workflow Definition and Serialization.">
-    <meta name="keywords" content="Highway DSL, Workflow Specification, Domain-Specific Language, YAML, JSON, Pydantic, Workflow Definition">
-    <meta name="author" content="Rodmena Limited">
-    <meta name="robots" content="index, follow">
-    <meta name="theme-color" content="#0a0e14">
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
-    <meta property="og:title" content="Highway DSL v2.0.0 - Workflow Specification Language">
-    <meta property="og:description" content="Highway DSL v2.0.0 - Domain-Specific Language for Workflow Definition and Serialization.">
-    <meta property="og:type" content="website">
     <style><%text>
         :root {
             --bg-primary: #0a0e14;
@@ -42,25 +32,22 @@
             color: var(--text-primary);
             line-height: 1.6;
             font-size: 14px;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
         }
 
         .container {
-            max-width: 1600px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 0 2rem;
         }
 
         header {
-            background-color: rgba(13, 17, 23, 0.95);
+            background-color: var(--bg-secondary);
             border-bottom: 2px solid var(--border-color);
             padding: 1.5rem 0;
             position: sticky;
             top: 0;
             z-index: 1000;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            opacity: 1;
         }
 
         .header-content {
@@ -72,23 +59,23 @@
         .logo {
             font-size: 1.2rem;
             font-weight: bold;
-            color: #3fb950 !important;
+            color: var(--accent-green);
         }
 
         .version {
-            color: #58a6ff !important;
+            color: var(--accent-blue);
             font-size: 0.9rem;
         }
 
         nav a {
-            color: #c9d1d9 !important;
+            color: var(--text-secondary);
             text-decoration: none;
             margin-left: 2rem;
             transition: color 0.2s;
         }
 
         nav a:hover {
-            color: #3fb950 !important;
+            color: var(--accent-green);
         }
 
         .hero {
@@ -326,246 +313,7 @@
         .note strong {
             color: var(--accent-yellow);
         }
-
-        /* Two-column layout */
-        .main-content {
-            display: flex;
-            gap: 2rem;
-            margin: 2rem 0;
-            max-width: 100%;
-        }
-
-        .docs-column {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .generator-column {
-            flex: 0 0 500px;
-            position: sticky;
-            top: 80px;
-            height: fit-content;
-            max-height: calc(100vh - 100px);
-            align-self: flex-start;
-            overflow-y: auto;
-        }
-
-        /* Scrollbar styling for generator column */
-        .generator-column::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .generator-column::-webkit-scrollbar-track {
-            background: var(--bg-primary);
-        }
-
-        .generator-column::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 4px;
-        }
-
-        .generator-column::-webkit-scrollbar-thumb:hover {
-            background: var(--text-muted);
-        }
-
-        /* DSL Generator Styles */
-        .dsl-generator {
-            background-color: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            padding: 1.5rem;
-            border-radius: 4px;
-        }
-
-        .dsl-generator h3 {
-            color: var(--accent-green);
-            margin-bottom: 1rem;
-            font-size: 1.2rem;
-        }
-
-        .generator-section {
-            margin-bottom: 1.5rem;
-        }
-
-        .generator-section label {
-            display: block;
-            color: var(--accent-blue);
-            margin-bottom: 0.5rem;
-            font-size: 0.9rem;
-        }
-
-        .prompt-input {
-            width: 100%;
-            min-height: 100px;
-            max-height: 200px;
-            background-color: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            color: var(--text-primary);
-            padding: 0.75rem;
-            font-family: 'Courier New', monospace;
-            font-size: 0.85rem;
-            resize: vertical;
-            border-radius: 4px;
-            line-height: 1.4;
-        }
-
-        .prompt-input:focus {
-            outline: none;
-            border-color: var(--accent-green);
-        }
-
-        .generate-btn {
-            width: 100%;
-            background-color: var(--accent-green);
-            color: var(--bg-primary);
-            border: none;
-            padding: 0.75rem 1.5rem;
-            font-size: 1rem;
-            font-weight: bold;
-            cursor: pointer;
-            border-radius: 4px;
-            transition: all 0.2s;
-            font-family: 'Courier New', monospace;
-        }
-
-        .generate-btn:hover {
-            background-color: #4ade80;
-            transform: translateY(-1px);
-        }
-
-        .generate-btn:disabled {
-            background-color: var(--border-color);
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .output-section {
-            margin-top: 1.5rem;
-        }
-
-        .output-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-
-        .copy-btn {
-            background-color: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            color: var(--accent-blue);
-            padding: 0.4rem 0.8rem;
-            font-size: 0.85rem;
-            cursor: pointer;
-            border-radius: 4px;
-            transition: all 0.2s;
-            font-family: 'Courier New', monospace;
-        }
-
-        .copy-btn:hover {
-            background-color: var(--accent-blue);
-            color: var(--bg-primary);
-        }
-
-        .copy-btn.copied {
-            background-color: var(--accent-green);
-            color: var(--bg-primary);
-        }
-
-        .code-output {
-            background-color: var(--bg-tertiary);
-            border: 1px solid var(--border-color);
-            padding: 0.75rem;
-            border-radius: 4px;
-            max-height: 250px;
-            overflow-y: auto;
-            font-family: 'Courier New', monospace;
-            font-size: 0.75rem;
-            line-height: 1.4;
-        }
-
-        .code-output::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .code-output::-webkit-scrollbar-track {
-            background: var(--bg-primary);
-        }
-
-        .code-output::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 4px;
-        }
-
-        .code-output::-webkit-scrollbar-thumb:hover {
-            background: var(--text-muted);
-        }
-
-        .code-output pre {
-            margin: 0;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-
-        .loading-spinner {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid var(--border-color);
-            border-top-color: var(--accent-green);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .error-message {
-            background-color: rgba(248, 81, 73, 0.1);
-            border: 1px solid var(--accent-red);
-            color: var(--accent-red);
-            padding: 1rem;
-            border-radius: 4px;
-            margin-top: 1rem;
-        }
-
-        .rate-limit-info {
-            background-color: rgba(210, 153, 34, 0.1);
-            border: 1px solid var(--accent-yellow);
-            color: var(--accent-yellow);
-            padding: 0.75rem;
-            border-radius: 4px;
-            margin-top: 1rem;
-            font-size: 0.85rem;
-        }
-
-        /* Syntax highlighting */
-        .token.keyword { color: #ff79c6; }
-        .token.string { color: #f1fa8c; }
-        .token.comment { color: #6272a4; }
-        .token.function { color: #50fa7b; }
-        .token.number { color: #bd93f9; }
-        .token.operator { color: #ff79c6; }
-        .token.punctuation { color: #f8f8f2; }
-
-        @media (max-width: 968px) {
-            .main-content {
-                flex-direction: column;
-            }
-            .docs-column {
-                max-width: 100%;
-            }
-            .generator-column {
-                flex: 1;
-                position: static;
-                max-height: none;
-                max-width: 100%;
-            }
-        }
     </%text></style>
-
-    <!-- Prism.js for syntax highlighting -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
 </head>
 <body>
     <header>
@@ -608,9 +356,8 @@
             </div>
         </section>
 
-        <div class="container main-content">
-            <div class="docs-column">
         <section id="install" class="section">
+            <div class="container">
                 <h2>INSTALLATION</h2>
 
                 <div class="install-box">
@@ -630,9 +377,11 @@ yaml_output = workflow.to_yaml()
 
 <span class="comment"># Serialize to JSON</span>
 json_output = workflow.to_json()</pre></div>
+            </div>
         </section>
 
         <section id="spec" class="section">
+            <div class="container">
                 <h2>SPECIFICATION OVERVIEW</h2>
 
                 <p>Highway DSL v2.0.0 is a Long-Term Support (LTS) specification with guaranteed backward compatibility for the 2.x series. The specification defines:</p>
@@ -710,9 +459,11 @@ json_output = workflow.to_json()</pre></div>
                     <p>• Operator-specific execution handlers</p>
                     <p>• State management and persistence</p>
                 </div>
+            </div>
         </section>
 
         <section id="operators" class="section">
+            <div class="container">
                 <h2>OPERATOR SPECIFICATION</h2>
 
                 <p>Highway DSL v2.0.0 defines 10 operator types for comprehensive workflow modeling:</p>
@@ -930,9 +681,11 @@ builder.join(
     join_mode=JoinMode.ONE_SUCCESS
 )</pre>
                 </div>
+            </div>
         </section>
 
         <section id="examples" class="section">
+            <div class="container">
                 <h2>COMPLETE WORKFLOW EXAMPLES</h2>
 
                 <h3>Example 1: Data Processing Pipeline</h3>
@@ -1036,9 +789,11 @@ workflow = (
     <span class="key">dependencies:</span> <span class="value">[wait_extractions]</span>
 <span class="key">variables:</span> {}</pre>
                 </div>
+            </div>
         </section>
 
         <section class="section">
+            <div class="container">
                 <h2>TECHNICAL SPECIFICATIONS</h2>
 
                 <div class="grid">
@@ -1131,9 +886,11 @@ workflow = (
     .build()
 )</pre>
                 </div>
+            </div>
         </section>
 
         <section class="section">
+            <div class="container">
                 <h2>IMPLEMENTATION NOTES</h2>
 
                 <div class="note">
@@ -1184,42 +941,8 @@ workflow = (
                     <p>• Complete operator support (all 10 types)</p>
                     <p>• Event coordination and join semantics</p>
                 </div>
+            </div>
         </section>
-            </div><!-- End docs-column -->
-
-            <div class="generator-column">
-                <div class="dsl-generator">
-                    <h3>AI Workflow Generator</h3>
-
-                    <div class="generator-section">
-                        <label for="workflow-prompt">Describe your workflow:</label>
-                        <textarea
-                            id="workflow-prompt"
-                            class="prompt-input"
-                            placeholder="E.g., Create an ETL pipeline that extracts data from an API, validates it, and loads it to a database..."
-                        ></textarea>
-                    </div>
-
-                    <button id="generate-btn" class="generate-btn">GENERATE</button>
-
-                    <div class="rate-limit-info">
-                        Limit: 10 requests/min
-                    </div>
-
-                    <div id="output-container" class="output-section" style="display: none;">
-                        <div class="output-header">
-                            <label>Generated Code:</label>
-                            <button id="copy-btn" class="copy-btn">COPY</button>
-                        </div>
-                        <div class="code-output">
-                            <pre><code id="code-output" class="language-python"></code></pre>
-                        </div>
-                    </div>
-
-                    <div id="error-container" style="display: none;"></div>
-                </div>
-            </div><!-- End generator-column -->
-        </div><!-- End main-content -->
     </main>
 
     <footer>
@@ -1229,129 +952,5 @@ workflow = (
             <p><a href="https://github.com/rodmena-limited/highway_dsl">github.com/rodmena-limited/highway_dsl</a></p>
         </div>
     </footer>
-
-    <!-- Prism.js for syntax highlighting -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
-
-    <script>
-        const API_URL = 'https://dsl.rodmena.app/api/v1/generate_dsl';
-        const promptInput = document.getElementById('workflow-prompt');
-        const generateBtn = document.getElementById('generate-btn');
-        const outputContainer = document.getElementById('output-container');
-        const codeOutput = document.getElementById('code-output');
-        const copyBtn = document.getElementById('copy-btn');
-        const errorContainer = document.getElementById('error-container');
-
-        let generatedCode = '';
-
-        // Generate workflow
-        generateBtn.addEventListener('click', async () => {
-            const prompt = promptInput.value.trim();
-
-            if (!prompt) {
-                showError('Please enter a workflow description');
-                return;
-            }
-
-            // Clear previous output/errors
-            hideError();
-            outputContainer.style.display = 'none';
-
-            // Show loading state
-            generateBtn.disabled = true;
-            generateBtn.innerHTML = '<span class="loading-spinner"></span> GENERATING...';
-
-            try {
-                const url = `${API_URL}?${new URLSearchParams({ input: prompt })}`;
-                const response = await fetch(url);
-
-                if (!response.ok) {
-                    if (response.status === 429) {
-                        throw new Error('Rate limit exceeded. Please wait a moment and try again.');
-                    }
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                generatedCode = await response.text();
-
-                // Display code with syntax highlighting
-                codeOutput.textContent = generatedCode;
-                Prism.highlightElement(codeOutput);
-
-                outputContainer.style.display = 'block';
-
-                // Collapse textarea to save space
-                promptInput.style.minHeight = '60px';
-                promptInput.style.maxHeight = '80px';
-
-                // Scroll to output
-                outputContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-
-            } catch (error) {
-                showError(error.message);
-            } finally {
-                // Reset button
-                generateBtn.disabled = false;
-                generateBtn.innerHTML = 'GENERATE';
-            }
-        });
-
-        // Copy to clipboard
-        copyBtn.addEventListener('click', async () => {
-            try {
-                await navigator.clipboard.writeText(generatedCode);
-
-                // Show feedback
-                const originalText = copyBtn.textContent;
-                copyBtn.textContent = '✓ COPIED!';
-                copyBtn.classList.add('copied');
-
-                setTimeout(() => {
-                    copyBtn.textContent = originalText;
-                    copyBtn.classList.remove('copied');
-                }, 2000);
-
-            } catch (error) {
-                showError('Failed to copy to clipboard');
-            }
-        });
-
-        // Allow Enter + Ctrl/Cmd to generate
-        promptInput.addEventListener('keydown', (e) => {
-            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-                generateBtn.click();
-            }
-        });
-
-        // Error handling
-        function showError(message) {
-            errorContainer.innerHTML = `<div class="error-message">❌ Error: ${message}</div>`;
-            errorContainer.style.display = 'block';
-        }
-
-        function hideError() {
-            errorContainer.style.display = 'none';
-            errorContainer.innerHTML = '';
-        }
-
-        // Example prompts (optional enhancement)
-        const examples = [
-            "Create a workflow that downloads data from an API and saves it to a file",
-            "Build an ETL pipeline that extracts, transforms, and loads data",
-            "Create a workflow with parallel processing of multiple data sources",
-            "Build a workflow that waits for an external event before processing"
-        ];
-
-        // Add example button functionality (optional)
-        let exampleIndex = 0;
-        promptInput.addEventListener('focus', function() {
-            if (!this.value && exampleIndex < examples.length) {
-                this.placeholder = examples[exampleIndex];
-                exampleIndex = (exampleIndex + 1) % examples.length;
-            }
-        });
-    </script>
 </body>
 </html>
