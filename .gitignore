@@ -216,3 +216,4 @@ __marimo__/
 .streamlit/secrets.toml
 app/screenshots
 app/screenshot_tool.py
+.claude
