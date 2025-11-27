@@ -136,7 +136,7 @@ Access task results using template syntax:
 - `tools.approval.request` - Request human approval with timeout
 
 ### Advanced Tools
-- `tools.llm.call` - Call LLM models (Ollama supported, others planned)
+- `tools.llm.call` - Call LLM models (REQUIRES provider and model - see detailed section below)
 - `tools.secrets.get_secret` - HashiCorp Vault secret retrieval (tenant-isolated)
 - `tools.secrets.set_secret` - Store secrets in Vault
 - `tools.secrets.delete_secret` - Delete secrets from Vault
@@ -294,6 +294,179 @@ print(workflow.to_json())
 **IMPORTANT:** The email body is rendered through a Mako template that appends:
 - A footer with "Highway Workflow Engine Notifications"
 - The `task_id` for audit tracing
+
+### 1c. LLM Tool - AI Model Integration
+
+**`tools.llm.call`** calls LLM models via multiple providers with circuit breaker protection.
+
+**CRITICAL: `provider` and `model` are REQUIRED - there are NO defaults!**
+
+**Required Parameters:**
+- `provider` (required): LLM provider - one of: `"ollama"`, `"openai"`, `"anthropic"`, `"grok"`, `"gemini"`, `"qwen"`
+- `model` (required): Model identifier (e.g., `"deepseek-v3.1:671b-cloud"`, `"gpt-4"`, `"claude-3-sonnet"`)
+- `prompt` (required): The user prompt/message to send
+
+**Optional Parameters:**
+- `base_url`: API base URL (for Ollama, defaults to `OLLAMA_BASE_URL` env or `localhost:11434`)
+- `api_key`: API key (for cloud providers like OpenAI, Anthropic)
+- `system_prompt`: Optional system prompt for guidance
+- `temperature`: Sampling temperature 0.0-1.0 (default 0.7)
+- `max_tokens`: Maximum tokens to generate
+- `use_agentic_prompt`: Use structured reasoning prompt (default False)
+
+**Returns:**
+- `response`: The LLM generated text response
+- `provider`: Provider used
+- `model`: Model used
+- `usage`: Token usage statistics (if available)
+
+**Basic LLM Call:**
+```python
+from highway_dsl import WorkflowBuilder
+
+builder = WorkflowBuilder(name="llm_simple")
+
+builder.task(
+    "ask_llm",
+    "tools.llm.call",
+    kwargs={
+        "provider": "ollama",  # REQUIRED - no default!
+        "model": "deepseek-v3.1:671b-cloud",  # REQUIRED - no default!
+        "prompt": "Explain what a workflow engine is in 2-3 sentences.",
+        "temperature": 0.7,
+    },
+    result_key="llm_response",
+)
+
+builder.task(
+    "use_response",
+    "tools.shell.run",
+    args=["echo 'LLM said: {{llm_response.response}}'"],
+    dependencies=["ask_llm"],
+)
+
+workflow = builder.build()
+print(workflow.to_json())
+```
+
+**LLM with HTTP Data Pipeline (Story Summarizer):**
+```python
+from highway_dsl import WorkflowBuilder
+
+builder = WorkflowBuilder(name="story_summarizer")
+
+# Step 1: Download content via HTTP
+builder.task(
+    "download_content",
+    "tools.http.request",
+    kwargs={
+        "url": "https://example.com/story.txt",
+        "method": "GET",
+    },
+    result_key="story_response",
+)
+
+# Step 2: Process with LLM (pass HTTP response directly)
+# NOTE: HTTP tool returns text directly, NOT wrapped in {body: ...}
+builder.task(
+    "summarize",
+    "tools.llm.call",
+    kwargs={
+        "provider": "ollama",
+        "model": "deepseek-v3.1:671b-cloud",
+        "prompt": "Summarize the following text in 3-5 paragraphs:\n\n{{story_response}}",
+        "temperature": 0.5,
+        "max_tokens": 1000,
+    },
+    result_key="summary",
+    dependencies=["download_content"],
+)
+
+# Step 3: Email the summary
+builder.task(
+    "send_summary",
+    "tools.email.send",
+    kwargs={
+        "to": "user@example.com",
+        "subject": "Story Summary",
+        "body": "Here is the AI-generated summary:\n\n{{summary.response}}",
+    },
+    dependencies=["summarize"],
+)
+
+workflow = builder.build()
+print(workflow.to_json())
+```
+
+**LLM with Python Data Processing:**
+```python
+from highway_dsl import WorkflowBuilder
+
+builder = WorkflowBuilder(name="llm_with_python")
+
+# Step 1: Get data
+builder.task(
+    "fetch_data",
+    "tools.http.request",
+    kwargs={"url": "https://api.example.com/data", "method": "GET"},
+    result_key="raw_data",
+)
+
+# Step 2: Process data with Python function
+# Note: tools.python.run injects ctx as first arg to user functions
+builder.task(
+    "preprocess",
+    "tools.python.run",
+    args=["mymodule.helpers.preprocess_data"],
+    kwargs={"data": "{{raw_data}}"},
+    result_key="processed_data",
+    dependencies=["fetch_data"],
+)
+
+# Step 3: Analyze with LLM
+builder.task(
+    "analyze",
+    "tools.llm.call",
+    kwargs={
+        "provider": "ollama",
+        "model": "deepseek-v3.1:671b-cloud",
+        "system_prompt": "You are a data analyst. Provide insights based on the data.",
+        "prompt": "Analyze this data and provide key insights:\n\n{{processed_data}}",
+        "temperature": 0.3,
+    },
+    result_key="analysis",
+    dependencies=["preprocess"],
+)
+
+workflow = builder.build()
+print(workflow.to_json())
+```
+
+**LLM Provider Examples:**
+```python
+# Ollama (local/self-hosted)
+kwargs={"provider": "ollama", "model": "deepseek-v3.1:671b-cloud", "prompt": "..."}
+
+# OpenAI
+kwargs={"provider": "openai", "model": "gpt-4", "api_key": "{{ENV.OPENAI_API_KEY}}", "prompt": "..."}
+
+# Anthropic
+kwargs={"provider": "anthropic", "model": "claude-3-sonnet", "api_key": "{{ENV.ANTHROPIC_API_KEY}}", "prompt": "..."}
+
+# Qwen
+kwargs={"provider": "qwen", "model": "qwen2.5:7b", "prompt": "..."}
+```
+
+**WRONG (will fail - missing required params):**
+```python
+# BAD - No provider/model specified
+builder.task("bad_llm", "tools.llm.call", kwargs={"prompt": "Hello"})
+# Error: call_llm() missing 1 required positional argument: 'provider'
+
+# BAD - Missing model
+builder.task("bad_llm", "tools.llm.call", kwargs={"provider": "ollama", "prompt": "Hello"})
+# Error: missing required argument 'model'
+```
 
 ### 2. ParallelOperator - Concurrent Execution (FORK-ONLY)
 
@@ -590,6 +763,65 @@ builder.task(
     timeout_policy=TimeoutPolicy(timeout=timedelta(hours=2))
 )
 ```
+
+### Auto-Activity Pattern (Timeout > 30 seconds)
+
+**CRITICAL:** Tasks with `timeout_policy` > 30 seconds are automatically converted to **activities** for scalability. This is transparent to the workflow author but important to understand.
+
+**How it works:**
+1. Task with timeout > 30s is queued as an activity (~100ms transaction)
+2. DB connection is released (prevents connection pool exhaustion)
+3. Activity worker executes the task asynchronously
+4. Checkpoint created for crash recovery
+5. On completion, event is emitted and workflow resumes
+6. Result is stored in workflow context for downstream tasks
+
+**Example - Long-running LLM call:**
+```python
+from highway_dsl import WorkflowBuilder, TimeoutPolicy
+from datetime import timedelta
+
+builder = WorkflowBuilder(name="long_running_example")
+
+# This task will be auto-converted to an activity (timeout > 30s)
+builder.task(
+    "llm_analysis",
+    "tools.llm.call",
+    kwargs={
+        "provider": "ollama",
+        "model": "deepseek-v3.1:671b-cloud",
+        "prompt": "Analyze this large document: {{document}}",
+    },
+    result_key="analysis_result",
+    timeout_policy=TimeoutPolicy(timeout=timedelta(seconds=120)),  # 2 minutes
+)
+
+# Downstream task receives the result normally
+builder.task(
+    "use_result",
+    "tools.email.send",
+    kwargs={
+        "to": "user@example.com",
+        "subject": "Analysis Complete",
+        "body": "Results: {{analysis_result.response}}",
+    },
+    dependencies=["llm_analysis"],
+)
+
+workflow = builder.build()
+print(workflow.to_json())
+```
+
+**Benefits of auto-activity conversion:**
+- 🔌 **Connection release**: Long tasks don't hold DB connections
+- 🔄 **Crash recovery**: Checkpoint ensures resumability
+- 📊 **Scalability**: Activity queue handles load distribution
+- ⚡ **Async execution**: Workflow sleeps durably while activity runs
+
+**When NOT to use long timeouts:**
+- Quick validation/transformation tasks (< 10s)
+- Tasks that need immediate results (use inline execution)
+- Tasks with complex error handling that requires workflow context
 
 ### Callback Hooks (on_failure, on_success)
 
@@ -974,6 +1206,86 @@ workflow = builder.build()
 print(workflow.to_json())
 ```
 
+### Example 7: LLM Story Summarizer with Email Delivery
+
+```python
+from highway_dsl import WorkflowBuilder
+
+builder = WorkflowBuilder(name="llm_story_summarizer")
+
+# Step 1: Download the story using HTTP request tool
+builder.task(
+    "download_story",
+    "tools.http.request",
+    kwargs={
+        "url": "https://sherlock-holm.es/stories/plain-text/cano.txt",
+        "method": "GET",
+    },
+    result_key="story_response",
+)
+
+# Step 2: Extract first N lines using Python function
+# NOTE: story_response IS the text directly (not wrapped in {body:...})
+# NOTE: tools.python.run injects ctx as first arg to user functions
+builder.task(
+    "extract_lines",
+    "tools.python.run",
+    args=["tests.helpers.dummy_functions.extract_first_n_lines"],
+    kwargs={
+        "text": "{{story_response}}",
+        "n": 500,
+    },
+    result_key="extracted_text",
+    dependencies=["download_story"],
+)
+
+# Step 3: Summarize using LLM
+# CRITICAL: provider and model are REQUIRED arguments for tools.llm.call
+builder.task(
+    "summarize_story",
+    "tools.llm.call",
+    kwargs={
+        "provider": "ollama",  # Required: ollama, openai, anthropic, grok, gemini, qwen
+        "model": "deepseek-v3.1:671b-cloud",  # Required: model name
+        "prompt": "Please provide a concise summary of the following story excerpt in 3-5 paragraphs. Focus on the main plot points, key characters, and themes:\n\n{{extracted_text.text}}",
+        "temperature": 0.5,
+        "max_tokens": 1000,
+    },
+    result_key="summary_result",
+    dependencies=["extract_lines"],
+)
+
+# Step 4: Send email with the summary
+builder.task(
+    "send_summary_email",
+    "tools.email.send",
+    kwargs={
+        "to": "user@example.com",
+        "subject": "Story Summary: Sherlock Holmes - The Canon",
+        "body": "Here is the AI-generated summary of the Sherlock Holmes story:\n\n{{summary_result.response}}\n\n---\nGenerated by Highway Workflow Engine",
+    },
+    result_key="email_result",
+    dependencies=["summarize_story"],
+).on_success("log_success").on_failure("log_failure")
+
+# Success handler
+builder.task(
+    "log_success",
+    "tools.shell.run",
+    args=["echo 'Story summary sent successfully!'"],
+)
+
+# Failure handler
+builder.task(
+    "log_failure",
+    "tools.shell.run",
+    args=["echo 'Failed to send story summary email'"],
+)
+
+workflow = builder.build()
+print(workflow.to_json())
+```
+
 ---
 
 ## Required Imports
@@ -1004,6 +1316,7 @@ Before generating any workflow, verify:
 8. **Sleep uses WaitOperator** - `builder.wait(task_id, wait_for=timedelta(seconds=N))` NOT shell `sleep`
 9. **Idempotency keys** - Added for state-changing operations
 10. **Callback tasks have NO dependencies** - on_failure/on_success handlers
+11. **LLM calls have provider AND model** - `tools.llm.call` REQUIRES both `provider` AND `model` - NO defaults!
 
 ---
 
@@ -1028,4 +1341,4 @@ Here's the workflow:
 ```
 ```
 
-**Remember:** Pure Python code, MANY granular steps, NO dangerous commands, explicit wait after parallel, use WaitOperator for sleep.
+**Remember:** Pure Python code, MANY granular steps, NO dangerous commands, explicit wait after parallel, use WaitOperator for sleep, LLM requires provider+model.

@@ -357,6 +357,7 @@ class Workflow(BaseModel):
             validated_tasks = {}
             operator_classes: dict[str, type[BaseOperator]] = {
                 OperatorType.TASK.value: TaskOperator,
+                OperatorType.ACTIVITY.value: ActivityOperator,
                 OperatorType.CONDITION.value: ConditionOperator,
                 OperatorType.WAIT.value: WaitOperator,
                 OperatorType.PARALLEL.value: ParallelOperator,
