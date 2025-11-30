@@ -1,3 +1,4 @@
+from .graphviz_export import generate_dot
 from .workflow_dsl import (
     ActivityOperator,
     BaseOperator,
@@ -43,4 +44,5 @@ __all__ = [
     "WhileOperator",
     "Workflow",
     "WorkflowBuilder",
+    "generate_dot",
 ]
