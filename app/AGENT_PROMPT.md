@@ -665,6 +665,7 @@ def my_function(ctx, arg1, arg2, kwarg1=None):
     # ctx has access to all DurableContext methods:
     # - ctx.sleep(step_name, seconds) - Durable sleep
     # - ctx.get_variable(key) / ctx.set_variable(key, value)
+    # - ctx.get_temp(key) / ctx.set_temp(key, value) - Ephemeral storage
     # - ctx.wait_for_event(step_name, event_name, timeout)
     # - ctx.emit_event(event_name, payload)
     # - ctx.step(step_name, func, *args, **kwargs) - Idempotent checkpointing
@@ -742,6 +743,11 @@ def example_function(ctx):
     # Encrypted variables (AES-256-GCM)
     ctx.set_encrypted_variable("secret", sensitive_data)
     secret = ctx.get_encrypted_variable("secret")
+
+    # Ephemeral state (per-transaction, not persisted)
+    # Use for passing large objects between tasks in the same transaction
+    ctx.set_temp("large_obj", non_serializable_data)
+    obj = ctx.get_temp("large_obj")
 
     # Events
     ctx.emit_event("event_name", {"data": "payload"})

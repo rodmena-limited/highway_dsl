@@ -21,12 +21,11 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
-# add dependencies here
 dependencies = [
     "pydantic>=2.12.3",
-    "pyyaml>=6.0"
-    ]
-# dev dependencies
+    "pyyaml>=6.0",
+]
+
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0.0",
@@ -34,6 +33,12 @@ dev = [
     "types-PyYAML>=6.0.0",
     "pytest-cov>=2.12.1",
 ]
+mcp = [
+    "mcp[cli]>=1.0.0",
+]
+
+[project.scripts]
+highway-mcp-server = "highway_dsl.mcp_server:main"
 
 [project.urls]
 Homepage = "https://github.com/rodmena-limited/highway_dsl"

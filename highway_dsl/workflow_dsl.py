@@ -94,6 +94,65 @@ class TimeoutPolicy(BaseModel):
     )
 
 
+class CircuitBreakerPolicy(BaseModel):
+    """Per-activity circuit breaker configuration (Issue #247).
+
+    When enabled, the activity will use its own circuit breaker instance
+    instead of relying solely on workflow retry_policy. Useful for protecting
+    against cascading failures from external dependencies.
+
+    Default: disabled (workflow retry_policy is the single source of truth).
+    """
+
+    failure_threshold: int = Field(
+        5,
+        description="Number of consecutive failures before opening circuit",
+        ge=1,
+    )
+    success_threshold: int = Field(
+        2,
+        description="Number of successes required to close circuit after isolation",
+        ge=1,
+    )
+    isolation_duration: timedelta = Field(
+        timedelta(seconds=30),
+        description="Duration circuit stays open before allowing test request",
+    )
+    catch_exceptions: list[str] | None = Field(
+        None,
+        description="Exception class names to count as failures (None = all exceptions)",
+    )
+    ignore_exceptions: list[str] | None = Field(
+        None,
+        description="Exception class names to NOT count as failures (pass through)",
+    )
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    def model_dump(self, **kwargs: Any) -> dict[str, Any]:
+        """Custom serialization for timedelta."""
+        data = super().model_dump(**kwargs)
+        # Serialize timedelta to seconds for JSON compatibility
+        if isinstance(self.isolation_duration, timedelta):
+            data["isolation_duration_seconds"] = self.isolation_duration.total_seconds()
+            # Remove the timedelta object to ensure JSON serialization works
+            if "isolation_duration" in data:
+                del data["isolation_duration"]
+        return data
+
+    @model_validator(mode="before")
+    @classmethod
+    def parse_isolation_duration(cls, data: Any) -> Any:
+        """Parse isolation_duration from seconds if needed."""
+        if isinstance(data, dict):
+            # Support deserialization from seconds
+            if "isolation_duration_seconds" in data and "isolation_duration" not in data:
+                data["isolation_duration"] = timedelta(
+                    seconds=data["isolation_duration_seconds"]
+                )
+        return data
+
+
 class BaseOperator(BaseModel, ABC):
     task_id: str
     operator_type: OperatorType
@@ -103,6 +162,10 @@ class BaseOperator(BaseModel, ABC):
     )
     retry_policy: RetryPolicy | None = None
     timeout_policy: TimeoutPolicy | None = None
+    circuit_breaker_policy: CircuitBreakerPolicy | None = Field(
+        None,
+        description="Per-activity circuit breaker (Issue #247). Default: disabled.",
+    )
     idempotency_key: str | None = Field(
         None, description="Key for idempotent execution (prevents duplicate runs)"
     )
@@ -614,6 +677,7 @@ class WorkflowBuilder:
             "dependencies",
             "retry_policy",
             "timeout_policy",
+            "circuit_breaker_policy",
             "idempotency_key",
             "metadata",
             "description",
@@ -647,6 +711,7 @@ class WorkflowBuilder:
             "dependencies",
             "retry_policy",
             "timeout_policy",
+            "circuit_breaker_policy",
             "idempotency_key",
             "metadata",
             "description",
