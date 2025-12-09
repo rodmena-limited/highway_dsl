@@ -80,7 +80,7 @@ def call_ollama(user_input):
         ],
         "stream": False,
         "options": {
-            "temperature": 0.1,  # Low temperature for more deterministic output
+            "temperature": 0.0,  # Low temperature for more deterministic output
             "top_p": 0.9,
         },
     }
@@ -297,6 +297,21 @@ def generate_dsl():
         return jsonify({"error": "Failed to generate DSL", "details": str(e)}), 500
 
 
+@app.route("/api/v1/dsl-context", methods=["GET"])
+def dsl_context():
+    """
+    Get the DSL reference context for code completion.
+
+    This endpoint returns the comprehensive Highway DSL documentation
+    that can be used as context for code completion models.
+
+    Returns:
+        200: DSL reference documentation as plain text
+    """
+    context = get_dsl_reference()
+    return Response(context, mimetype="text/plain")
+
+
 @app.route("/health", methods=["GET"])
 def health():
     """Health check endpoint."""
@@ -334,6 +349,10 @@ def index():
                     "description": "Generate Highway DSL workflow from natural language",
                     "parameters": {"input": "Workflow description (required)"},
                     "example": "/api/v1/generate_dsl?input=Create a workflow that fetches data from an API and processes it",
+                },
+                "/api/v1/dsl-context": {
+                    "method": "GET",
+                    "description": "Get DSL reference context for code completion",
                 },
                 "/health": {"method": "GET", "description": "Health check endpoint"},
             },
