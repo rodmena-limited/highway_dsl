@@ -118,6 +118,14 @@ SwitchOperator
    :undoc-members:
    :show-inheritance:
 
+ReflexiveOperator
+~~~~~~~~~~~~~~~~~
+
+.. autoclass:: highway_dsl.workflow_dsl.ReflexiveOperator
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Policies
 --------
 

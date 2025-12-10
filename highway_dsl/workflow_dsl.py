@@ -59,6 +59,7 @@ class OperatorType(Enum):
     WAIT_FOR_EVENT = "wait_for_event"
     JOIN = "join"
     ACTIVITY = "activity"
+    REFLEXIVE = "reflexive"  # Issue #331: Sherlock reflexive loop
 
 
 class JoinMode(Enum):
@@ -274,6 +275,7 @@ class ForEachOperator(BaseOperator):
             "WaitForEventOperator",
             "SwitchOperator",
             "JoinOperator",
+            "ReflexiveOperator",
         ]
     ] = Field(default_factory=list)
     parallel: bool = Field(
@@ -297,6 +299,7 @@ class WhileOperator(BaseOperator):
             "WaitForEventOperator",
             "SwitchOperator",
             "JoinOperator",
+            "ReflexiveOperator",
         ]
     ] = Field(default_factory=list)
     operator_type: OperatorType = Field(OperatorType.WHILE, frozen=True)
@@ -345,6 +348,45 @@ class SwitchOperator(BaseOperator):
     operator_type: OperatorType = Field(OperatorType.SWITCH, frozen=True)
 
 
+class ReflexiveOperator(BaseOperator):
+    """Issue #331: Reflexive Loop operator (Sherlock pattern).
+
+    Implements the Reflexive Loop pattern from Sherlock paper (arXiv:2511.00330):
+    Generate -> Verify -> Self-correct within a single atomic step.
+
+    This operator serializes to an ActivityOperator using tools.agent.reflexive_loop,
+    ensuring the retry loop happens outside the DB transaction to prevent
+    connection exhaustion.
+
+    Example:
+        builder.reflexive(
+            task_id="gen_code",
+            generator="tools.llm.call",
+            generator_kwargs={
+                "provider": "ollama",
+                "model": "deepseek-v3.1:671b-cloud",
+                "prompt": "Write fibonacci in Python",
+            },
+            verifier="tools.python.run",
+            max_turns=3,
+        )
+    """
+
+    generator: str = Field(..., description="Generator tool name (e.g., tools.llm.call)")
+    generator_kwargs: dict[str, Any] = Field(
+        default_factory=dict, description="Arguments for generator tool"
+    )
+    verifier: str = Field(..., description="Verifier tool name (e.g., tools.python.run)")
+    verifier_kwargs: dict[str, Any] = Field(
+        default_factory=dict, description="Arguments for verifier tool"
+    )
+    max_turns: int = Field(3, description="Maximum correction attempts", ge=1, le=10)
+    correction_prompt_template: str | None = Field(
+        None, description="Custom template for correction prompts"
+    )
+    operator_type: OperatorType = Field(OperatorType.REFLEXIVE, frozen=True)
+
+
 class Workflow(BaseModel):
     name: str
     version: str = "2.0.0"
@@ -361,7 +403,8 @@ class Workflow(BaseModel):
         | EmitEventOperator
         | WaitForEventOperator
         | SwitchOperator
-        | JoinOperator,
+        | JoinOperator
+        | ReflexiveOperator,
     ] = Field(default_factory=dict)
     variables: dict[str, Any] = Field(default_factory=dict)
     start_task: str | None = None
@@ -430,6 +473,7 @@ class Workflow(BaseModel):
                 OperatorType.WAIT_FOR_EVENT.value: WaitForEventOperator,
                 OperatorType.SWITCH.value: SwitchOperator,
                 OperatorType.JOIN.value: JoinOperator,
+                OperatorType.REFLEXIVE.value: ReflexiveOperator,
             }
             for task_id, task_data in data["tasks"].items():
                 operator_type = task_data.get("operator_type")
@@ -456,6 +500,7 @@ class Workflow(BaseModel):
             | WaitForEventOperator
             | SwitchOperator
             | JoinOperator
+            | ReflexiveOperator
         ),
     ) -> "Workflow":
         self.tasks[task.task_id] = task
@@ -634,6 +679,7 @@ class WorkflowBuilder:
             | WaitForEventOperator
             | SwitchOperator
             | JoinOperator
+            | ReflexiveOperator
         ),
         **kwargs: Any,
     ) -> None:
@@ -730,6 +776,82 @@ class WorkflowBuilder:
 
         task = ActivityOperator(
             task_id=task_id, function=function, args=args, kwargs=task_kwargs, **operator_config
+        )
+        self._add_task(task, **kwargs)
+        return self
+
+    def reflexive(
+        self,
+        task_id: str,
+        generator: str,
+        verifier: str,
+        generator_kwargs: dict[str, Any] | None = None,
+        verifier_kwargs: dict[str, Any] | None = None,
+        max_turns: int = 3,
+        correction_prompt_template: str | None = None,
+        **kwargs: Any,
+    ) -> "WorkflowBuilder":
+        """Add a reflexive loop task (Issue #331 - Sherlock pattern).
+
+        Implements the Reflexive Loop pattern from Sherlock paper (arXiv:2511.00330):
+        Generate -> Verify -> Self-correct within a single atomic step.
+
+        IMPORTANT: This task MUST execute as an Activity (outside DB transaction)
+        to prevent database connection exhaustion during the retry loop.
+
+        Args:
+            task_id: Unique identifier for this task
+            generator: Generator tool name (e.g., "tools.llm.call")
+            verifier: Verifier tool name (e.g., "tools.python.run")
+            generator_kwargs: Arguments for generator tool
+            verifier_kwargs: Arguments for verifier tool
+            max_turns: Maximum correction attempts (1-10, default: 3)
+            correction_prompt_template: Custom template for correction prompts
+            **kwargs: Additional operator config (dependencies, retry_policy, etc.)
+
+        Returns:
+            Self for method chaining
+
+        Example:
+            builder.reflexive(
+                task_id="gen_code",
+                generator="tools.llm.call",
+                generator_kwargs={
+                    "provider": "ollama",
+                    "model": "deepseek-v3.1:671b-cloud",
+                    "prompt": "Write fibonacci in Python",
+                },
+                verifier="tools.python.run",
+                max_turns=3,
+            )
+        """
+        # Operator configuration fields
+        operator_fields = {
+            "dependencies",
+            "retry_policy",
+            "timeout_policy",
+            "circuit_breaker_policy",
+            "idempotency_key",
+            "metadata",
+            "description",
+            "result_key",
+            "on_success_task_id",
+            "on_failure_task_id",
+            "trigger_rule",
+        }
+
+        # Separate operator config from other params
+        operator_config = {k: v for k, v in kwargs.items() if k in operator_fields}
+
+        task = ReflexiveOperator(
+            task_id=task_id,
+            generator=generator,
+            generator_kwargs=generator_kwargs or {},
+            verifier=verifier,
+            verifier_kwargs=verifier_kwargs or {},
+            max_turns=max_turns,
+            correction_prompt_template=correction_prompt_template,
+            **operator_config,
         )
         self._add_task(task, **kwargs)
         return self

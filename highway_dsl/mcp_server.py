@@ -13,7 +13,6 @@ Usage:
 
 import ast
 import subprocess
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -346,6 +345,22 @@ builder.wait_for_event(
     dependencies=["long_task"],
     timeout_seconds=3600,
     result_key="task_done",
+)
+```
+
+### 12. ReflexiveOperator - Sherlock Pattern (Generate -> Verify -> Correct)
+```python
+# Atomic generation-verification loop
+builder.reflexive(
+    "gen_code",
+    generator="tools.llm.call",
+    generator_kwargs={
+        "provider": "ollama",
+        "model": "deepseek-v3.1:671b-cloud",
+        "prompt": "Write fibonacci in Python",
+    },
+    verifier="tools.python.run",
+    max_turns=3,
 )
 ```
 
@@ -781,6 +796,24 @@ builder.activity("long_task", "tools.python.run",
 # MUST wait for completion!
 builder.wait_for_event("wait_task", "{{task_result.completion_event}}",
     dependencies=["long_task"], timeout_seconds=3600, result_key="done")
+```
+
+## Reflexive Operator (Sherlock Pattern)
+
+Atomic loop for Generate -> Verify -> Self-Correct:
+
+```python
+builder.reflexive(
+    "gen_code",
+    generator="tools.llm.call",
+    generator_kwargs={
+        "provider": "ollama",
+        "model": "deepseek-v3.1:671b-cloud",
+        "prompt": "Write fibonacci in Python",
+    },
+    verifier="tools.python.run",
+    max_turns=3,
+)
 ```
 
 ## CRITICAL CHECKLIST
@@ -1678,6 +1711,7 @@ def get_operator_reference() -> dict[str, dict[str, Any]]:
     - switch: Multi-branch routing
     - join: Validate after waiting
     - activity: Long-running tasks
+    - reflexive: Atomic Generate-Verify-Correct loop
 
     Each entry includes signature, parameters, and usage examples.
     """
@@ -1833,6 +1867,20 @@ builder.while_loop('loop', condition='{{counter}} < 5', loop_body=body, dependen
             "example": """builder.activity('long_task', 'tools.python.run', args=['module.func'],
     result_key='task_result', timeout_policy=TimeoutPolicy(timeout=timedelta(hours=1)))
 builder.wait_for_event('wait_task', '{{task_result.completion_event}}', dependencies=['long_task'])""",
+        },
+        "reflexive": {
+            "description": "Atomic Generate -> Verify -> Self-Correct loop (Sherlock Pattern)",
+            "signature": "builder.reflexive(task_id, generator, verifier, generator_kwargs={}, verifier_kwargs={}, max_turns=3, correction_prompt_template=None)",
+            "parameters": {
+                "task_id": "required - Unique identifier",
+                "generator": "required - Tool name for generation (e.g., tools.llm.call)",
+                "verifier": "required - Tool name for verification (e.g., tools.python.run)",
+                "generator_kwargs": "dict - Arguments for generator",
+                "verifier_kwargs": "dict - Arguments for verifier",
+                "max_turns": "int - Maximum correction attempts (default 3)",
+            },
+            "critical": "Executes as a single Activity outside DB transaction. Prevents connection exhaustion.",
+            "example": """builder.reflexive('gen_code', generator='tools.llm.call', verifier='tools.python.run', max_turns=3)""",
         },
     }
 

@@ -563,6 +563,10 @@ Table of Contents
    JOIN = "join"
       Coordinates multiple tasks/branches with explicit join modes
       (Temporal-style join logic).
+
+   REFLEXIVE = "reflexive"
+      Executes a reflexive loop (generator -> verifier -> correction)
+      within a single atomic step (Sherlock pattern).
 4.3. Base Operator Contract
 
    All operators inherit from BaseOperator, which defines the common
@@ -1485,6 +1489,81 @@ Table of Contents
        - fetch_status
 
 
+5.11. ReflexiveOperator
+
+   The ReflexiveOperator implements the Reflexive Loop pattern from
+   the Sherlock paper (arXiv:2511.00330). It encapsulates a
+   generation -> verification -> self-correction loop within a single
+   atomic step.
+
+   Class: ReflexiveOperator
+   Module: highway_dsl.workflow_dsl
+   Inherits: BaseOperator
+
+   Additional Fields:
+
+   generator: str (REQUIRED)
+      Name of the generator tool (e.g., "tools.llm.call").
+
+   generator_kwargs: Dict[str, Any] (DEFAULT: {})
+      Arguments passed to the generator tool.
+
+   verifier: str (REQUIRED)
+      Name of the verifier tool (e.g., "tools.python.run").
+
+   verifier_kwargs: Dict[str, Any] (DEFAULT: {})
+      Arguments passed to the verifier tool.
+
+   max_turns: int (DEFAULT: 3)
+      Maximum number of correction attempts (1-10).
+
+   correction_prompt_template: Optional[str] (DEFAULT: None)
+      Custom template for generating correction prompts based on
+      verifier feedback.
+
+   Operator Type:
+      OperatorType.REFLEXIVE
+
+   Execution Semantics:
+
+   1. The operator executes as a single Activity (outside database
+      transaction) to prevent connection exhaustion.
+
+   2. Loop logic:
+         a. Call generator tool.
+         b. Call verifier tool with generated output.
+         c. If verification passes, return result.
+         d. If verification fails and turns < max_turns:
+               i. Construct correction prompt using verification error.
+              ii. Loop back to step 'a' with correction prompt.
+         e. If verification fails and turns exhausted, fail the task.
+
+   Example (Python):
+
+   reflexive = ReflexiveOperator(
+       task_id="gen_code",
+       generator="tools.llm.call",
+       generator_kwargs={
+           "model": "gpt-4",
+           "prompt": "Write fibonacci in Python"
+       },
+       verifier="tools.python.run",
+       max_turns=3
+   )
+
+   Example (YAML):
+
+   gen_code:
+     operator_type: reflexive
+     task_id: gen_code
+     generator: tools.llm.call
+     generator_kwargs:
+       model: gpt-4
+       prompt: Write fibonacci in Python
+     verifier: tools.python.run
+     max_turns: 3
+
+
 6. Scheduling Specification
 
 6.1. Cron-Based Scheduling
@@ -2043,6 +2122,41 @@ Table of Contents
        args=["{{url}}"],
        result_key="raw_data",
        retry_policy=RetryPolicy(max_retries=3)
+   )
+
+   def reflexive(
+       self,
+       task_id: str,
+       generator: str,
+       verifier: str,
+       generator_kwargs: Dict[str, Any] = None,
+       verifier_kwargs: Dict[str, Any] = None,
+       max_turns: int = 3,
+       correction_prompt_template: str = None,
+       **kwargs
+   ) -> "WorkflowBuilder"
+
+   Create a ReflexiveOperator.
+
+   Parameters:
+      - task_id: Unique identifier
+      - generator: Generator tool name
+      - verifier: Verifier tool name
+      - generator_kwargs: Generator tool arguments
+      - verifier_kwargs: Verifier tool arguments
+      - max_turns: Maximum correction attempts
+      - correction_prompt_template: Custom correction template
+      - **kwargs: Additional fields
+
+   Returns: self
+
+   Example:
+
+   builder.reflexive(
+       "gen_code",
+       generator="tools.llm.call",
+       verifier="tools.python.run",
+       max_turns=3
    )
 
 

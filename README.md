@@ -80,6 +80,17 @@ builder.set_description("Production ETL pipeline")
 builder.set_version("2.1.0")  # Update version later
 ```
 
+#### 5. **Reflexive Operator (Sherlock Pattern)**
+Implements the Reflexive Loop pattern (Generate -> Verify -> Self-Correct) in a single atomic step:
+```python
+builder.reflexive(
+    task_id="gen_code",
+    generator="tools.llm.call",
+    verifier="tools.python.run",
+    max_turns=3
+)
+```
+
 ### Breaking Changes
 - Default workflow version changed from "1.1.0" to "1.3.0"
 - WaitOperator now serializes durations as ISO 8601 format (`PT<seconds>S`) instead of `duration:<seconds>`
@@ -260,6 +271,7 @@ graph TB
     *   `WaitForEvent` - Wait for external events with timeout
     *   `Switch` - Multi-branch routing (switch/case)
     *   `Join` - Temporal-style explicit coordination with join modes (ALL_OF, ANY_OF, ALL_SUCCESS, ONE_SUCCESS)
+    *   `Reflexive` - Atomic generation/verification loop (Sherlock pattern)
 *   **Scheduling:** Built-in support for cron-based scheduling, start dates, and catchup configuration
 *   **Event-Driven:** First-class support for event emission and waiting (Absurd integration)
 *   **Callback Hooks:** Durable success/failure handlers as workflow nodes

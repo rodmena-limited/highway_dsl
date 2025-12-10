@@ -9,7 +9,6 @@ Port: 7291
 """
 
 import os
-import sys
 import tempfile
 import py_compile
 
@@ -51,7 +50,7 @@ def build_agent_prompt():
 # Build prompt at startup using MCP functions
 AGENT_PROMPT = build_agent_prompt()
 print(f"✓ Built agent prompt from MCP server ({len(AGENT_PROMPT)} chars)")
-print(f"  - DSL instructions: included")
+print("  - DSL instructions: included")
 print(f"  - Example patterns: {len(get_example_patterns())} patterns")
 print(f"  - Available tools: {len(list_available_tools())} tools")
 print(f"  - Operators: {len(get_operator_reference())} operators")
@@ -274,7 +273,7 @@ def generate_dsl():
         if warnings:
             print(f"⚠️ Workflow warnings: {warnings}")
 
-        print(f"✓ Generated valid Highway DSL workflow")
+        print("✓ Generated valid Highway DSL workflow")
         print(f"  - Name: {workflow_info.get('name', 'unknown')}")
         print(f"  - Tasks: {workflow_info.get('task_count', 0)}")
         print(f"  - Size: {len(cleaned_code)} bytes")
@@ -372,7 +371,7 @@ if __name__ == "__main__":
     print("=" * 60)
     print(f"Ollama URL: {OLLAMA_BASE_URL}")
     print(f"Ollama Model: {OLLAMA_MODEL}")
-    print(f"Prompt Source: MCP Server")
+    print("Prompt Source: MCP Server")
     print(f"Prompt Size: {len(AGENT_PROMPT)} chars")
     print("Port: 7291")
     print("=" * 60)
