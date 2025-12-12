@@ -216,6 +216,20 @@ builder.task("finalize", "tools.shell.run", args=["echo 'Done'"],
 - `tools.simple_counter.init_counter` - Initialize counter
 - `tools.simple_counter.increment_counter` - Increment counter
 
+### Sandboxed Code Execution
+- `tools.code.exec` - Execute Python code in Docker sandbox (isolated, NO DurableContext)
+  - kwargs: {timeout: 30}
+  - Security: cap_drop=["ALL"], network_mode="none", read_only=True
+
+### Sherlock AI Patterns
+- `tools.semantic.step` - Semantic idempotency with embedding-based caching
+  - kwargs: {step_name, generator_tool, generator_kwargs, similarity_threshold, embedding_model}
+
+### Tenant Apps
+- `apps.{publisher_id}.{app_name}.{action}` - Call installed tenant apps
+  - Example: `apps.platform.approval_gateway.request_generic_approval`
+  - Example: `apps.platform.welcome_email.send_welcome`
+
 ## ALL OPERATORS
 
 ### 1. TaskOperator - Basic workflow steps
@@ -633,6 +647,57 @@ builder.task("approve", "tools.approval.request",
 builder.task("init", "tools.simple_counter.init_counter")
 builder.task("inc", "tools.simple_counter.increment_counter", dependencies=["init"])
 # Access: {{counter}}
+```
+
+### Sandboxed Code Execution (tools.code.exec)
+```python
+# Execute UNTRUSTED code in isolated Docker sandbox
+# IMPORTANT: NO DurableContext access - use for LLM-generated code
+builder.task("sandbox", "tools.code.exec",
+    args=['''
+import math
+result = {"pi": math.pi, "computed": 2 + 2}
+print(f"Result: {result}")
+'''],
+    kwargs={"timeout": 30},
+    result_key="sandbox_output")
+```
+
+### Semantic Idempotency (tools.semantic.step)
+```python
+# LLM output caching based on semantic similarity (not exact text)
+# On replay: returns cached result if embedding similarity >= threshold
+builder.activity("generate", "tools.semantic.step",
+    kwargs={
+        "step_name": "summarize_doc",
+        "generator_tool": "tools.llm.call",
+        "generator_kwargs": {
+            "provider": "ollama",
+            "model": "deepseek-v3.1:671b-cloud",
+            "prompt": "Summarize this document...",
+        },
+        "similarity_threshold": 0.90,  # 90% similarity = cache hit
+        "embedding_model": "nomic-embed-text",
+    })
+```
+
+### Tenant Apps Integration
+```python
+# Apps are published by tenants and installed by other tenants
+# Format: apps.{publisher_id}.{app_name}.{action_name}
+
+# Approval gateway (human approval with email links)
+builder.task("approve", "apps.platform.approval_gateway.request_generic_approval",
+    kwargs={
+        "approval_key": "payment_{{workflow_run_id}}",
+        "title": "Payment Approval",
+        "description": "Approve payment of $1000",
+        "timeout_hours": 24,
+    })
+
+# Welcome email
+builder.task("welcome", "apps.platform.welcome_email.send_welcome",
+    kwargs={"to": "user@example.com", "tenant_id": "acme"})
 ```
 
 ## Parallel Execution Pattern (CRITICAL!)
@@ -1340,6 +1405,58 @@ def list_available_tools() -> list[dict[str, Any]]:
             "description": "Execute nested workflow",
             "parameters": {"workflow_id": "required - Nested workflow ID"},
             "usage": 'builder.task("sub", "tools.workflow.execute", kwargs={"workflow_id": "{{nested_workflow}}"})',
+        },
+        # Sandboxed Code Execution
+        {
+            "name": "tools.code.exec",
+            "category": "Security",
+            "description": "Execute Python code in isolated Docker sandbox (NO DurableContext access)",
+            "parameters": {
+                "args": ["python_code_string"],
+                "timeout": "int - Execution timeout in seconds (default: 30)",
+            },
+            "security": [
+                "Docker container isolation",
+                "cap_drop=['ALL'] - No Linux capabilities",
+                "network_mode='none' - No network access",
+                "read_only=True - Read-only filesystem",
+                "Non-root user execution",
+            ],
+            "critical": "Use for UNTRUSTED code (e.g., LLM-generated). Does NOT have access to DurableContext, database, or secrets!",
+            "usage": 'builder.task("sandbox", "tools.code.exec", args=["import math\\nprint(math.pi)"], kwargs={"timeout": 30})',
+            "output": "stdout from code execution",
+        },
+        # Semantic Idempotency
+        {
+            "name": "tools.semantic.step",
+            "category": "AI",
+            "description": "Semantic idempotency - LLM output caching based on embedding similarity",
+            "parameters": {
+                "step_name": "required - Unique step name for checkpointing",
+                "generator_tool": "required - Tool for generation (e.g., 'tools.llm.call')",
+                "generator_kwargs": "dict - Arguments for generator tool",
+                "similarity_threshold": "float 0-1 - Cosine similarity threshold (default: 0.90)",
+                "embedding_model": "string - Model for embeddings (default: 'nomic-embed-text')",
+            },
+            "critical": "On replay: compares embeddings, returns cached result if similarity >= threshold. Prevents expensive LLM re-runs for semantically equivalent outputs.",
+            "usage": 'builder.activity("gen", "tools.semantic.step", kwargs={"step_name": "summarize", "generator_tool": "tools.llm.call", "generator_kwargs": {...}, "similarity_threshold": 0.90})',
+            "output": "Generator tool output with embedding cached",
+        },
+        # Tenant Apps
+        {
+            "name": "apps.{publisher_id}.{app_name}.{action}",
+            "category": "Apps",
+            "description": "Call installed tenant apps - reusable workflow components",
+            "parameters": {
+                "publisher_id": "Tenant that published the app",
+                "app_name": "Name of the app",
+                "action": "Action to call within the app",
+            },
+            "examples": [
+                "apps.platform.approval_gateway.request_generic_approval",
+                "apps.platform.welcome_email.send_welcome",
+            ],
+            "usage": 'builder.task("approve", "apps.platform.approval_gateway.request_generic_approval", kwargs={"approval_key": "key", "title": "Title", "timeout_hours": 24})',
         },
     ]
 

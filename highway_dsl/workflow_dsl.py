@@ -476,6 +476,10 @@ class Workflow(BaseModel):
                 OperatorType.REFLEXIVE.value: ReflexiveOperator,
             }
             for task_id, task_data in data["tasks"].items():
+                if isinstance(task_data, BaseOperator):
+                    validated_tasks[task_id] = task_data
+                    continue
+
                 operator_type = task_data.get("operator_type")
                 if operator_type and operator_type in operator_classes:
                     operator_class = operator_classes[operator_type]
@@ -557,74 +561,29 @@ class Workflow(BaseModel):
     def to_json(self) -> str:
         return self.model_dump_json(indent=2)
 
-    def to_mermaid(
-        self,
-    ) -> str:
-        """convert to mermaid state diagram format"""
-        lines = ["stateDiagram-v2"]
+    def to_mermaid(self) -> str:
+        """Convert workflow to Mermaid stateDiagram-v2 format.
 
-        all_dependencies = {dep for task in self.tasks.values() for dep in task.dependencies}
+        Uses the robust DiagramGenerator to handle nested structures,
+        parallel branches, and all operator types correctly.
+        """
+        # Local import to avoid circular dependency
+        from highway_dsl.diagrams import DiagramGenerator
 
-        for task_id, task in self.tasks.items():
-            # Add state with description for regular tasks
-            if task.description and not isinstance(task, (ForEachOperator, WhileOperator)):
-                lines.append(f'    state "{task.description}" as {task_id}')
+        generator = DiagramGenerator(self)
+        return generator.to_mermaid()
 
-            # Add dependencies
-            if not task.dependencies:
-                if self.start_task == task_id or not self.start_task:
-                    lines.append(f"    [*] --> {task_id}")
-            else:
-                for dep in task.dependencies:
-                    lines.append(f"    {dep} --> {task_id}")
+    def to_graphviz(self) -> str:
+        """Convert workflow to Graphviz DOT format.
 
-            # Add transitions for conditional operator
-            if isinstance(task, ConditionOperator):
-                if task.if_true:
-                    lines.append(f"    {task_id} --> {task.if_true} : True")
-                if task.if_false:
-                    lines.append(f"    {task_id} --> {task.if_false} : False")
+        Uses the robust DiagramGenerator to handle nested structures,
+        parallel branches, and all operator types correctly.
+        """
+        # Local import to avoid circular dependency
+        from highway_dsl.diagrams import DiagramGenerator
 
-            # Add composite state for parallel operator
-            if isinstance(task, ParallelOperator):
-                lines.append(f"    state {task_id} {{")
-                for i, branch in enumerate(task.branches):
-                    lines.append(f'        state "Branch {i+1}" as {branch}')
-                    if i < len(task.branches) - 1:
-                        lines.append("        --")
-                lines.append("    }")
-
-            # Add composite state for foreach operator
-            if isinstance(task, ForEachOperator):
-                lines.append(f"    state {task_id} {{")
-                for sub_task in task.loop_body:
-                    if sub_task.description:
-                        lines.append(
-                            f'        state "{sub_task.description}" as {sub_task.task_id}'
-                        )
-                    else:
-                        lines.append(f"        {sub_task.task_id}")
-                lines.append("    }")
-
-            # Add composite state for while operator
-            if isinstance(task, WhileOperator):
-                lines.append(f"    state {task_id} {{")
-                for sub_task in task.loop_body:
-                    if sub_task.description:
-                        lines.append(
-                            f'        state "{sub_task.description}" as {sub_task.task_id}'
-                        )
-                    else:
-                        lines.append(f"        {sub_task.task_id}")
-                lines.append("    }")
-
-            # End states
-            if task_id not in all_dependencies and not (
-                isinstance(task, ConditionOperator) and (task.if_true or task.if_false)
-            ):
-                lines.append(f"    {task_id} --> [*]")
-
-        return "\n".join(lines)
+        generator = DiagramGenerator(self)
+        return generator.to_graphviz()
 
     @classmethod
     def from_yaml(cls, yaml_str: str) -> "Workflow":
@@ -943,6 +902,74 @@ class WorkflowBuilder:
         # This prevents double execution (once in parent, once in branch)
 
         self._current_task = task_id
+        return self
+
+    def parallel_with_join(
+        self,
+        task_id: str,
+        branches: dict[str, Callable[["WorkflowBuilder"], "WorkflowBuilder"]],
+        timeout_seconds: int = 300,
+        join_result_key: str | None = None,
+        **kwargs: Any,
+    ) -> "WorkflowBuilder":
+        """Fork/join parallel execution with automatic join barrier (#408).
+
+        This is a developer-friendly wrapper around parallel() that automatically
+        adds the wait_for_parallel_branches task to rejoin all branches.
+
+        The pattern:
+            parallel_with_join("my_parallel", branches={...})
+
+        Is equivalent to:
+            parallel("my_parallel", branches={...}, result_key="my_parallel_data")
+            task("my_parallel_join", "tools.workflow.wait_for_parallel_branches",
+                 args=["{{my_parallel_data}}"], kwargs={"timeout_seconds": 300},
+                 dependencies=["my_parallel"])
+
+        Args:
+            task_id: Unique identifier for the parallel group
+            branches: Dictionary of branch_name -> builder function
+            timeout_seconds: Timeout for waiting on branches (default: 5 minutes)
+            join_result_key: Key to store joined results (default: {task_id}_results)
+            **kwargs: Additional arguments for ParallelOperator
+
+        Returns:
+            WorkflowBuilder for chaining (current task is the join task)
+
+        Example:
+            builder.parallel_with_join(
+                "data_processing",
+                branches={
+                    "process_users": lambda b: b.task(...),
+                    "process_orders": lambda b: b.task(...),
+                },
+                timeout_seconds=120,
+            ).task(
+                "aggregate",  # Automatically depends on join task
+                "tools.python.run",
+                args=["aggregate_results"],
+            )
+        """
+        # Set result_key for the parallel operator to capture fork metadata
+        fork_result_key = f"{task_id}_fork_data"
+        kwargs["result_key"] = fork_result_key
+
+        # Create the parallel (fork) task
+        self.parallel(task_id, branches, **kwargs)
+
+        # Automatically add the join task
+        join_task_id = f"{task_id}_join"
+        join_result = join_result_key or f"{task_id}_results"
+
+        self.task(
+            join_task_id,
+            "tools.workflow.wait_for_parallel_branches",
+            args=[f"{{{{{fork_result_key}}}}}"],  # Template: {{fork_result_key}}
+            kwargs={"timeout_seconds": timeout_seconds},
+            dependencies=[task_id],
+            result_key=join_result,
+        )
+
         return self
 
     def foreach(
