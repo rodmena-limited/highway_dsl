@@ -677,6 +677,12 @@ class WorkflowBuilder:
         args = kwargs.pop("args", [])
         task_kwargs = kwargs.pop("kwargs", {})
 
+        # Support depends_on as alias for dependencies
+        if "depends_on" in kwargs and "dependencies" not in kwargs:
+            kwargs["dependencies"] = kwargs.pop("depends_on")
+        elif "depends_on" in kwargs:
+            kwargs.pop("depends_on")  # Remove if both specified (dependencies takes precedence)
+
         # Operator configuration fields
         operator_fields = {
             "dependencies",
@@ -710,6 +716,12 @@ class WorkflowBuilder:
         # Extract args and kwargs if provided
         args = kwargs.pop("args", [])
         task_kwargs = kwargs.pop("kwargs", {})
+
+        # Support depends_on as alias for dependencies
+        if "depends_on" in kwargs and "dependencies" not in kwargs:
+            kwargs["dependencies"] = kwargs.pop("depends_on")
+        elif "depends_on" in kwargs:
+            kwargs.pop("depends_on")
 
         # Operator configuration fields
         operator_fields = {
