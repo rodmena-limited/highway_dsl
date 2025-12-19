@@ -1,7 +1,7 @@
 
 Highway DSL                                               Farshid A.
 Specification                                             Rodmena Ltd.
-Version: 2.0.1                                            November 2025
+Version: 2.1.2                                            December 2025
 Category: Standards Track
 
 
@@ -19,7 +19,7 @@ Status of This Memo
 
 Abstract
 
-   This document describes Highway DSL version 2.0.0 (LTS Stable), a Python-based
+   This document describes Highway DSL version 2.1.2 (LTS Stable), a Python-based
    domain-specific language for defining Directed Acyclic Graph (DAG)
    workflows with advanced features including conditional branching,
    parallel execution, iterative loops, event-driven coordination,
@@ -701,6 +701,60 @@ Table of Contents
    When serialized to YAML/JSON, timedelta is represented in ISO 8601
    duration format:
       timeout: PT2H  (2 hours)
+
+
+4.6. Circuit Breaker Policy
+
+   The CircuitBreakerPolicy class defines per-activity circuit breaker
+   configuration for protecting against cascading failures from external
+   dependencies (Issue #247).
+
+   Class: CircuitBreakerPolicy
+   Module: highway_dsl.workflow_dsl
+   Inherits: pydantic.BaseModel
+
+   Fields:
+
+   failure_threshold: int (DEFAULT: 5, ge=1)
+      Number of consecutive failures before opening the circuit.
+
+   success_threshold: int (DEFAULT: 2, ge=1)
+      Number of successes required to close the circuit after isolation.
+
+   isolation_duration: timedelta (DEFAULT: timedelta(seconds=30))
+      Duration the circuit stays open before allowing a test request.
+
+   catch_exceptions: Optional[List[str]] (DEFAULT: None)
+      Exception class names to count as failures. If None, all exceptions
+      count as failures.
+
+   ignore_exceptions: Optional[List[str]] (DEFAULT: None)
+      Exception class names to NOT count as failures (pass through).
+
+   Behavior:
+
+   The circuit breaker operates in three states:
+      1. CLOSED - Normal operation, requests pass through.
+      2. OPEN - Circuit tripped, requests fail immediately.
+      3. HALF-OPEN - After isolation_duration, one test request is allowed.
+
+   State transitions:
+      - CLOSED -> OPEN: After failure_threshold consecutive failures
+      - OPEN -> HALF-OPEN: After isolation_duration expires
+      - HALF-OPEN -> CLOSED: After success_threshold successes
+      - HALF-OPEN -> OPEN: On any failure
+
+   Example:
+      CircuitBreakerPolicy(
+          failure_threshold=5,
+          success_threshold=2,
+          isolation_duration=timedelta(seconds=30)
+      )
+
+   Serialization:
+
+   When serialized to YAML/JSON, isolation_duration is represented as
+   isolation_duration_seconds (float) for JSON compatibility.
 
 
 5. Operator Specifications
@@ -2104,7 +2158,8 @@ Table of Contents
       - task_id: Unique identifier
       - function: Fully-qualified function name
       - **kwargs: Additional fields (args, kwargs, result_key,
-        dependencies, retry_policy, timeout_policy, description, etc.)
+        dependencies, depends_on, retry_policy, timeout_policy,
+        circuit_breaker_policy, description, etc.)
 
    Returns: self
 
@@ -2113,6 +2168,13 @@ Table of Contents
       - If dependencies is not specified and _current_task is set, adds
         _current_task as a dependency (automatic chaining).
       - Sets _current_task to task_id.
+
+   Dependency Alias:
+      The `depends_on` parameter is an alias for `dependencies`.
+      Both can be used interchangeably:
+
+      builder.task("b", "func_b", dependencies=["a"])
+      builder.task("b", "func_b", depends_on=["a"])  # Equivalent
 
    Example:
 
@@ -2218,6 +2280,52 @@ Table of Contents
            "transform_b": lambda b: b.task("t_b", "transform.b"),
            "transform_c": lambda b: b.task("t_c", "transform.c")
        }
+   )
+
+   def parallel_with_join(
+       self,
+       task_id: str,
+       branches: Dict[str, Callable[["WorkflowBuilder"], "WorkflowBuilder"]],
+       timeout_seconds: int = 300,
+       join_result_key: Optional[str] = None,
+       **kwargs
+   ) -> "WorkflowBuilder"
+
+   Create a ParallelOperator with automatic join barrier (#408).
+
+   This is a developer-friendly wrapper around parallel() that automatically
+   adds a wait_for_parallel_branches task to rejoin all branches.
+
+   Parameters:
+      - task_id: Unique identifier for the parallel group
+      - branches: Dictionary mapping branch names to lambdas
+      - timeout_seconds: Timeout for waiting on branches (default: 300)
+      - join_result_key: Key to store joined results (default: {task_id}_results)
+      - **kwargs: Additional arguments for ParallelOperator
+
+   Returns: self (current task is the join task)
+
+   The pattern:
+      parallel_with_join("my_parallel", branches={...})
+
+   Is equivalent to:
+      parallel("my_parallel", branches={...}, result_key="my_parallel_data")
+      task("my_parallel_join", "tools.workflow.wait_for_parallel_branches",
+           args=["{{my_parallel_data}}"], kwargs={"timeout_seconds": 300},
+           dependencies=["my_parallel"])
+
+   Example:
+
+   builder.parallel_with_join(
+       "data_processing",
+       branches={
+           "process_users": lambda b: b.task("users", "process.users"),
+           "process_orders": lambda b: b.task("orders", "process.orders"),
+       },
+       timeout_seconds=120,
+   ).task(
+       "aggregate",  # Automatically depends on join task
+       "tools.aggregate",
    )
 
    def foreach(

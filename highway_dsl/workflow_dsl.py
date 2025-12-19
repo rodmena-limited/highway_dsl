@@ -147,7 +147,10 @@ class CircuitBreakerPolicy(BaseModel):
         """Parse isolation_duration from seconds if needed."""
         if isinstance(data, dict):
             # Support deserialization from seconds
-            if "isolation_duration_seconds" in data and "isolation_duration" not in data:
+            if (
+                "isolation_duration_seconds" in data
+                and "isolation_duration" not in data
+            ):
                 data["isolation_duration"] = timedelta(
                     seconds=data["isolation_duration_seconds"]
                 )
@@ -197,6 +200,7 @@ class TaskOperator(BaseOperator):
 
 class ActivityOperator(BaseOperator):
     """Long-running activity that executes outside workflow transaction."""
+
     function: str = Field(..., description="Function to execute")
     args: list[Any] = Field(default_factory=list)
     kwargs: dict[str, Any] = Field(default_factory=dict)
@@ -222,12 +226,16 @@ class WaitOperator(BaseOperator):
             if isinstance(wait_for, str):
                 if wait_for.startswith("PT"):
                     # ISO 8601 duration format
-                    match = re.match(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?", wait_for)
+                    match = re.match(
+                        r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?", wait_for
+                    )
                     if match:
                         hours = int(match.group(1) or 0)
                         minutes = int(match.group(2) or 0)
                         seconds = float(match.group(3) or 0)
-                        data["wait_for"] = timedelta(hours=hours, minutes=minutes, seconds=seconds)
+                        data["wait_for"] = timedelta(
+                            hours=hours, minutes=minutes, seconds=seconds
+                        )
                 elif wait_for.startswith("duration:"):  # Backward compatibility
                     data["wait_for"] = timedelta(seconds=float(wait_for.split(":")[1]))
                 elif wait_for.startswith("datetime:"):  # Backward compatibility
@@ -252,7 +260,7 @@ class ParallelOperator(BaseOperator):
     branches: dict[str, list[str]] = Field(default_factory=dict)
     branch_workflows: dict[str, dict[str, Any]] = Field(
         default_factory=dict,
-        description="Complete workflow definitions for each branch (serialized)"
+        description="Complete workflow definitions for each branch (serialized)",
     )
     timeout: int | None = Field(
         None, description="Optional timeout in seconds for branch execution"
@@ -279,7 +287,8 @@ class ForEachOperator(BaseOperator):
         ]
     ] = Field(default_factory=list)
     parallel: bool = Field(
-        default=False, description="Execute iterations in parallel (dynamic task mapping)"
+        default=False,
+        description="Execute iterations in parallel (dynamic task mapping)",
     )
     operator_type: OperatorType = Field(OperatorType.FOREACH, frozen=True)
 
@@ -309,7 +318,9 @@ class EmitEventOperator(BaseOperator):
     """Phase 2: Emit an event that other workflows can wait for."""
 
     event_name: str = Field(..., description="Name of the event to emit")
-    payload: dict[str, Any] = Field(default_factory=dict, description="Event payload data")
+    payload: dict[str, Any] = Field(
+        default_factory=dict, description="Event payload data"
+    )
     operator_type: OperatorType = Field(OperatorType.EMIT_EVENT, frozen=True)
 
 
@@ -372,11 +383,15 @@ class ReflexiveOperator(BaseOperator):
         )
     """
 
-    generator: str = Field(..., description="Generator tool name (e.g., tools.llm.call)")
+    generator: str = Field(
+        ..., description="Generator tool name (e.g., tools.llm.call)"
+    )
     generator_kwargs: dict[str, Any] = Field(
         default_factory=dict, description="Arguments for generator tool"
     )
-    verifier: str = Field(..., description="Verifier tool name (e.g., tools.python.run)")
+    verifier: str = Field(
+        ..., description="Verifier tool name (e.g., tools.python.run)"
+    )
     verifier_kwargs: dict[str, Any] = Field(
         default_factory=dict, description="Arguments for verifier tool"
     )
@@ -410,11 +425,17 @@ class Workflow(BaseModel):
     start_task: str | None = None
 
     # Phase 1: Scheduling metadata
-    schedule: str | None = Field(None, description="Cron expression for scheduled execution")
-    start_date: datetime | None = Field(None, description="When the schedule becomes active")
+    schedule: str | None = Field(
+        None, description="Cron expression for scheduled execution"
+    )
+    start_date: datetime | None = Field(
+        None, description="When the schedule becomes active"
+    )
     catchup: bool = Field(False, description="Whether to backfill missed runs")
     is_paused: bool = Field(False, description="Whether the workflow is paused")
-    tags: list[str] = Field(default_factory=list, description="Workflow categorization tags")
+    tags: list[str] = Field(
+        default_factory=list, description="Workflow categorization tags"
+    )
     max_active_runs: int = Field(1, description="Maximum number of concurrent runs")
     default_retry_policy: RetryPolicy | None = Field(
         None, description="Default retry policy for all tasks"
@@ -681,7 +702,9 @@ class WorkflowBuilder:
         if "depends_on" in kwargs and "dependencies" not in kwargs:
             kwargs["dependencies"] = kwargs.pop("depends_on")
         elif "depends_on" in kwargs:
-            kwargs.pop("depends_on")  # Remove if both specified (dependencies takes precedence)
+            kwargs.pop(
+                "depends_on"
+            )  # Remove if both specified (dependencies takes precedence)
 
         # Operator configuration fields
         operator_fields = {
@@ -706,7 +729,11 @@ class WorkflowBuilder:
         task_kwargs.update(task_params)
 
         task = TaskOperator(
-            task_id=task_id, function=function, args=args, kwargs=task_kwargs, **operator_config
+            task_id=task_id,
+            function=function,
+            args=args,
+            kwargs=task_kwargs,
+            **operator_config,
         )
         self._add_task(task, **kwargs)
         return self
@@ -746,7 +773,11 @@ class WorkflowBuilder:
         task_kwargs.update(task_params)
 
         task = ActivityOperator(
-            task_id=task_id, function=function, args=args, kwargs=task_kwargs, **operator_config
+            task_id=task_id,
+            function=function,
+            args=args,
+            kwargs=task_kwargs,
+            **operator_config,
         )
         self._add_task(task, **kwargs)
         return self
@@ -891,7 +922,8 @@ class WorkflowBuilder:
             branch_builders[name] = branch_builder
 
         branch_tasks = {
-            name: list(builder.workflow.tasks.keys()) for name, builder in branch_builders.items()
+            name: list(builder.workflow.tasks.keys())
+            for name, builder in branch_builders.items()
         }
 
         # Serialize complete branch workflows for execution
@@ -904,7 +936,7 @@ class WorkflowBuilder:
             task_id=task_id,
             branches=branch_tasks,
             branch_workflows=branch_workflows,
-            **kwargs
+            **kwargs,
         )
 
         self._add_task(task, **kwargs)
@@ -1095,7 +1127,9 @@ class WorkflowBuilder:
         return self
 
     # Phase 2: Event-based operators
-    def emit_event(self, task_id: str, event_name: str, **kwargs: Any) -> "WorkflowBuilder":
+    def emit_event(
+        self, task_id: str, event_name: str, **kwargs: Any
+    ) -> "WorkflowBuilder":
         """Emit an event that other workflows can wait for."""
         task = EmitEventOperator(task_id=task_id, event_name=event_name, **kwargs)
         self._add_task(task, **kwargs)
@@ -1115,7 +1149,9 @@ class WorkflowBuilder:
         Returns:
             WorkflowBuilder for chaining
         """
-        task = JoinOperator(task_id=task_id, join_tasks=join_tasks, join_mode=join_mode, **kwargs)
+        task = JoinOperator(
+            task_id=task_id, join_tasks=join_tasks, join_mode=join_mode, **kwargs
+        )
         self._add_task(task, **kwargs)
         return self
 
@@ -1232,12 +1268,18 @@ class WorkflowBuilder:
         """
         # Validate callback references
         for task_id, task in self.workflow.tasks.items():
-            if task.on_success_task_id and task.on_success_task_id not in self.workflow.tasks:
+            if (
+                task.on_success_task_id
+                and task.on_success_task_id not in self.workflow.tasks
+            ):
                 raise ValueError(
                     f"Task '{task_id}' references non-existent on_success task "
                     f"'{task.on_success_task_id}'"
                 )
-            if task.on_failure_task_id and task.on_failure_task_id not in self.workflow.tasks:
+            if (
+                task.on_failure_task_id
+                and task.on_failure_task_id not in self.workflow.tasks
+            ):
                 raise ValueError(
                     f"Task '{task_id}' references non-existent on_failure task "
                     f"'{task.on_failure_task_id}'"

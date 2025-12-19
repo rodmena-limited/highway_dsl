@@ -19,7 +19,7 @@ Welcome to Highway DSL Documentation
    :target: https://pypi.org/project/highway-dsl/
    :alt: LTS Stable
 
-.. image:: https://img.shields.io/badge/Version-2.0.2-green
+.. image:: https://img.shields.io/badge/Version-2.1.2-green
    :target: https://github.com/rodmena-limited/highway_dsl
    :alt: Version
 
@@ -27,7 +27,7 @@ Welcome to Highway DSL Documentation
    :target: https://github.com/rodmena-limited/highway_dsl/actions/workflows/publish.yml
    :alt: Publish to PyPI
 
-Version 2.0.2 - LTS Stable Release
+Version 2.1.2 - LTS Stable Release
 ------------------------------------
 
 This is a **Long-Term Support (LTS)** release consolidating all features from the 1.x series into a stable, production-ready API. No breaking changes will be introduced in the 2.x series, making it safe for production deployments.
@@ -37,7 +37,7 @@ Key Features
 
 * **Fluent API**: A powerful and intuitive ``WorkflowBuilder`` for defining workflows programmatically
 * **Pydantic-based**: All models are built on Pydantic, providing robust data validation, serialization, and documentation
-* **Rich Operators**: 11 operator types for handling various workflow scenarios:
+* **Rich Operators**: 12 operator types for handling various workflow scenarios:
 
   * ``Task`` - Basic workflow steps
   * ``Activity`` - Lightweight workflow steps
@@ -50,6 +50,7 @@ Key Features
   * ``WaitForEvent`` - Wait for external events with timeout
   * ``Switch`` - Multi-branch routing (switch/case)
   * ``Join`` - Temporal-style explicit coordination with join modes
+  * ``Reflexive`` - Generate-verify-correct loops (Sherlock pattern)
 
 * **Scheduling**: Built-in support for cron-based scheduling, start dates, and catchup configuration
 * **Event-Driven**: First-class support for event emission and waiting

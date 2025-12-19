@@ -46,7 +46,9 @@ def demonstrate_bank_etl_workflow() -> Workflow:
                 "ingest_card_txns",
                 "etl.ingest.from_payment_gateway_sftp",
                 result_key="card_data",
-                timeout_policy=TimeoutPolicy(timeout=timedelta(hours=2), kill_on_timeout=True),
+                timeout_policy=TimeoutPolicy(
+                    timeout=timedelta(hours=2), kill_on_timeout=True
+                ),
             ),
             "loan_systems": lambda b: b.task(
                 "ingest_loan_systems",

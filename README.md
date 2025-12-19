@@ -3,14 +3,14 @@
 [![PyPI version](https://badge.fury.io/py/highway-dsl.svg)](https://badge.fury.io/py/highway-dsl)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![LTS Stable](https://img.shields.io/badge/Status-LTS%20Stable-blue)](https://pypi.org/project/highway-dsl/)
-[![Version](https://img.shields.io/badge/Version-2.0.2-green)](https://github.com/rodmena-limited/highway_dsl)
+[![Version](https://img.shields.io/badge/Version-2.1.2-green)](https://github.com/rodmena-limited/highway_dsl)
 [![Publish to PyPI](https://github.com/rodmena-limited/highway_dsl/actions/workflows/publish.yml/badge.svg)](https://github.com/rodmena-limited/highway_dsl/actions/workflows/publish.yml)
 
 **Highway DSL** is a Python-based domain-specific language for defining production-grade workflows with Temporal-style coordination patterns. It is part of the larger **Highway** project, an advanced workflow engine capable of running complex DAG-based workflows with durability guarantees.
 
-> **🎯 LTS Stable Release**: Version 2.0.2 is a Long-Term Support release. No breaking changes will be introduced in the 2.x series, making it safe for production deployments. All future 2.x releases will maintain backward compatibility.
+> **🎯 LTS Stable Release**: Version 2.1.2 is a Long-Term Support release. No breaking changes will be introduced in the 2.x series, making it safe for production deployments. All future 2.x releases will maintain backward compatibility.
 
-## Version 2.0.2 - LTS Stable Release
+## Version 2.1.2 - LTS Stable Release
 
 This is a **Long-Term Support (LTS)** release consolidating all features from the 1.x series into a stable, production-ready API:
 
@@ -88,6 +88,45 @@ builder.reflexive(
     generator="tools.llm.call",
     verifier="tools.python.run",
     max_turns=3
+)
+```
+
+#### 6. **depends_on Alias**
+More intuitive alias for the `dependencies` parameter:
+```python
+builder.task("extract", "etl.extract", result_key="data")
+builder.task("transform", "etl.transform", depends_on=["extract"])  # More readable
+```
+
+#### 7. **Fork/Join Pattern with parallel_with_join**
+Simplified fork/join parallel execution with automatic join barrier:
+```python
+builder.parallel_with_join(
+    "data_processing",
+    branches={
+        "process_users": lambda b: b.task("users", "process.users"),
+        "process_orders": lambda b: b.task("orders", "process.orders"),
+    },
+    timeout_seconds=120,
+).task(
+    "aggregate",  # Automatically depends on join task
+    "tools.aggregate",
+)
+```
+
+#### 8. **Per-Activity Circuit Breaker**
+Protect against cascading failures with per-activity circuit breakers:
+```python
+from highway_dsl import CircuitBreakerPolicy
+
+builder.task(
+    "call_external_api",
+    "api.fetch_data",
+    circuit_breaker_policy=CircuitBreakerPolicy(
+        failure_threshold=5,      # Open after 5 failures
+        success_threshold=2,      # Close after 2 successes
+        isolation_duration=timedelta(seconds=30),
+    )
 )
 ```
 
@@ -197,7 +236,7 @@ Access the specification at `/dsl/spec.txt` in the repository.
 
 ```mermaid
 graph TB
-    subgraph "Highway DSL v2.0.0 (LTS Stable)"
+    subgraph "Highway DSL v2.1.2 (LTS Stable)"
         A[WorkflowBuilder<br/>Fluent API] --> B[Core Operators]
         A --> C[Scheduling]
         A --> D[Events]
@@ -211,6 +250,7 @@ graph TB
         B --> B6[Wait]
         B --> B7[Switch]
         B --> B8[Join]
+        B --> B9[Reflexive]
 
         C --> C1[Cron Schedules]
         C --> C2[Start Date]
@@ -223,6 +263,7 @@ graph TB
         E --> E1[RetryPolicy]
         E --> E2[TimeoutPolicy]
         E --> E3[Callbacks]
+        E --> E4[CircuitBreaker]
     end
 
     subgraph "Output Formats"
@@ -277,6 +318,7 @@ graph TB
 *   **Callback Hooks:** Durable success/failure handlers as workflow nodes
 *   **YAML/JSON Interoperability:** Workflows can be defined in Python and exported to YAML or JSON, and vice-versa.
 *   **Retry and Timeout Policies:** Built-in error handling and execution time management.
+*   **Circuit Breaker:** Per-activity circuit breakers to prevent cascading failures.
 *   **Extensible:** The DSL is designed to be extensible with custom operators and policies.
 
 ## Installation
@@ -497,12 +539,19 @@ builder.task(
 
 ## Version History
 
-### Version 2.0.0 - LTS Stable Release (Current)
+### Version 2.1.2 - LTS Stable Release (Current)
 
 **🎯 Long-Term Support Release:**
 - **Stable production API** - No breaking changes in 2.x series
 - **Recommended for all production deployments**
 - **Backward compatibility guaranteed** for all 2.x releases
+
+**New in 2.1.x:**
+- `depends_on` alias for more readable dependency declarations
+- `parallel_with_join` method for simplified fork/join patterns
+- `CircuitBreakerPolicy` for per-activity circuit breaker protection
+- ReflexiveOperator (Sherlock pattern) for generate-verify-correct loops
+- Full mypy --strict compliance with pydantic plugin
 
 **Consolidated Features:**
 - JoinOperator for Temporal-style explicit coordination (ALL_OF, ANY_OF, ALL_SUCCESS, ONE_SUCCESS)

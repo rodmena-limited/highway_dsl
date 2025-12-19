@@ -901,7 +901,10 @@ def _get_templates_dir() -> Path | None:
     possible_paths = [
         Path("/home/farshid/develop/highway-workflow-engine/api/dsl_templates"),
         Path.cwd() / "api" / "dsl_templates",
-        Path(__file__).parent.parent.parent / "highway-workflow-engine" / "api" / "dsl_templates",
+        Path(__file__).parent.parent.parent
+        / "highway-workflow-engine"
+        / "api"
+        / "dsl_templates",
     ]
     for path in possible_paths:
         if path.exists():
@@ -928,11 +931,15 @@ def _list_template_files() -> list[dict[str, str]]:
         except Exception:
             docstring = ""
 
-        templates.append({
-            "name": py_file.stem,
-            "filename": py_file.name,
-            "description": docstring.split("\n")[0] if docstring else py_file.stem.replace("_", " ").title(),
-        })
+        templates.append(
+            {
+                "name": py_file.stem,
+                "filename": py_file.name,
+                "description": docstring.split("\n")[0]
+                if docstring
+                else py_file.stem.replace("_", " ").title(),
+            }
+        )
 
     return templates
 
@@ -997,11 +1004,13 @@ def list_templates() -> list[dict[str, str]]:
     """
     templates = _list_template_files()
     if not templates:
-        return [{
-            "name": "basic_hello_world",
-            "description": "Simple Hello World workflow",
-            "note": "Templates directory not found - showing example only",
-        }]
+        return [
+            {
+                "name": "basic_hello_world",
+                "description": "Simple Hello World workflow",
+                "note": "Templates directory not found - showing example only",
+            }
+        ]
     return templates
 
 
@@ -1108,7 +1117,11 @@ def validate_workflow(python_code: str) -> dict[str, Any]:
     has_import = False
     for node in ast.walk(tree):
         if isinstance(node, (ast.Import, ast.ImportFrom)):
-            if isinstance(node, ast.ImportFrom) and node.module and "highway_dsl" in node.module:
+            if (
+                isinstance(node, ast.ImportFrom)
+                and node.module
+                and "highway_dsl" in node.module
+            ):
                 has_import = True
             elif isinstance(node, ast.Import):
                 for alias in node.names:
@@ -1131,7 +1144,9 @@ def validate_workflow(python_code: str) -> dict[str, Any]:
         wrong_frameworks.append("Conductor")
 
     if wrong_frameworks:
-        errors.append(f"WRONG FRAMEWORK! Found: {', '.join(wrong_frameworks)}. Use ONLY highway_dsl!")
+        errors.append(
+            f"WRONG FRAMEWORK! Found: {', '.join(wrong_frameworks)}. Use ONLY highway_dsl!"
+        )
 
     # 5. Try to execute and build the workflow
     try:
@@ -1162,13 +1177,9 @@ def validate_workflow(python_code: str) -> dict[str, Any]:
 
         # Check for parallel without wait
         has_parallel = any(
-            "parallel" in name.lower() or "fork" in name.lower()
-            for name in task_names
+            "parallel" in name.lower() or "fork" in name.lower() for name in task_names
         )
-        has_wait = any(
-            "wait" in name.lower()
-            for name in task_names
-        )
+        has_wait = any("wait" in name.lower() for name in task_names)
 
         if has_parallel and not has_wait:
             warnings.append(
@@ -1211,9 +1222,7 @@ def list_available_tools() -> list[dict[str, Any]]:
             "name": "tools.shell.run",
             "category": "Core",
             "description": "Execute shell commands",
-            "parameters": {
-                "args": ["command_string"]
-            },
+            "parameters": {"args": ["command_string"]},
             "usage": 'builder.task("cmd", "tools.shell.run", args=["echo \'Hello\'"], result_key="output")',
             "output": {"stdout": "string", "stderr": "string", "returncode": "int"},
             "access": "{{output.stdout}}, {{output.stderr}}, {{output.returncode}}",
@@ -1240,7 +1249,7 @@ def list_available_tools() -> list[dict[str, Any]]:
             "description": "Execute Python functions with DurableContext",
             "parameters": {
                 "args": ["module.function", "positional_arg1", ...],
-                "kwargs": {"key": "value"}
+                "kwargs": {"key": "value"},
             },
             "critical": "Function MUST accept ctx as first parameter! ctx is injected automatically.",
             "usage": 'builder.task("process", "tools.python.run", args=["mymodule.function", "arg1"], kwargs={"key": "value"})',
@@ -1269,7 +1278,12 @@ def list_available_tools() -> list[dict[str, Any]]:
             },
             "critical": "Tasks > 30 seconds MUST have timeout_policy to route to activity worker!",
             "usage": 'builder.task("container", "tools.docker.run", kwargs={"image": "alpine", "command": ["echo", "Hello"]}, timeout_policy=TimeoutPolicy(timeout=timedelta(minutes=5)))',
-            "output": {"container_id": "string", "stdout": "string", "stderr": "string", "exit_code": "int"},
+            "output": {
+                "container_id": "string",
+                "stdout": "string",
+                "stderr": "string",
+                "exit_code": "int",
+            },
         },
         {
             "name": "tools.docker.compose_up",
@@ -1369,7 +1383,11 @@ def list_available_tools() -> list[dict[str, Any]]:
                 "timeout_seconds": "int - Timeout (default 3600)",
             },
             "usage": 'builder.task("approve", "tools.approval.request", kwargs={"message": "Deploy to production?", "timeout_seconds": 3600})',
-            "output": {"approved": "bool", "approver": "string", "timestamp": "datetime"},
+            "output": {
+                "approved": "bool",
+                "approver": "string",
+                "timestamp": "datetime",
+            },
         },
         # Counter
         {
@@ -1393,7 +1411,7 @@ def list_available_tools() -> list[dict[str, Any]]:
             "description": "Wait for parallel branches to complete",
             "critical": "REQUIRED after every ParallelOperator! ParallelOperator only forks, it does NOT wait!",
             "parameters": {
-                "args": ["{{fork_data}}"] ,
+                "args": ["{{fork_data}}"],
                 "timeout_seconds": "int - Wait timeout (default 300)",
             },
             "usage": 'builder.task("wait", "tools.workflow.wait_for_parallel_branches", args=["{{fork_data}}"], kwargs={"timeout_seconds": 300}, dependencies=["parallel_fork"])',
@@ -1481,7 +1499,7 @@ def get_example_patterns() -> dict[str, str]:
     Copy and adapt these patterns for your workflows!
     """
     return {
-        "sequential_with_data": '''from highway_dsl import WorkflowBuilder
+        "sequential_with_data": """from highway_dsl import WorkflowBuilder
 
 def get_workflow():
     builder = WorkflowBuilder(name="sequential_data_passing")
@@ -1506,8 +1524,8 @@ def get_workflow():
 
 if __name__ == "__main__":
     print(get_workflow().to_json())
-''',
-        "parallel_with_wait": '''from highway_dsl import WorkflowBuilder
+""",
+        "parallel_with_wait": """from highway_dsl import WorkflowBuilder
 
 def get_workflow():
     builder = WorkflowBuilder(name="parallel_example")
@@ -1541,8 +1559,8 @@ def get_workflow():
 
 if __name__ == "__main__":
     print(get_workflow().to_json())
-''',
-        "multi_step_parallel_branches": '''from highway_dsl import WorkflowBuilder
+""",
+        "multi_step_parallel_branches": """from highway_dsl import WorkflowBuilder
 
 def get_workflow():
     builder = WorkflowBuilder(name="multi_step_branches")
@@ -1571,8 +1589,8 @@ def get_workflow():
 
 if __name__ == "__main__":
     print(get_workflow().to_json())
-''',
-        "conditional_branching": '''from highway_dsl import WorkflowBuilder
+""",
+        "conditional_branching": """from highway_dsl import WorkflowBuilder
 
 def get_workflow():
     builder = WorkflowBuilder(name="conditional_example")
@@ -1595,8 +1613,8 @@ def get_workflow():
 
 if __name__ == "__main__":
     print(get_workflow().to_json())
-''',
-        "while_loop": '''from highway_dsl import WorkflowBuilder
+""",
+        "while_loop": """from highway_dsl import WorkflowBuilder
 
 def get_workflow():
     builder = WorkflowBuilder(name="while_loop_example")
@@ -1622,8 +1640,8 @@ def get_workflow():
 
 if __name__ == "__main__":
     print(get_workflow().to_json())
-''',
-        "foreach_loop": '''from highway_dsl import WorkflowBuilder
+""",
+        "foreach_loop": """from highway_dsl import WorkflowBuilder
 
 def get_workflow():
     builder = WorkflowBuilder(name="foreach_example")
@@ -1648,8 +1666,8 @@ def get_workflow():
 
 if __name__ == "__main__":
     print(get_workflow().to_json())
-''',
-        "llm_integration": '''from highway_dsl import WorkflowBuilder
+""",
+        "llm_integration": """from highway_dsl import WorkflowBuilder
 
 def get_workflow():
     builder = WorkflowBuilder(name="llm_example")
@@ -1679,8 +1697,8 @@ def get_workflow():
 
 if __name__ == "__main__":
     print(get_workflow().to_json())
-''',
-        "docker_container": '''from datetime import timedelta
+""",
+        "docker_container": """from datetime import timedelta
 from highway_dsl import WorkflowBuilder, TimeoutPolicy
 
 def get_workflow():
@@ -1714,8 +1732,8 @@ def get_workflow():
 
 if __name__ == "__main__":
     print(get_workflow().to_json())
-''',
-        "email_notification": '''from highway_dsl import WorkflowBuilder
+""",
+        "email_notification": """from highway_dsl import WorkflowBuilder
 
 def get_workflow():
     builder = WorkflowBuilder(name="email_example")
@@ -1739,8 +1757,8 @@ def get_workflow():
 
 if __name__ == "__main__":
     print(get_workflow().to_json())
-''',
-        "error_handling": '''from highway_dsl import WorkflowBuilder
+""",
+        "error_handling": """from highway_dsl import WorkflowBuilder
 
 def get_workflow():
     builder = WorkflowBuilder(name="error_handling_example")
@@ -1771,8 +1789,8 @@ def get_workflow():
 
 if __name__ == "__main__":
     print(get_workflow().to_json())
-''',
-        "event_coordination": '''from highway_dsl import WorkflowBuilder
+""",
+        "event_coordination": """from highway_dsl import WorkflowBuilder
 
 def get_workflow():
     builder = WorkflowBuilder(name="event_coordination")
@@ -1808,7 +1826,7 @@ def get_workflow():
 
 if __name__ == "__main__":
     print(get_workflow().to_json())
-''',
+""",
     }
 
 
@@ -2036,7 +2054,7 @@ def resource_tools() -> str:
         result += f"## {tool['name']}\n"
         result += f"**Category:** {tool.get('category', 'General')}\n\n"
         result += f"{tool['description']}\n\n"
-        if 'critical' in tool:
+        if "critical" in tool:
             result += f"⚠️ **CRITICAL:** {tool['critical']}\n\n"
         result += f"```python\n{tool['usage']}\n```\n\n"
     return result
@@ -2051,7 +2069,7 @@ def resource_operators() -> str:
         result += f"## {name}\n"
         result += f"{info['description']}\n\n"
         result += f"**Signature:** `{info['signature']}`\n\n"
-        if 'critical' in info:
+        if "critical" in info:
             result += f"⚠️ **CRITICAL:** {info['critical']}\n\n"
         result += f"**Example:**\n```python\n{info['example']}\n```\n\n"
     return result
@@ -2138,7 +2156,7 @@ Provide the corrected code with explanations of what was wrong.
 # =============================================================================
 
 
-def main():
+def main() -> None:
     """Run the MCP server."""
     mcp.run()
 

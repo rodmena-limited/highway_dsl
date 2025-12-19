@@ -33,19 +33,17 @@ def demonstrate_car_factory_workflow():
     )
 
     # 2. Add the main ForEach loop to iterate over each vehicle in the manifest
-    # The 'task_chain' defines the sub-workflow for *one* vehicle.
+    # The loop_body tasks are added separately below. This defines the iteration structure.
     workflow.add_task(
         ForEachOperator(
             task_id="build_vehicle_loop",
             items="{{manifest.vehicles}}",  # e.g., [{"vin": "...", "model": "...", "type": "EV"}, ...]
-            task_chain=["check_vehicle_specs"],  # Entry point for the sub-workflow
             dependencies=["get_build_manifest"],
         ),
     )
 
     # --- Define the "Build One Vehicle" Sub-Workflow ---
-    # All tasks from here until the final 'builder.task' are part
-    # of the ForEach 'task_chain', executed for each 'item'.
+    # All tasks from here are part of the ForEach loop body, executed for each 'item'.
 
     # 3. Get detailed specs for the specific vehicle
     workflow.add_task(
@@ -306,7 +304,8 @@ def extract_yaml_content(content):
             while yaml_end > yaml_start and (
                 lines[yaml_end - 1].strip() == ""
                 or lines[yaml_end - 1].strip().startswith("---")
-                or lines[yaml_end - 1].strip() == "---------------------------------------------"
+                or lines[yaml_end - 1].strip()
+                == "---------------------------------------------"
             ):
                 yaml_end -= 1
             break

@@ -1,4 +1,3 @@
-
 from highway_dsl.workflow_dsl import (
     OperatorType,
     ReflexiveOperator,
@@ -19,7 +18,7 @@ def test_reflexive_operator_init():
         correction_prompt_template="Fix the code: {code}",
         description="A reflexive loop task",
     )
-    
+
     assert op.task_id == "reflexive_task"
     assert op.operator_type == OperatorType.REFLEXIVE
     assert op.generator == "tools.llm.call"
@@ -38,7 +37,7 @@ def test_reflexive_operator_defaults():
         generator="tools.llm.call",
         verifier="tools.python.run",
     )
-    
+
     assert op.max_turns == 3
     assert op.generator_kwargs == {}
     assert op.verifier_kwargs == {}
@@ -60,9 +59,9 @@ def test_workflow_builder_reflexive():
         max_turns=4,
         description="Generate code with reflexive loop",
     )
-    
+
     workflow = builder.build()
-    
+
     assert "gen_code" in workflow.tasks
     task = workflow.tasks["gen_code"]
     assert isinstance(task, ReflexiveOperator)
@@ -84,15 +83,15 @@ def test_reflexive_operator_serialization():
         max_turns=2,
     )
     workflow = builder.build()
-    
+
     yaml_output = workflow.to_yaml()
-    
+
     # Simple check if keys are present in YAML
     assert "operator_type: reflexive" in yaml_output
     assert "generator: my_gen" in yaml_output
     assert "verifier: my_ver" in yaml_output
     assert "max_turns: 2" in yaml_output
-    
+
     # Test deserialization
     loaded_workflow = Workflow.from_yaml(yaml_output)
     task = loaded_workflow.tasks["reflexive_task"]

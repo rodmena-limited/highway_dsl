@@ -31,14 +31,12 @@ def demonstrate_complex_agentic_workflow():
     )
 
     # 2. Add the ForEach operator to loop over the tasks.
-    # This requires defining the "task_chain" (sub-workflow)
-    # that will be executed for each item.
-    # The task_chain IDs are: "analyze", "check_review", "route_by_review"
+    # The loop_body tasks (analyze, check_review, route_by_review) are added
+    # separately below. This defines the iteration structure.
     workflow.add_task(
         ForEachOperator(
             task_id="process_all_tasks",
             items="{{task_list_obj.tasks}}",
-            task_chain=["analyze", "check_review", "route_by_review"],
             dependencies=["get_pending_tasks"],
         ),
     )
@@ -260,7 +258,10 @@ def test_complex_agentic_workflow():
     assert generated_data["tasks"]["get_pending_tasks"]["operator_type"] == "task"
     assert generated_data["tasks"]["process_all_tasks"]["operator_type"] == "foreach"
     assert generated_data["tasks"]["route_by_review"]["operator_type"] == "condition"
-    assert generated_data["tasks"]["human_review_branch_start"]["operator_type"] == "parallel"
+    assert (
+        generated_data["tasks"]["human_review_branch_start"]["operator_type"]
+        == "parallel"
+    )
 
     # Validate the generated YAML matches expected (ignoring the header)
     assert generated_data["name"] == expected_data["name"]

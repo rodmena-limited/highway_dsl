@@ -76,7 +76,13 @@ def generate_workflow(description: str) -> dict[str, Any]:
                 "message": "Workflow generated successfully. The code is ready to execute.",
             }
         else:
-            error_data = response.json() if response.headers.get("content-type", "").startswith("application/json") else {"error": response.text}
+            error_data = (
+                response.json()
+                if response.headers.get("content-type", "").startswith(
+                    "application/json"
+                )
+                else {"error": response.text}
+            )
             return {
                 "success": False,
                 "error": error_data.get("error", "Unknown error"),
@@ -158,7 +164,7 @@ Check if the generation service is online and available.
 """
 
 
-def main():
+def main() -> None:
     """Run the MCP server."""
     mcp.run()
 

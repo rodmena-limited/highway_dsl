@@ -7,7 +7,7 @@ packages = ["highway_dsl"]
 
 [project]
 name = "highway_dsl"
-version = "2.1.1"
+version = "2.1.2"
 authors = [
   { name = "Farseed Ashouri", email = "farseed.ashouri@gmail.com" },
 ]
@@ -43,3 +43,57 @@ highway-mcp-server = "highway_dsl.mcp_server:main"
 [project.urls]
 Homepage = "https://github.com/rodmena-limited/highway_dsl"
 Issues = "https://github.com/rodmena-limited/highway_dsl/issues"
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+plugins = ["pydantic.mypy"]
+exclude = [
+    "build/",
+    "dist/",
+    "app/gunicorn.conf.py",  # Gunicorn hooks have dynamic types
+]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+
+[[tool.mypy.overrides]]
+module = "app.*"
+disallow_untyped_defs = false
+disallow_untyped_calls = false
+
+[[tool.mypy.overrides]]
+module = "selenium.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "webdriver_manager.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "mcp.*"
+ignore_missing_imports = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+[tool.coverage.run]
+source = ["highway_dsl"]
+omit = [
+    "highway_dsl/mcp_server.py",
+    "highway_dsl/mcp_client_server.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+fail_under = 90

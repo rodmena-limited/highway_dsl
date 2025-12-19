@@ -1,7 +1,7 @@
 API Reference
 =============
 
-This section provides detailed API documentation for Highway DSL v2.0.2.
+This section provides detailed API documentation for Highway DSL v2.1.2.
 
 WorkflowBuilder
 ---------------
@@ -145,6 +145,14 @@ TimeoutPolicy
    :undoc-members:
    :show-inheritance:
 
+CircuitBreakerPolicy
+~~~~~~~~~~~~~~~~~~~~
+
+.. autoclass:: highway_dsl.workflow_dsl.CircuitBreakerPolicy
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Enums
 -----
 
@@ -171,14 +179,6 @@ Duration
 ~~~~~~~~
 
 .. autoclass:: highway_dsl.workflow_dsl.Duration
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-WorkflowMetadata
-~~~~~~~~~~~~~~~~
-
-.. autoclass:: highway_dsl.workflow_dsl.WorkflowMetadata
    :members:
    :undoc-members:
    :show-inheritance:

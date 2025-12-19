@@ -199,7 +199,8 @@ def extract_yaml_content(content):
         if "Successfully generated" in line:
             yaml_end = i
             while yaml_end > yaml_start and (
-                lines[yaml_end - 1].strip() == "" or lines[yaml_end - 1].strip().startswith("---")
+                lines[yaml_end - 1].strip() == ""
+                or lines[yaml_end - 1].strip().startswith("---")
             ):
                 yaml_end -= 1
             break

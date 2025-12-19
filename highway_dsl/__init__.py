@@ -53,10 +53,14 @@ __all__ = [
 
 
 # Optional MCP server support (requires mcp extra)
-def get_mcp_server():
+from typing import Any
+
+
+def get_mcp_server() -> Any:
     """Get the MCP server instance. Requires: pip install highway_dsl[mcp]"""
     try:
         from highway_dsl.mcp_server import mcp
+
         return mcp
     except ImportError as e:
         raise ImportError(

@@ -109,7 +109,9 @@ def test_task_operator_model():
     assert task.kwargs == {"kwarg1": "value1"}
     assert task.result_key == "res1"
     assert task.dependencies == ["dep1"]
+    assert task.retry_policy is not None
     assert task.retry_policy.max_retries == 1
+    assert task.timeout_policy is not None
     assert task.timeout_policy.timeout == timedelta(seconds=30)
     assert task.metadata == {"meta1": "data1"}
 
@@ -208,7 +210,10 @@ def test_wait_operator_serialization():
         ).wait_for
         == now
     )
-    assert WaitOperator.model_validate({"task_id": "t", "wait_for": "event"}).wait_for == "event"
+    assert (
+        WaitOperator.model_validate({"task_id": "t", "wait_for": "event"}).wait_for
+        == "event"
+    )
 
 
 def test_workflow_builder_simple_chain():
@@ -233,9 +238,12 @@ def test_workflow_builder_with_retry_and_timeout():
         .timeout(timeout=timedelta(minutes=1))
         .build()
     )
-    assert workflow.tasks["step1"].retry_policy.max_retries == 5
-    assert workflow.tasks["step1"].retry_policy.delay == timedelta(seconds=15)
-    assert workflow.tasks["step1"].timeout_policy.timeout == timedelta(minutes=1)
+    step1_task = workflow.tasks["step1"]
+    assert step1_task.retry_policy is not None
+    assert step1_task.retry_policy.max_retries == 5
+    assert step1_task.retry_policy.delay == timedelta(seconds=15)
+    assert step1_task.timeout_policy is not None
+    assert step1_task.timeout_policy.timeout == timedelta(minutes=1)
 
 
 def test_workflow_builder_condition():
@@ -251,9 +259,11 @@ def test_workflow_builder_condition():
         .build()
     )
     assert "check" in workflow.tasks
-    assert workflow.tasks["check"].dependencies == ["initial"]
-    assert workflow.tasks["check"].if_true == "high"
-    assert workflow.tasks["check"].if_false == "low"
+    check_task = workflow.tasks["check"]
+    assert check_task.dependencies == ["initial"]
+    assert isinstance(check_task, ConditionOperator)
+    assert check_task.if_true == "high"
+    assert check_task.if_false == "low"
     assert "high" in workflow.tasks
     assert "low" in workflow.tasks
 
@@ -275,6 +285,7 @@ def test_workflow_builder_parallel():
     assert workflow.tasks["parallel_step"].dependencies == ["init"]
     # After fork-only fix, branch tasks are stored in branch_workflows, not parent tasks
     parallel_op = workflow.tasks["parallel_step"]
+    assert isinstance(parallel_op, ParallelOperator)
     assert "b1" in parallel_op.branch_workflows
     assert "b2" in parallel_op.branch_workflows
     assert "t1" in parallel_op.branch_workflows["b1"]["tasks"]

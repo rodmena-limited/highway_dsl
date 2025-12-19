@@ -134,7 +134,7 @@ def clean_generated_code(code):
     code_end_idx = len(lines)
     for i, line in enumerate(lines):
         # If we find text after the main block, truncate there
-        if 'print(get_workflow().to_json())' in line:
+        if "print(get_workflow().to_json())" in line:
             code_end_idx = i + 1
             break
 
@@ -147,9 +147,12 @@ def clean_generated_code(code):
         # Replace the entire main block
         if "if __name__" in cleaned:
             main_start = cleaned.find("if __name__")
-            cleaned = cleaned[:main_start] + '''if __name__ == "__main__":
+            cleaned = (
+                cleaned[:main_start]
+                + """if __name__ == "__main__":
     print(get_workflow().to_json())
-'''
+"""
+            )
 
     return cleaned
 
@@ -256,7 +259,9 @@ def generate_dsl():
             ), 500
 
         # Validate with MCP server (checks workflow structure)
-        is_valid_workflow, errors, warnings, workflow_info = validate_with_mcp(cleaned_code)
+        is_valid_workflow, errors, warnings, workflow_info = validate_with_mcp(
+            cleaned_code
+        )
 
         if not is_valid_workflow:
             print(f"❌ Workflow validation failed: {errors}")
