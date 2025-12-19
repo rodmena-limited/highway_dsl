@@ -88,6 +88,10 @@ ignore_missing_imports = true
 module = "highway_dsl.mcp_client_server"
 disallow_untyped_decorators = false
 
+[[tool.mypy.overrides]]
+module = "highway_dsl.mcp_server"
+disallow_untyped_decorators = false
+
 [tool.pydantic-mypy]
 init_forbid_extra = true
 init_typed = true
