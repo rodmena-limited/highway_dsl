@@ -663,6 +663,8 @@ class WorkflowBuilder:
         ),
         **kwargs: Any,
     ) -> None:
+        # Check if dependencies were explicitly provided (even if empty list)
+        dependencies_explicitly_provided = "dependencies" in kwargs
         dependencies = kwargs.get("dependencies", [])
 
         # Check if this task is intended to be a handler for another task
@@ -683,9 +685,9 @@ class WorkflowBuilder:
 
         # Only add the current task as dependency if:
         # 1. There IS a current task (not the first task)
-        # 2. No explicit dependencies were provided
+        # 2. No explicit dependencies were provided (empty list counts as explicit)
         # 3. This is NOT a handler task
-        if self._current_task and not dependencies and not is_handler_task:
+        if self._current_task and not dependencies_explicitly_provided and not is_handler_task:
             dependencies.append(self._current_task)
 
         task.dependencies = sorted(set(dependencies))
