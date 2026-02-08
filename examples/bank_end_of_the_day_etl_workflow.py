@@ -2,18 +2,17 @@ import contextlib
 import sys
 from datetime import timedelta  # Need datetime for the validator
 
-
 try:
+    from highway_dsl import ConditionOperator  # noqa: F401
+    from highway_dsl import ForEachOperator  # noqa: F401
+    from highway_dsl import OperatorType  # noqa: F401
+    from highway_dsl import ParallelOperator  # noqa: F401
+    from highway_dsl import TaskOperator  # noqa: F401
+    from highway_dsl import WaitOperator  # noqa: F401
+    from highway_dsl import WhileOperator  # noqa: F401
     from highway_dsl import (
-        ConditionOperator,  # noqa: F401
-        ForEachOperator,  # noqa: F401
-        OperatorType,  # noqa: F401
-        ParallelOperator,  # noqa: F401
         RetryPolicy,
-        TaskOperator,  # noqa: F401
         TimeoutPolicy,
-        WaitOperator,  # noqa: F401
-        WhileOperator,  # noqa: F401
         Workflow,
         WorkflowBuilder,
     )
@@ -38,17 +37,13 @@ def demonstrate_bank_etl_workflow() -> Workflow:
                 "etl.ingest.from_mainframe_db2",
                 args=["accounts", "balances"],
                 result_key="core_data",
-                retry_policy=RetryPolicy(
-                    max_retries=5, delay=timedelta(seconds=5), backoff_factor=2.0
-                ),
+                retry_policy=RetryPolicy(max_retries=5, delay=timedelta(seconds=5), backoff_factor=2.0),
             ),
             "card_transactions": lambda b: b.task(
                 "ingest_card_txns",
                 "etl.ingest.from_payment_gateway_sftp",
                 result_key="card_data",
-                timeout_policy=TimeoutPolicy(
-                    timeout=timedelta(hours=2), kill_on_timeout=True
-                ),
+                timeout_policy=TimeoutPolicy(timeout=timedelta(hours=2), kill_on_timeout=True),
             ),
             "loan_systems": lambda b: b.task(
                 "ingest_loan_systems",

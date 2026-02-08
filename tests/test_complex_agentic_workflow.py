@@ -221,8 +221,7 @@ def extract_yaml_content(content):
             while yaml_end > yaml_start and (
                 lines[yaml_end - 1].strip() == ""
                 or lines[yaml_end - 1].strip().startswith("---")
-                or lines[yaml_end - 1].strip()
-                == "-------------------------------------------------"
+                or lines[yaml_end - 1].strip() == "-------------------------------------------------"
             ):
                 yaml_end -= 1
             break
@@ -258,10 +257,7 @@ def test_complex_agentic_workflow():
     assert generated_data["tasks"]["get_pending_tasks"]["operator_type"] == "task"
     assert generated_data["tasks"]["process_all_tasks"]["operator_type"] == "foreach"
     assert generated_data["tasks"]["route_by_review"]["operator_type"] == "condition"
-    assert (
-        generated_data["tasks"]["human_review_branch_start"]["operator_type"]
-        == "parallel"
-    )
+    assert generated_data["tasks"]["human_review_branch_start"]["operator_type"] == "parallel"
 
     # Validate the generated YAML matches expected (ignoring the header)
     assert generated_data["name"] == expected_data["name"]

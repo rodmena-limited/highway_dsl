@@ -1,11 +1,9 @@
 """Tests for Phase 1 Workflow Patterns: DataGuard, MultiChoice, Terminate."""
 
-import json
 
 import pytest
 
 from highway_dsl.workflow_dsl import (
-    BaseOperator,
     DataGuard,
     MultiChoiceBranch,
     MultiChoiceOperator,
@@ -15,7 +13,6 @@ from highway_dsl.workflow_dsl import (
     Workflow,
     WorkflowBuilder,
 )
-
 
 # ── DataGuard Model Tests ───────────────────────────────────────────────
 

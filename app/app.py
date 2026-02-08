@@ -9,19 +9,19 @@ Port: 7291
 """
 
 import os
-import tempfile
 import py_compile
+import tempfile
 
 import requests
-from flask import Flask, request, jsonify, Response
+from flask import Flask, Response, jsonify, request
 
 # Import MCP server functions for DSL reference and validation
 from highway_dsl.mcp_server import (
     HIGHWAY_DSL_INSTRUCTIONS,
     get_dsl_reference,
     get_example_patterns,
-    list_available_tools,
     get_operator_reference,
+    list_available_tools,
     validate_workflow,
 )
 
@@ -99,9 +99,7 @@ def call_ollama(user_input):
     except requests.exceptions.Timeout:
         raise Exception("Ollama API request timed out after 120 seconds")
     except requests.exceptions.ConnectionError:
-        raise Exception(
-            f"Cannot connect to Ollama at {OLLAMA_BASE_URL}. Is Ollama running?"
-        )
+        raise Exception(f"Cannot connect to Ollama at {OLLAMA_BASE_URL}. Is Ollama running?")
     except requests.exceptions.HTTPError as e:
         raise Exception(f"Ollama API returned error: {e}")
     except Exception as e:
@@ -147,12 +145,9 @@ def clean_generated_code(code):
         # Replace the entire main block
         if "if __name__" in cleaned:
             main_start = cleaned.find("if __name__")
-            cleaned = (
-                cleaned[:main_start]
-                + """if __name__ == "__main__":
+            cleaned = cleaned[:main_start] + """if __name__ == "__main__":
     print(get_workflow().to_json())
 """
-            )
 
     return cleaned
 
@@ -229,12 +224,15 @@ def generate_dsl():
     user_input = request.args.get("input")
 
     if not user_input:
-        return jsonify(
-            {
-                "error": "Missing 'input' query parameter",
-                "usage": "/api/v1/generate_dsl?input=<workflow_description>",
-            }
-        ), 400
+        return (
+            jsonify(
+                {
+                    "error": "Missing 'input' query parameter",
+                    "usage": "/api/v1/generate_dsl?input=<workflow_description>",
+                }
+            ),
+            400,
+        )
 
     try:
         print(f"📝 Generating DSL for: {user_input[:100]}...")
@@ -250,29 +248,33 @@ def generate_dsl():
 
         if not is_valid_syntax:
             print(f"❌ Syntax validation failed: {syntax_error}")
-            return jsonify(
-                {
-                    "error": "Generated code has syntax errors",
-                    "details": syntax_error,
-                    "generated_code": cleaned_code,
-                }
-            ), 500
+            return (
+                jsonify(
+                    {
+                        "error": "Generated code has syntax errors",
+                        "details": syntax_error,
+                        "generated_code": cleaned_code,
+                    }
+                ),
+                500,
+            )
 
         # Validate with MCP server (checks workflow structure)
-        is_valid_workflow, errors, warnings, workflow_info = validate_with_mcp(
-            cleaned_code
-        )
+        is_valid_workflow, errors, warnings, workflow_info = validate_with_mcp(cleaned_code)
 
         if not is_valid_workflow:
             print(f"❌ Workflow validation failed: {errors}")
-            return jsonify(
-                {
-                    "error": "Generated workflow has structural errors",
-                    "details": errors,
-                    "warnings": warnings,
-                    "generated_code": cleaned_code,
-                }
-            ), 500
+            return (
+                jsonify(
+                    {
+                        "error": "Generated workflow has structural errors",
+                        "details": errors,
+                        "warnings": warnings,
+                        "generated_code": cleaned_code,
+                    }
+                ),
+                500,
+            )
 
         # Log warnings but don't fail
         if warnings:

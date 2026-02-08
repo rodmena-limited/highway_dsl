@@ -4,12 +4,9 @@ import pytest
 
 from highway_dsl.workflow_dsl import (
     ForEachOperator,
-    OperatorType,
-    TaskOperator,
     Workflow,
     WorkflowBuilder,
 )
-
 
 # ── ForEachOperator Dynamic Field Tests ──────────────────────────────────
 
@@ -42,7 +39,10 @@ class TestForEachDynamic:
 
     def test_dynamic_with_parallel(self):
         op = ForEachOperator(
-            task_id="fe1", items="{{items}}", dynamic=True, parallel=True,
+            task_id="fe1",
+            items="{{items}}",
+            dynamic=True,
+            parallel=True,
         )
         assert op.dynamic is True
         assert op.parallel is True

@@ -28,7 +28,6 @@ from .workflow_dsl import (
     WorkflowBuilder,
 )
 
-
 __all__ = [
     "ActivityOperator",
     "BaseOperator",
@@ -71,7 +70,4 @@ def get_mcp_server() -> Any:
 
         return mcp
     except ImportError as e:
-        raise ImportError(
-            "MCP support requires the mcp extra. "
-            "Install with: pip install highway_dsl[mcp]"
-        ) from e
+        raise ImportError("MCP support requires the mcp extra. " "Install with: pip install highway_dsl[mcp]") from e

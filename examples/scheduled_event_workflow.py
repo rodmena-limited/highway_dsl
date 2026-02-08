@@ -30,9 +30,7 @@ def create_scheduled_event_workflow() -> Workflow:
         .set_catchup(False)
         .add_tags("demo", "events", "scheduled")
         .set_max_active_runs(1)
-        .set_default_retry_policy(
-            RetryPolicy(max_retries=2, delay=timedelta(seconds=30), backoff_factor=2.0)
-        )
+        .set_default_retry_policy(RetryPolicy(max_retries=2, delay=timedelta(seconds=30), backoff_factor=2.0))
     )
 
     # Regular task

@@ -901,10 +901,7 @@ def _get_templates_dir() -> Path | None:
     possible_paths = [
         Path("/home/farshid/develop/highway-workflow-engine/api/dsl_templates"),
         Path.cwd() / "api" / "dsl_templates",
-        Path(__file__).parent.parent.parent
-        / "highway-workflow-engine"
-        / "api"
-        / "dsl_templates",
+        Path(__file__).parent.parent.parent / "highway-workflow-engine" / "api" / "dsl_templates",
     ]
     for path in possible_paths:
         if path.exists():
@@ -935,9 +932,7 @@ def _list_template_files() -> list[dict[str, str]]:
             {
                 "name": py_file.stem,
                 "filename": py_file.name,
-                "description": docstring.split("\n")[0]
-                if docstring
-                else py_file.stem.replace("_", " ").title(),
+                "description": docstring.split("\n")[0] if docstring else py_file.stem.replace("_", " ").title(),
             }
         )
 
@@ -1039,7 +1034,7 @@ def get_template(template_name: str) -> str:
     if content:
         return content
 
-    return f'''# Template '{template_name}' not found. Here's the correct basic pattern:
+    return f"""# Template '{template_name}' not found. Here's the correct basic pattern:
 
 from highway_dsl import WorkflowBuilder
 
@@ -1057,7 +1052,7 @@ def get_workflow():
 
 if __name__ == "__main__":
     print(get_workflow().to_json())
-'''
+"""
 
 
 @mcp.tool()
@@ -1117,11 +1112,7 @@ def validate_workflow(python_code: str) -> dict[str, Any]:
     has_import = False
     for node in ast.walk(tree):
         if isinstance(node, (ast.Import, ast.ImportFrom)):
-            if (
-                isinstance(node, ast.ImportFrom)
-                and node.module
-                and "highway_dsl" in node.module
-            ):
+            if isinstance(node, ast.ImportFrom) and node.module and "highway_dsl" in node.module:
                 has_import = True
             elif isinstance(node, ast.Import):
                 for alias in node.names:
@@ -1144,9 +1135,7 @@ def validate_workflow(python_code: str) -> dict[str, Any]:
         wrong_frameworks.append("Conductor")
 
     if wrong_frameworks:
-        errors.append(
-            f"WRONG FRAMEWORK! Found: {', '.join(wrong_frameworks)}. Use ONLY highway_dsl!"
-        )
+        errors.append(f"WRONG FRAMEWORK! Found: {', '.join(wrong_frameworks)}. Use ONLY highway_dsl!")
 
     # 5. Try to execute and build the workflow
     try:
@@ -1176,9 +1165,7 @@ def validate_workflow(python_code: str) -> dict[str, Any]:
         task_names = list(workflow.tasks.keys())
 
         # Check for parallel without wait
-        has_parallel = any(
-            "parallel" in name.lower() or "fork" in name.lower() for name in task_names
-        )
+        has_parallel = any("parallel" in name.lower() or "fork" in name.lower() for name in task_names)
         has_wait = any("wait" in name.lower() for name in task_names)
 
         if has_parallel and not has_wait:

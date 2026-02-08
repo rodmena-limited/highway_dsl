@@ -149,13 +149,8 @@ class CircuitBreakerPolicy(BaseModel):
         """Parse isolation_duration from seconds if needed."""
         if isinstance(data, dict):
             # Support deserialization from seconds
-            if (
-                "isolation_duration_seconds" in data
-                and "isolation_duration" not in data
-            ):
-                data["isolation_duration"] = timedelta(
-                    seconds=data["isolation_duration_seconds"]
-                )
+            if "isolation_duration_seconds" in data and "isolation_duration" not in data:
+                data["isolation_duration"] = timedelta(seconds=data["isolation_duration_seconds"])
         return data
 
 
@@ -170,8 +165,7 @@ class DataGuard(BaseModel):
     variable: str = Field(..., description="Variable to check, e.g. '{{flight_number}}'")
     check: str = Field(
         ...,
-        description="Check type: exists, not_null, equals, not_equals, "
-        "in_range, matches_regex, type_check, in_set",
+        description="Check type: exists, not_null, equals, not_equals, " "in_range, matches_regex, type_check, in_set",
     )
     value: Any = Field(None, description="Expected value, range [min, max], regex, type name, or set")
     message: str = Field("", description="Error message on failure")
@@ -179,15 +173,19 @@ class DataGuard(BaseModel):
     @model_validator(mode="after")
     def validate_check_type(self) -> "DataGuard":
         valid_checks = {
-            "exists", "not_null", "equals", "not_equals",
-            "in_range", "matches_regex", "type_check", "in_set",
+            "exists",
+            "not_null",
+            "equals",
+            "not_equals",
+            "in_range",
+            "matches_regex",
+            "type_check",
+            "in_set",
         }
         if self.check not in valid_checks:
             msg = "Invalid check type '%s'. Valid: %s" % (self.check, ", ".join(sorted(valid_checks)))
             raise ValueError(msg)
-        if self.check == "in_range" and (
-            not isinstance(self.value, list) or len(self.value) != 2
-        ):
+        if self.check == "in_range" and (not isinstance(self.value, list) or len(self.value) != 2):
             msg = "in_range check requires value=[min, max]"
             raise ValueError(msg)
         if self.check == "in_set" and not isinstance(self.value, list):
@@ -200,18 +198,14 @@ class BaseOperator(BaseModel, ABC):
     task_id: str
     operator_type: OperatorType
     dependencies: list[str] = Field(default_factory=list)
-    trigger_rule: TriggerRule = Field(
-        TriggerRule.ALL_SUCCESS, description="Dependency trigger rule for smart joins"
-    )
+    trigger_rule: TriggerRule = Field(TriggerRule.ALL_SUCCESS, description="Dependency trigger rule for smart joins")
     retry_policy: RetryPolicy | None = None
     timeout_policy: TimeoutPolicy | None = None
     circuit_breaker_policy: CircuitBreakerPolicy | None = Field(
         None,
         description="Per-activity circuit breaker (Issue #247). Default: disabled.",
     )
-    idempotency_key: str | None = Field(
-        None, description="Key for idempotent execution (prevents duplicate runs)"
-    )
+    idempotency_key: str | None = Field(None, description="Key for idempotent execution (prevents duplicate runs)")
     metadata: dict[str, Any] = Field(default_factory=dict)
     description: str = Field(default="", description="Task description")
     result_key: str | None = Field(None, description="Key to store result in context")
@@ -219,13 +213,9 @@ class BaseOperator(BaseModel, ABC):
     on_success_task_id: str | None = Field(None, description="Task to run on success")
     on_failure_task_id: str | None = Field(None, description="Task to run on failure")
     # Mark if task is internal to a loop (must NOT be excluded for engine to see it)
-    is_internal_loop_task: bool = Field(
-        default=False, description="Task is internal to a loop body"
-    )
+    is_internal_loop_task: bool = Field(default=False, description="Task is internal to a loop body")
     # PHASE 2.1: Mark if task is internal to a parallel branch
-    is_internal_parallel_task: bool = Field(
-        default=False, description="Task is internal to a parallel branch"
-    )
+    is_internal_parallel_task: bool = Field(default=False, description="Task is internal to a parallel branch")
     # WDP-34/35/36/37: Task pre/post conditions
     preconditions: list[DataGuard] = Field(
         default_factory=list,
@@ -274,16 +264,12 @@ class WaitOperator(BaseOperator):
             if isinstance(wait_for, str):
                 if wait_for.startswith("PT"):
                     # ISO 8601 duration format
-                    match = re.match(
-                        r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?", wait_for
-                    )
+                    match = re.match(r"PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?", wait_for)
                     if match:
                         hours = int(match.group(1) or 0)
                         minutes = int(match.group(2) or 0)
                         seconds = float(match.group(3) or 0)
-                        data["wait_for"] = timedelta(
-                            hours=hours, minutes=minutes, seconds=seconds
-                        )
+                        data["wait_for"] = timedelta(hours=hours, minutes=minutes, seconds=seconds)
                 elif wait_for.startswith("duration:"):  # Backward compatibility
                     data["wait_for"] = timedelta(seconds=float(wait_for.split(":")[1]))
                 elif wait_for.startswith("datetime:"):  # Backward compatibility
@@ -310,9 +296,7 @@ class ParallelOperator(BaseOperator):
         default_factory=dict,
         description="Complete workflow definitions for each branch (serialized)",
     )
-    timeout: int | None = Field(
-        None, description="Optional timeout in seconds for branch execution"
-    )
+    timeout: int | None = Field(None, description="Optional timeout in seconds for branch execution")
     operator_type: OperatorType = Field(OperatorType.PARALLEL, frozen=True)
 
 
@@ -374,9 +358,7 @@ class EmitEventOperator(BaseOperator):
     """Phase 2: Emit an event that other workflows can wait for."""
 
     event_name: str = Field(..., description="Name of the event to emit")
-    payload: dict[str, Any] = Field(
-        default_factory=dict, description="Event payload data"
-    )
+    payload: dict[str, Any] = Field(default_factory=dict, description="Event payload data")
     operator_type: OperatorType = Field(OperatorType.EMIT_EVENT, frozen=True)
 
 
@@ -384,9 +366,7 @@ class WaitForEventOperator(BaseOperator):
     """Phase 2: Wait for an external event with optional timeout."""
 
     event_name: str = Field(..., description="Name of the event to wait for")
-    timeout_seconds: int | None = Field(
-        None, description="Timeout in seconds (None = wait forever)"
-    )
+    timeout_seconds: int | None = Field(None, description="Timeout in seconds (None = wait forever)")
     operator_type: OperatorType = Field(OperatorType.WAIT_FOR_EVENT, frozen=True)
 
 
@@ -398,9 +378,7 @@ class JoinOperator(BaseOperator):
     """
 
     join_tasks: list[str] = Field(..., description="List of task IDs to wait for")
-    join_mode: JoinMode = Field(
-        JoinMode.ALL_OF, description="Coordination mode (all_of, any_of, etc.)"
-    )
+    join_mode: JoinMode = Field(JoinMode.ALL_OF, description="Coordination mode (all_of, any_of, etc.)")
     operator_type: OperatorType = Field(OperatorType.JOIN, frozen=True)
 
 
@@ -408,9 +386,7 @@ class SwitchOperator(BaseOperator):
     """Phase 4: Multi-branch switch/case operator."""
 
     switch_on: str = Field(..., description="Expression to evaluate for switch")
-    cases: dict[str, str] = Field(
-        default_factory=dict, description="Map of case values to task IDs"
-    )
+    cases: dict[str, str] = Field(default_factory=dict, description="Map of case values to task IDs")
     default: str | None = Field(None, description="Default task ID if no case matches")
     operator_type: OperatorType = Field(OperatorType.SWITCH, frozen=True)
 
@@ -439,22 +415,12 @@ class ReflexiveOperator(BaseOperator):
         )
     """
 
-    generator: str = Field(
-        ..., description="Generator tool name (e.g., tools.llm.call)"
-    )
-    generator_kwargs: dict[str, Any] = Field(
-        default_factory=dict, description="Arguments for generator tool"
-    )
-    verifier: str = Field(
-        ..., description="Verifier tool name (e.g., tools.python.run)"
-    )
-    verifier_kwargs: dict[str, Any] = Field(
-        default_factory=dict, description="Arguments for verifier tool"
-    )
+    generator: str = Field(..., description="Generator tool name (e.g., tools.llm.call)")
+    generator_kwargs: dict[str, Any] = Field(default_factory=dict, description="Arguments for generator tool")
+    verifier: str = Field(..., description="Verifier tool name (e.g., tools.python.run)")
+    verifier_kwargs: dict[str, Any] = Field(default_factory=dict, description="Arguments for verifier tool")
     max_turns: int = Field(3, description="Maximum correction attempts", ge=1, le=10)
-    correction_prompt_template: str | None = Field(
-        None, description="Custom template for correction prompts"
-    )
+    correction_prompt_template: str | None = Field(None, description="Custom template for correction prompts")
     operator_type: OperatorType = Field(OperatorType.REFLEXIVE, frozen=True)
 
 
@@ -462,9 +428,7 @@ class MultiChoiceBranch(BaseModel):
     """A branch in a MultiChoiceOperator (WCP-6 OR-split)."""
 
     condition: str = Field(..., description="Expression to evaluate for this branch")
-    tasks: list[str] = Field(
-        default_factory=list, description="Task IDs in this branch (for reference)"
-    )
+    tasks: list[str] = Field(default_factory=list, description="Task IDs in this branch (for reference)")
 
 
 class MultiChoiceOperator(BaseOperator):
@@ -479,9 +443,7 @@ class MultiChoiceOperator(BaseOperator):
     proceeding with insufficient parallelism.
     """
 
-    branches: dict[str, MultiChoiceBranch] = Field(
-        ..., description="Branch definitions with conditions"
-    )
+    branches: dict[str, MultiChoiceBranch] = Field(..., description="Branch definitions with conditions")
     branch_workflows: dict[str, dict[str, Any]] = Field(
         default_factory=dict,
         description="Complete workflow definitions for each branch (serialized)",
@@ -491,9 +453,7 @@ class MultiChoiceOperator(BaseOperator):
         ge=0,
         description="Minimum branches that must activate (0=allow none, safety check)",
     )
-    timeout: int | None = Field(
-        None, description="Optional timeout in seconds for branch execution"
-    )
+    timeout: int | None = Field(None, description="Optional timeout in seconds for branch execution")
     operator_type: OperatorType = Field(OperatorType.MULTI_CHOICE, frozen=True)
 
 
@@ -509,9 +469,7 @@ class TerminateOperator(BaseOperator):
         "completed",
         description="Workflow termination status: completed, failed, or cancelled",
     )
-    result: dict[str, Any] = Field(
-        default_factory=dict, description="Final workflow result data"
-    )
+    result: dict[str, Any] = Field(default_factory=dict, description="Final workflow result data")
     reason: str = Field("", description="Termination reason for audit log")
     operator_type: OperatorType = Field(OperatorType.TERMINATE, frozen=True)
 
@@ -549,29 +507,17 @@ class Workflow(BaseModel):
     start_task: str | None = None
 
     # Phase 1: Scheduling metadata
-    schedule: str | None = Field(
-        None, description="Cron expression for scheduled execution"
-    )
-    start_date: datetime | None = Field(
-        None, description="When the schedule becomes active"
-    )
+    schedule: str | None = Field(None, description="Cron expression for scheduled execution")
+    start_date: datetime | None = Field(None, description="When the schedule becomes active")
     catchup: bool = Field(False, description="Whether to backfill missed runs")
     is_paused: bool = Field(False, description="Whether the workflow is paused")
-    tags: list[str] = Field(
-        default_factory=list, description="Workflow categorization tags"
-    )
+    tags: list[str] = Field(default_factory=list, description="Workflow categorization tags")
     max_active_runs: int = Field(1, description="Maximum number of concurrent runs")
-    default_retry_policy: RetryPolicy | None = Field(
-        None, description="Default retry policy for all tasks"
-    )
+    default_retry_policy: RetryPolicy | None = Field(None, description="Default retry policy for all tasks")
 
     # Phase 2: Workflow-level deadline (WCP-deadline)
-    deadline_seconds: int | None = Field(
-        None, description="Maximum workflow duration in seconds from start"
-    )
-    deadline_action: str = Field(
-        "fail", description="Action on deadline: 'fail' or 'cancel'"
-    )
+    deadline_seconds: int | None = Field(None, description="Maximum workflow duration in seconds from start")
+    deadline_action: str = Field("fail", description="Action on deadline: 'fail' or 'cancel'")
 
     @model_validator(mode="after")
     def validate_deadline(self) -> "Workflow":
@@ -579,13 +525,10 @@ class Workflow(BaseModel):
         allowed = ("fail", "cancel")
         if self.deadline_action not in allowed:
             raise ValueError(
-                "deadline_action must be one of: %s (got '%s')"
-                % (", ".join(allowed), self.deadline_action)
+                "deadline_action must be one of: %s (got '%s')" % (", ".join(allowed), self.deadline_action)
             )
         if self.deadline_seconds is not None and self.deadline_seconds <= 0:
-            raise ValueError(
-                "deadline_seconds must be positive (got %d)" % self.deadline_seconds
-            )
+            raise ValueError("deadline_seconds must be positive (got %d)" % self.deadline_seconds)
         return self
 
     @model_validator(mode="before")
@@ -830,12 +773,8 @@ class WorkflowBuilder:
         is_handler_task = False
         for other_task in self.workflow.tasks.values():
             # Check if any existing task has this task as its handler
-            if (
-                hasattr(other_task, "on_failure_task_id")
-                and other_task.on_failure_task_id == task.task_id
-            ) or (
-                hasattr(other_task, "on_success_task_id")
-                and other_task.on_success_task_id == task.task_id
+            if (hasattr(other_task, "on_failure_task_id") and other_task.on_failure_task_id == task.task_id) or (
+                hasattr(other_task, "on_success_task_id") and other_task.on_success_task_id == task.task_id
             ):
                 is_handler_task = True
                 break
@@ -861,9 +800,7 @@ class WorkflowBuilder:
         if "depends_on" in kwargs and "dependencies" not in kwargs:
             kwargs["dependencies"] = kwargs.pop("depends_on")
         elif "depends_on" in kwargs:
-            kwargs.pop(
-                "depends_on"
-            )  # Remove if both specified (dependencies takes precedence)
+            kwargs.pop("depends_on")  # Remove if both specified (dependencies takes precedence)
 
         # Operator configuration fields
         operator_fields = {
@@ -1080,16 +1017,10 @@ class WorkflowBuilder:
             )
             branch_builders[name] = branch_builder
 
-        branch_tasks = {
-            name: list(builder.workflow.tasks.keys())
-            for name, builder in branch_builders.items()
-        }
+        branch_tasks = {name: list(builder.workflow.tasks.keys()) for name, builder in branch_builders.items()}
 
         # Serialize complete branch workflows for execution
-        branch_workflows = {
-            name: builder.workflow.model_dump(mode="json")
-            for name, builder in branch_builders.items()
-        }
+        branch_workflows = {name: builder.workflow.model_dump(mode="json") for name, builder in branch_builders.items()}
 
         task = ParallelOperator(
             task_id=task_id,
@@ -1286,17 +1217,13 @@ class WorkflowBuilder:
         return self
 
     # Phase 2: Event-based operators
-    def emit_event(
-        self, task_id: str, event_name: str, **kwargs: Any
-    ) -> "WorkflowBuilder":
+    def emit_event(self, task_id: str, event_name: str, **kwargs: Any) -> "WorkflowBuilder":
         """Emit an event that other workflows can wait for."""
         task = EmitEventOperator(task_id=task_id, event_name=event_name, **kwargs)
         self._add_task(task, **kwargs)
         return self
 
-    def join(
-        self, task_id: str, join_tasks: list[str], join_mode: JoinMode, **kwargs: Any
-    ) -> "WorkflowBuilder":
+    def join(self, task_id: str, join_tasks: list[str], join_mode: JoinMode, **kwargs: Any) -> "WorkflowBuilder":
         """Create a JoinOperator to coordinate multiple branches.
 
         Args:
@@ -1308,9 +1235,7 @@ class WorkflowBuilder:
         Returns:
             WorkflowBuilder for chaining
         """
-        task = JoinOperator(
-            task_id=task_id, join_tasks=join_tasks, join_mode=join_mode, **kwargs
-        )
+        task = JoinOperator(task_id=task_id, join_tasks=join_tasks, join_mode=join_mode, **kwargs)
         self._add_task(task, **kwargs)
         return self
 
@@ -1398,10 +1323,7 @@ class WorkflowBuilder:
                 tasks=list(branch_builder.workflow.tasks.keys()),
             )
 
-        branch_workflows = {
-            name: builder.workflow.model_dump(mode="json")
-            for name, builder in branch_builders.items()
-        }
+        branch_workflows = {name: builder.workflow.model_dump(mode="json") for name, builder in branch_builders.items()}
 
         task = MultiChoiceOperator(
             task_id=task_id,
@@ -1560,21 +1482,13 @@ class WorkflowBuilder:
         """
         # Validate callback references
         for task_id, task in self.workflow.tasks.items():
-            if (
-                task.on_success_task_id
-                and task.on_success_task_id not in self.workflow.tasks
-            ):
+            if task.on_success_task_id and task.on_success_task_id not in self.workflow.tasks:
                 raise ValueError(
-                    f"Task '{task_id}' references non-existent on_success task "
-                    f"'{task.on_success_task_id}'"
+                    f"Task '{task_id}' references non-existent on_success task " f"'{task.on_success_task_id}'"
                 )
-            if (
-                task.on_failure_task_id
-                and task.on_failure_task_id not in self.workflow.tasks
-            ):
+            if task.on_failure_task_id and task.on_failure_task_id not in self.workflow.tasks:
                 raise ValueError(
-                    f"Task '{task_id}' references non-existent on_failure task "
-                    f"'{task.on_failure_task_id}'"
+                    f"Task '{task_id}' references non-existent on_failure task " f"'{task.on_failure_task_id}'"
                 )
 
         # Set start task if not explicitly set

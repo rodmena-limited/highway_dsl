@@ -52,9 +52,7 @@ def test_parallel_diagram_generation():
 def test_loops_diagram_generation():
     builder = WorkflowBuilder("loops")
 
-    builder.foreach(
-        "process_items", items="{{items}}", loop_body=lambda b: b.task("process", "cmd")
-    )
+    builder.foreach("process_items", items="{{items}}", loop_body=lambda b: b.task("process", "cmd"))
 
     workflow = builder.build()
     mermaid = workflow.to_mermaid()

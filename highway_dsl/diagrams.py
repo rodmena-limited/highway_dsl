@@ -33,9 +33,7 @@ class DiagramGenerator:
 
     def _sanitize_id(self, name: str) -> str:
         """Sanitize a name to be safe for Mermaid/Graphviz IDs."""
-        safe = (
-            name.replace("-", "_").replace(" ", "_").replace(":", "_").replace(".", "_")
-        )
+        safe = name.replace("-", "_").replace(" ", "_").replace(":", "_").replace(".", "_")
         if safe and safe[0].isdigit():
             safe = "_" + safe
         return safe
@@ -46,27 +44,13 @@ class DiagramGenerator:
         lines.append(
             '    classDef default fill:#1a1a1a,stroke:#333,stroke-width:1px,color:white,font-family:"JetBrains Mono";'
         )
-        lines.append(
-            "    classDef condition fill:#2c3e50,stroke:#f1c40f,stroke-width:2px,color:white;"
-        )
-        lines.append(
-            "    classDef parallel fill:#2c3e50,stroke:#3498db,stroke-width:2px,color:white;"
-        )
-        lines.append(
-            "    classDef loop fill:#2c3e50,stroke:#e67e22,stroke-width:2px,color:white;"
-        )
-        lines.append(
-            "    classDef event fill:#2c3e50,stroke:#9b59b6,stroke-width:2px,color:white;"
-        )
-        lines.append(
-            "    classDef wait fill:#2c3e50,stroke:#95a5a6,stroke-width:2px,color:white;"
-        )
-        lines.append(
-            "    classDef error fill:#c0392b,stroke:#e74c3c,stroke-width:2px,color:white;"
-        )
-        lines.append(
-            "    classDef reflexive fill:#2c3e50,stroke:#ff00ff,stroke-width:2px,color:white;"
-        )
+        lines.append("    classDef condition fill:#2c3e50,stroke:#f1c40f,stroke-width:2px,color:white;")
+        lines.append("    classDef parallel fill:#2c3e50,stroke:#3498db,stroke-width:2px,color:white;")
+        lines.append("    classDef loop fill:#2c3e50,stroke:#e67e22,stroke-width:2px,color:white;")
+        lines.append("    classDef event fill:#2c3e50,stroke:#9b59b6,stroke-width:2px,color:white;")
+        lines.append("    classDef wait fill:#2c3e50,stroke:#95a5a6,stroke-width:2px,color:white;")
+        lines.append("    classDef error fill:#c0392b,stroke:#e74c3c,stroke-width:2px,color:white;")
+        lines.append("    classDef reflexive fill:#2c3e50,stroke:#ff00ff,stroke-width:2px,color:white;")
 
         # Render tasks
         self._render_mermaid_tasks(self.workflow.tasks, lines, indent=4)
@@ -76,9 +60,7 @@ class DiagramGenerator:
 
         return "\n".join(lines)
 
-    def _render_mermaid_tasks(
-        self, tasks: Mapping[str, BaseOperator], lines: List[str], indent: int
-    ) -> None:
+    def _render_mermaid_tasks(self, tasks: Mapping[str, BaseOperator], lines: List[str], indent: int) -> None:
         prefix = " " * indent
 
         # Sort tasks to ensure deterministic output
@@ -107,9 +89,7 @@ class DiagramGenerator:
                         # Fallback if validation fails (shouldn't happen if valid)
                         branch_tasks = {}
 
-                    lines.append(
-                        f'{prefix}    state "{branch_name}" as {safe_id}_{self._sanitize_id(branch_name)} {{'
-                    )
+                    lines.append(f'{prefix}    state "{branch_name}" as {safe_id}_{self._sanitize_id(branch_name)} {{')
                     self._render_mermaid_tasks(branch_tasks, lines, indent + 8)
 
                     # Render internal dependencies for the branch
@@ -191,13 +171,9 @@ class DiagramGenerator:
 
             # Notes
             if task.description:
-                lines.append(
-                    f"{prefix}note right of {safe_id}: {task.operator_type.value}"
-                )
+                lines.append(f"{prefix}note right of {safe_id}: {task.operator_type.value}")
 
-    def _render_mermaid_dependencies(
-        self, workflow: Workflow, lines: List[str], indent: int
-    ) -> None:
+    def _render_mermaid_dependencies(self, workflow: Workflow, lines: List[str], indent: int) -> None:
         prefix = " " * indent
         tasks = workflow.tasks
 
@@ -230,35 +206,23 @@ class DiagramGenerator:
             # Condition branches
             if isinstance(task, ConditionOperator):
                 if task.if_true and task.if_true in tasks:
-                    lines.append(
-                        f"{prefix}{safe_id} --> {self._sanitize_id(task.if_true)} : True"
-                    )
+                    lines.append(f"{prefix}{safe_id} --> {self._sanitize_id(task.if_true)} : True")
                 if task.if_false and task.if_false in tasks:
-                    lines.append(
-                        f"{prefix}{safe_id} --> {self._sanitize_id(task.if_false)} : False"
-                    )
+                    lines.append(f"{prefix}{safe_id} --> {self._sanitize_id(task.if_false)} : False")
 
             # Switch branches
             if isinstance(task, SwitchOperator):
                 for case_val, target_id in task.cases.items():
                     if target_id in tasks:
-                        lines.append(
-                            f"{prefix}{safe_id} --> {self._sanitize_id(target_id)} : {case_val}"
-                        )
+                        lines.append(f"{prefix}{safe_id} --> {self._sanitize_id(target_id)} : {case_val}")
                 if task.default and task.default in tasks:
-                    lines.append(
-                        f"{prefix}{safe_id} --> {self._sanitize_id(task.default)} : Default"
-                    )
+                    lines.append(f"{prefix}{safe_id} --> {self._sanitize_id(task.default)} : Default")
 
             # Callback hooks
             if task.on_success_task_id and task.on_success_task_id in tasks:
-                lines.append(
-                    f"{prefix}{safe_id} --> {self._sanitize_id(task.on_success_task_id)} : On Success"
-                )
+                lines.append(f"{prefix}{safe_id} --> {self._sanitize_id(task.on_success_task_id)} : On Success")
             if task.on_failure_task_id and task.on_failure_task_id in tasks:
-                lines.append(
-                    f"{prefix}{safe_id} --> {self._sanitize_id(task.on_failure_task_id)} : On Failure"
-                )
+                lines.append(f"{prefix}{safe_id} --> {self._sanitize_id(task.on_failure_task_id)} : On Failure")
 
             # Check if it's a leaf node
             # A node is a leaf if no other task depends on it AND it's not a condition/switch routing to something
@@ -304,9 +268,7 @@ class DiagramGenerator:
         lines.append("}")
         return "\n".join(lines)
 
-    def _render_graphviz_tasks(
-        self, tasks: Mapping[str, BaseOperator], lines: List[str], indent: int
-    ) -> None:
+    def _render_graphviz_tasks(self, tasks: Mapping[str, BaseOperator], lines: List[str], indent: int) -> None:
         prefix = " " * indent
 
         for task_id, task in sorted(tasks.items()):
@@ -324,9 +286,7 @@ class DiagramGenerator:
                 lines.append(f'{prefix}    fontcolor="#3498db";')
 
                 # Render branches as sub-clusters
-                for i, (branch_name, branch_wf_data) in enumerate(
-                    task.branch_workflows.items()
-                ):
+                for i, (branch_name, branch_wf_data) in enumerate(task.branch_workflows.items()):
                     branch_safe_id = f"{safe_id}_{self._sanitize_id(branch_name)}"
                     lines.append(f"{prefix}    subgraph cluster_{branch_safe_id} {{")
                     lines.append(f'{prefix}        label="{branch_name}";')
@@ -336,9 +296,7 @@ class DiagramGenerator:
                     try:
                         branch_wf = Workflow.model_validate(branch_wf_data)
                         self._render_graphviz_tasks(branch_wf.tasks, lines, indent + 8)
-                        self._render_graphviz_dependencies(
-                            branch_wf, lines, indent + 8, is_root=False
-                        )
+                        self._render_graphviz_dependencies(branch_wf, lines, indent + 8, is_root=False)
                     except Exception:
                         pass
 
@@ -372,39 +330,25 @@ class DiagramGenerator:
                     max_active_runs=1,
                     default_retry_policy=None,
                 )
-                self._render_graphviz_dependencies(
-                    dummy_wf, lines, indent + 4, is_root=False
-                )
+                self._render_graphviz_dependencies(dummy_wf, lines, indent + 4, is_root=False)
 
                 lines.append(f"{prefix}}}")
-                lines.append(
-                    f'{prefix}{safe_id} [label="{label}", shape=hexagon, fillcolor="#e67e22", style=filled];'
-                )
+                lines.append(f'{prefix}{safe_id} [label="{label}", shape=hexagon, fillcolor="#e67e22", style=filled];')
 
             elif isinstance(task, ConditionOperator):
-                lines.append(
-                    f'{prefix}{safe_id} [{attrs}, shape=diamond, fillcolor="#f1c40f", fontcolor=black];'
-                )
+                lines.append(f'{prefix}{safe_id} [{attrs}, shape=diamond, fillcolor="#f1c40f", fontcolor=black];')
 
             elif isinstance(task, SwitchOperator):
-                lines.append(
-                    f'{prefix}{safe_id} [{attrs}, shape=diamond, fillcolor="#f1c40f", fontcolor=black];'
-                )
+                lines.append(f'{prefix}{safe_id} [{attrs}, shape=diamond, fillcolor="#f1c40f", fontcolor=black];')
 
             elif isinstance(task, (EmitEventOperator, WaitForEventOperator)):
-                lines.append(
-                    f'{prefix}{safe_id} [{attrs}, shape=cds, fillcolor="#9b59b6"];'
-                )
+                lines.append(f'{prefix}{safe_id} [{attrs}, shape=cds, fillcolor="#9b59b6"];')
 
             elif isinstance(task, WaitOperator):
-                lines.append(
-                    f'{prefix}{safe_id} [{attrs}, shape=hourglass, fillcolor="#95a5a6"];'
-                )
+                lines.append(f'{prefix}{safe_id} [{attrs}, shape=hourglass, fillcolor="#95a5a6"];')
 
             elif isinstance(task, ReflexiveOperator):
-                lines.append(
-                    f'{prefix}{safe_id} [{attrs}, shape=component, fillcolor="#ff00ff"];'
-                )
+                lines.append(f'{prefix}{safe_id} [{attrs}, shape=component, fillcolor="#ff00ff"];')
 
             else:
                 lines.append(f"{prefix}{safe_id} [{attrs}];")
@@ -450,9 +394,7 @@ class DiagramGenerator:
                 for case_val, target_id in task.cases.items():
                     if target_id in tasks:
                         label = self._escape_dot_label(case_val)
-                        lines.append(
-                            f'{prefix}{safe_id} -> {self._sanitize_id(target_id)} [label="{label}"];'
-                        )
+                        lines.append(f'{prefix}{safe_id} -> {self._sanitize_id(target_id)} [label="{label}"];')
                 if task.default and task.default in tasks:
                     lines.append(
                         f'{prefix}{safe_id} -> {self._sanitize_id(task.default)} [label="Default", style=dashed];'
@@ -475,9 +417,7 @@ class DiagramGenerator:
                     if task_id in other_task.dependencies:
                         is_leaf = False
                         break
-                if isinstance(task, ConditionOperator) and (
-                    task.if_true or task.if_false
-                ):
+                if isinstance(task, ConditionOperator) and (task.if_true or task.if_false):
                     is_leaf = False
                 if isinstance(task, SwitchOperator) and (task.cases or task.default):
                     is_leaf = False

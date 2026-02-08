@@ -210,10 +210,7 @@ def test_wait_operator_serialization():
         ).wait_for
         == now
     )
-    assert (
-        WaitOperator.model_validate({"task_id": "t", "wait_for": "event"}).wait_for
-        == "event"
-    )
+    assert WaitOperator.model_validate({"task_id": "t", "wait_for": "event"}).wait_for == "event"
 
 
 def test_workflow_builder_simple_chain():

@@ -124,8 +124,7 @@ def demonstrate_agentic_dev_platform_workflow():
                     result_key="e2e_results",
                 ),
             },
-        )
-        .task(
+        ).task(
             "aggregate_test_results",
             "ci.aggregate_results",
             args=["{{unit_results}}", "{{int_results}}", "{{e2e_results}}"],
@@ -269,8 +268,7 @@ def extract_yaml_content(content):
             while yaml_end > yaml_start and (
                 lines[yaml_end - 1].strip() == ""
                 or lines[yaml_end - 1].strip().startswith("---")
-                or lines[yaml_end - 1].strip()
-                == "---------------------------------------------------"
+                or lines[yaml_end - 1].strip() == "---------------------------------------------------"
             ):
                 yaml_end -= 1
             break
@@ -287,9 +285,7 @@ def test_agentic_ai_software_workflow():
     generated_data = yaml.safe_load(generated_yaml)
 
     # Load expected output
-    expected_file = (
-        Path(__file__).parent / "data" / "test_driven_agentic_ai_software_workflow.yaml"
-    )
+    expected_file = Path(__file__).parent / "data" / "test_driven_agentic_ai_software_workflow.yaml"
     with open(expected_file) as f:
         content = f.read()
         expected_content = extract_yaml_content(content)
@@ -310,10 +306,7 @@ def test_agentic_ai_software_workflow():
     # Check operator types
     assert generated_data["tasks"]["test_generation_loop"]["operator_type"] == "foreach"
     assert generated_data["tasks"]["main_build_loop"]["operator_type"] == "while"
-    assert (
-        generated_data["tasks"]["run_ansible_deployments"]["operator_type"]
-        == "parallel"
-    )
+    assert generated_data["tasks"]["run_ansible_deployments"]["operator_type"] == "parallel"
     assert generated_data["tasks"]["analyze_requirements"]["operator_type"] == "task"
 
     # Validate the generated YAML matches expected (ignoring the header)

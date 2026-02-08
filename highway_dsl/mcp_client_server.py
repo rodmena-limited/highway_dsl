@@ -12,9 +12,9 @@ Usage:
 """
 
 import os
-import requests
 from typing import Any
 
+import requests
 from mcp.server.fastmcp import FastMCP
 
 # Configuration
@@ -78,9 +78,7 @@ def generate_workflow(description: str) -> dict[str, Any]:
         else:
             error_data = (
                 response.json()
-                if response.headers.get("content-type", "").startswith(
-                    "application/json"
-                )
+                if response.headers.get("content-type", "").startswith("application/json")
                 else {"error": response.text}
             )
             return {
