@@ -60,6 +60,8 @@ class OperatorType(Enum):
     JOIN = "join"
     ACTIVITY = "activity"
     REFLEXIVE = "reflexive"  # Issue #331: Sherlock reflexive loop
+    MULTI_CHOICE = "multi_choice"  # WCP-6: OR-split
+    TERMINATE = "terminate"  # WCP-43: Explicit termination
 
 
 class JoinMode(Enum):
@@ -157,6 +159,43 @@ class CircuitBreakerPolicy(BaseModel):
         return data
 
 
+class DataGuard(BaseModel):
+    """Pre/post condition guard for task data validation (WDP-34/35/36/37).
+
+    Guards are evaluated before (precondition) or after (postcondition) task execution.
+    A failed precondition prevents task execution. A failed postcondition marks the task
+    as failed even if execution succeeded.
+    """
+
+    variable: str = Field(..., description="Variable to check, e.g. '{{flight_number}}'")
+    check: str = Field(
+        ...,
+        description="Check type: exists, not_null, equals, not_equals, "
+        "in_range, matches_regex, type_check, in_set",
+    )
+    value: Any = Field(None, description="Expected value, range [min, max], regex, type name, or set")
+    message: str = Field("", description="Error message on failure")
+
+    @model_validator(mode="after")
+    def validate_check_type(self) -> "DataGuard":
+        valid_checks = {
+            "exists", "not_null", "equals", "not_equals",
+            "in_range", "matches_regex", "type_check", "in_set",
+        }
+        if self.check not in valid_checks:
+            msg = "Invalid check type '%s'. Valid: %s" % (self.check, ", ".join(sorted(valid_checks)))
+            raise ValueError(msg)
+        if self.check == "in_range" and (
+            not isinstance(self.value, list) or len(self.value) != 2
+        ):
+            msg = "in_range check requires value=[min, max]"
+            raise ValueError(msg)
+        if self.check == "in_set" and not isinstance(self.value, list):
+            msg = "in_set check requires value=[item1, item2, ...]"
+            raise ValueError(msg)
+        return self
+
+
 class BaseOperator(BaseModel, ABC):
     task_id: str
     operator_type: OperatorType
@@ -186,6 +225,15 @@ class BaseOperator(BaseModel, ABC):
     # PHASE 2.1: Mark if task is internal to a parallel branch
     is_internal_parallel_task: bool = Field(
         default=False, description="Task is internal to a parallel branch"
+    )
+    # WDP-34/35/36/37: Task pre/post conditions
+    preconditions: list[DataGuard] = Field(
+        default_factory=list,
+        description="Guards evaluated before task execution (WDP-34/35)",
+    )
+    postconditions: list[DataGuard] = Field(
+        default_factory=list,
+        description="Guards evaluated after task execution (WDP-36/37)",
     )
 
     model_config = ConfigDict(use_enum_values=True, arbitrary_types_allowed=True)
@@ -284,11 +332,17 @@ class ForEachOperator(BaseOperator):
             "SwitchOperator",
             "JoinOperator",
             "ReflexiveOperator",
+            "MultiChoiceOperator",
+            "TerminateOperator",
         ]
     ] = Field(default_factory=list)
     parallel: bool = Field(
         default=False,
         description="Execute iterations in parallel (dynamic task mapping)",
+    )
+    dynamic: bool = Field(
+        default=False,
+        description="Allow dynamic item addition via add_items signal (WCP-15)",
     )
     operator_type: OperatorType = Field(OperatorType.FOREACH, frozen=True)
 
@@ -309,6 +363,8 @@ class WhileOperator(BaseOperator):
             "SwitchOperator",
             "JoinOperator",
             "ReflexiveOperator",
+            "MultiChoiceOperator",
+            "TerminateOperator",
         ]
     ] = Field(default_factory=list)
     operator_type: OperatorType = Field(OperatorType.WHILE, frozen=True)
@@ -402,6 +458,72 @@ class ReflexiveOperator(BaseOperator):
     operator_type: OperatorType = Field(OperatorType.REFLEXIVE, frozen=True)
 
 
+class MultiChoiceBranch(BaseModel):
+    """A branch in a MultiChoiceOperator (WCP-6 OR-split)."""
+
+    condition: str = Field(..., description="Expression to evaluate for this branch")
+    tasks: list[str] = Field(
+        default_factory=list, description="Task IDs in this branch (for reference)"
+    )
+
+
+class MultiChoiceOperator(BaseOperator):
+    """WCP-6: Multi-Choice (OR-split) operator.
+
+    Evaluates multiple conditions and spawns only matching branches.
+    Unlike ParallelOperator which spawns all branches unconditionally,
+    MultiChoiceOperator activates a subset based on conditions.
+
+    Safety: minimum_branches ensures at least N branches activate.
+    If fewer branches match, the operator fails rather than silently
+    proceeding with insufficient parallelism.
+    """
+
+    branches: dict[str, MultiChoiceBranch] = Field(
+        ..., description="Branch definitions with conditions"
+    )
+    branch_workflows: dict[str, dict[str, Any]] = Field(
+        default_factory=dict,
+        description="Complete workflow definitions for each branch (serialized)",
+    )
+    minimum_branches: int = Field(
+        1,
+        ge=0,
+        description="Minimum branches that must activate (0=allow none, safety check)",
+    )
+    timeout: int | None = Field(
+        None, description="Optional timeout in seconds for branch execution"
+    )
+    operator_type: OperatorType = Field(OperatorType.MULTI_CHOICE, frozen=True)
+
+
+class TerminateOperator(BaseOperator):
+    """WCP-43: Explicit Termination operator.
+
+    Immediately ends workflow execution with specified status.
+    All remaining tasks are skipped. Used for emergency shutdown,
+    early completion, or conditional abort scenarios.
+    """
+
+    status: str = Field(
+        "completed",
+        description="Workflow termination status: completed, failed, or cancelled",
+    )
+    result: dict[str, Any] = Field(
+        default_factory=dict, description="Final workflow result data"
+    )
+    reason: str = Field("", description="Termination reason for audit log")
+    operator_type: OperatorType = Field(OperatorType.TERMINATE, frozen=True)
+
+    @model_validator(mode="after")
+    def validate_status(self) -> "TerminateOperator":
+        valid = {"completed", "failed", "cancelled"}
+        if self.status not in valid:
+            msg = "Terminate status must be one of: %s" % ", ".join(sorted(valid))
+            raise ValueError(msg)
+        return self
+
+
 class Workflow(BaseModel):
     name: str
     version: str = "2.0.0"
@@ -419,7 +541,9 @@ class Workflow(BaseModel):
         | WaitForEventOperator
         | SwitchOperator
         | JoinOperator
-        | ReflexiveOperator,
+        | ReflexiveOperator
+        | MultiChoiceOperator
+        | TerminateOperator,
     ] = Field(default_factory=dict)
     variables: dict[str, Any] = Field(default_factory=dict)
     start_task: str | None = None
@@ -440,6 +564,29 @@ class Workflow(BaseModel):
     default_retry_policy: RetryPolicy | None = Field(
         None, description="Default retry policy for all tasks"
     )
+
+    # Phase 2: Workflow-level deadline (WCP-deadline)
+    deadline_seconds: int | None = Field(
+        None, description="Maximum workflow duration in seconds from start"
+    )
+    deadline_action: str = Field(
+        "fail", description="Action on deadline: 'fail' or 'cancel'"
+    )
+
+    @model_validator(mode="after")
+    def validate_deadline(self) -> "Workflow":
+        """Validate deadline configuration."""
+        allowed = ("fail", "cancel")
+        if self.deadline_action not in allowed:
+            raise ValueError(
+                "deadline_action must be one of: %s (got '%s')"
+                % (", ".join(allowed), self.deadline_action)
+            )
+        if self.deadline_seconds is not None and self.deadline_seconds <= 0:
+            raise ValueError(
+                "deadline_seconds must be positive (got %d)" % self.deadline_seconds
+            )
+        return self
 
     @model_validator(mode="before")
     @classmethod
@@ -495,6 +642,8 @@ class Workflow(BaseModel):
                 OperatorType.SWITCH.value: SwitchOperator,
                 OperatorType.JOIN.value: JoinOperator,
                 OperatorType.REFLEXIVE.value: ReflexiveOperator,
+                OperatorType.MULTI_CHOICE.value: MultiChoiceOperator,
+                OperatorType.TERMINATE.value: TerminateOperator,
             }
             for task_id, task_data in data["tasks"].items():
                 if isinstance(task_data, BaseOperator):
@@ -526,6 +675,8 @@ class Workflow(BaseModel):
             | SwitchOperator
             | JoinOperator
             | ReflexiveOperator
+            | MultiChoiceOperator
+            | TerminateOperator
         ),
     ) -> "Workflow":
         self.tasks[task.task_id] = task
@@ -623,6 +774,8 @@ class WorkflowBuilder:
         version: str = "2.0.0",
         existing_workflow: Workflow | None = None,
         parent: Optional["WorkflowBuilder"] = None,
+        deadline_seconds: int | None = None,
+        deadline_action: str = "fail",
     ) -> None:
         if existing_workflow:
             self.workflow = existing_workflow
@@ -641,6 +794,8 @@ class WorkflowBuilder:
                 tags=[],
                 max_active_runs=1,
                 default_retry_policy=None,
+                deadline_seconds=deadline_seconds,
+                deadline_action=deadline_action,
             )
         self._current_task: str | None = None
         self.parent = parent
@@ -660,6 +815,8 @@ class WorkflowBuilder:
             | SwitchOperator
             | JoinOperator
             | ReflexiveOperator
+            | MultiChoiceOperator
+            | TerminateOperator
         ),
         **kwargs: Any,
     ) -> None:
@@ -1205,6 +1362,139 @@ class WorkflowBuilder:
             **kwargs,
         )
         self._add_task(task, **kwargs)
+        return self
+
+    def multi_choice(
+        self,
+        task_id: str,
+        branches: dict[str, tuple[str, Callable[["WorkflowBuilder"], "WorkflowBuilder"]]],
+        minimum_branches: int = 1,
+        **kwargs: Any,
+    ) -> "WorkflowBuilder":
+        """WCP-6: Multi-Choice (OR-split) operator.
+
+        Evaluates conditions and spawns only matching branches. Unlike parallel()
+        which spawns all branches unconditionally.
+
+        Args:
+            task_id: Unique identifier for this operator
+            branches: Dict of branch_name -> (condition_expression, builder_function)
+            minimum_branches: Minimum branches that must activate (safety check)
+            **kwargs: Additional operator config
+
+        Returns:
+            WorkflowBuilder for chaining
+        """
+        branch_defs = {}
+        branch_builders = {}
+        for name, (condition, branch_func) in branches.items():
+            normalized_name = name.lower()
+            branch_builder = branch_func(
+                WorkflowBuilder(f"{task_id}_{normalized_name}", parent=self),
+            )
+            branch_builders[name] = branch_builder
+            branch_defs[name] = MultiChoiceBranch(
+                condition=condition,
+                tasks=list(branch_builder.workflow.tasks.keys()),
+            )
+
+        branch_workflows = {
+            name: builder.workflow.model_dump(mode="json")
+            for name, builder in branch_builders.items()
+        }
+
+        task = MultiChoiceOperator(
+            task_id=task_id,
+            branches=branch_defs,
+            branch_workflows=branch_workflows,
+            minimum_branches=minimum_branches,
+            **kwargs,
+        )
+
+        self._add_task(task, **kwargs)
+        self._current_task = task_id
+        return self
+
+    def terminate(
+        self,
+        task_id: str,
+        status: str = "completed",
+        result: dict[str, Any] | None = None,
+        reason: str = "",
+        **kwargs: Any,
+    ) -> "WorkflowBuilder":
+        """WCP-43: Explicit Termination operator.
+
+        Immediately ends workflow execution with specified status.
+
+        Args:
+            task_id: Unique identifier
+            status: Termination status (completed, failed, cancelled)
+            result: Final workflow result data
+            reason: Termination reason for audit log
+            **kwargs: Additional operator config
+
+        Returns:
+            WorkflowBuilder for chaining
+        """
+        task = TerminateOperator(
+            task_id=task_id,
+            status=status,
+            result=result or {},
+            reason=reason,
+            **kwargs,
+        )
+        self._add_task(task, **kwargs)
+        return self
+
+    def precondition(
+        self,
+        variable: str,
+        check: str,
+        value: Any = None,
+        message: str = "",
+    ) -> "WorkflowBuilder":
+        """Add a precondition guard to the current task (WDP-34/35).
+
+        Args:
+            variable: Variable to check, e.g. '{{flight_number}}'
+            check: Check type (exists, not_null, equals, in_range, matches_regex, etc.)
+            value: Expected value for the check
+            message: Error message on failure
+
+        Returns:
+            WorkflowBuilder for chaining
+        """
+        if not self._current_task:
+            msg = "precondition() must be called after a task"
+            raise ValueError(msg)
+        guard = DataGuard(variable=variable, check=check, value=value, message=message)
+        self.workflow.tasks[self._current_task].preconditions.append(guard)
+        return self
+
+    def postcondition(
+        self,
+        variable: str,
+        check: str,
+        value: Any = None,
+        message: str = "",
+    ) -> "WorkflowBuilder":
+        """Add a postcondition guard to the current task (WDP-36/37).
+
+        Args:
+            variable: Variable to check, e.g. '{{result}}'
+            check: Check type (exists, not_null, equals, in_range, matches_regex, etc.)
+            value: Expected value for the check
+            message: Error message on failure
+
+        Returns:
+            WorkflowBuilder for chaining
+        """
+        if not self._current_task:
+            msg = "postcondition() must be called after a task"
+            raise ValueError(msg)
+        guard = DataGuard(variable=variable, check=check, value=value, message=message)
+        self.workflow.tasks[self._current_task].postconditions.append(guard)
         return self
 
     # Workflow metadata methods
