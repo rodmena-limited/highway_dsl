@@ -2,6 +2,7 @@ from .graphviz_export import generate_dot
 from .workflow_dsl import (
     ActivityOperator,
     BaseOperator,
+    ChildWorkflowOperator,
     CircuitBreakerPolicy,
     ConditionOperator,
     DataGuard,
@@ -31,6 +32,7 @@ from .workflow_dsl import (
 __all__ = [
     "ActivityOperator",
     "BaseOperator",
+    "ChildWorkflowOperator",
     "CircuitBreakerPolicy",
     "ConditionOperator",
     "DataGuard",

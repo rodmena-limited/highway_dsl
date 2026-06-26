@@ -62,6 +62,7 @@ class OperatorType(Enum):
     REFLEXIVE = "reflexive"  # Issue #331: Sherlock reflexive loop
     MULTI_CHOICE = "multi_choice"  # WCP-6: OR-split
     TERMINATE = "terminate"  # WCP-43: Explicit termination
+    CHILD_WORKFLOW = "child_workflow"  # Durable child workflows as separate runs + counter-join
 
 
 class JoinMode(Enum):
@@ -318,6 +319,7 @@ class ForEachOperator(BaseOperator):
             "ReflexiveOperator",
             "MultiChoiceOperator",
             "TerminateOperator",
+            "ChildWorkflowOperator",
         ]
     ] = Field(default_factory=list)
     parallel: bool = Field(
@@ -349,6 +351,7 @@ class WhileOperator(BaseOperator):
             "ReflexiveOperator",
             "MultiChoiceOperator",
             "TerminateOperator",
+            "ChildWorkflowOperator",
         ]
     ] = Field(default_factory=list)
     operator_type: OperatorType = Field(OperatorType.WHILE, frozen=True)
@@ -482,6 +485,24 @@ class TerminateOperator(BaseOperator):
         return self
 
 
+class ChildWorkflowOperator(BaseOperator):
+    """Spawn N child workflows as SEPARATE durable runs, then await + collect their results.
+
+    Unlike ParallelOperator (whose branch tasks run inline within the parent run/transaction),
+    each child here is its OWN workflow run - its own workflow_run_id, linked to the parent via
+    parent_run_id - so it is durable, crash-recoverable, and may itself spawn children (deep
+    hierarchies). Results are gathered via the run-id-independent counter-join. ``children`` maps
+    a branch name to a spec ``{"workflow_name": str, "inputs": dict}``.
+    """
+
+    children: dict[str, dict[str, Any]] = Field(
+        default_factory=dict,
+        description="Branch name -> {workflow_name, inputs} for each child workflow to spawn",
+    )
+    timeout_seconds: int | None = Field(None, description="Max seconds to await all children (None = default)")
+    operator_type: OperatorType = Field(OperatorType.CHILD_WORKFLOW, frozen=True)
+
+
 class Workflow(BaseModel):
     name: str
     version: str = "2.0.0"
@@ -501,7 +522,8 @@ class Workflow(BaseModel):
         | JoinOperator
         | ReflexiveOperator
         | MultiChoiceOperator
-        | TerminateOperator,
+        | TerminateOperator
+        | ChildWorkflowOperator,
     ] = Field(default_factory=dict)
     variables: dict[str, Any] = Field(default_factory=dict)
     start_task: str | None = None
@@ -587,6 +609,7 @@ class Workflow(BaseModel):
                 OperatorType.REFLEXIVE.value: ReflexiveOperator,
                 OperatorType.MULTI_CHOICE.value: MultiChoiceOperator,
                 OperatorType.TERMINATE.value: TerminateOperator,
+                OperatorType.CHILD_WORKFLOW.value: ChildWorkflowOperator,
             }
             for task_id, task_data in data["tasks"].items():
                 if isinstance(task_data, BaseOperator):
@@ -620,6 +643,7 @@ class Workflow(BaseModel):
             | ReflexiveOperator
             | MultiChoiceOperator
             | TerminateOperator
+            | ChildWorkflowOperator
         ),
     ) -> "Workflow":
         self.tasks[task.task_id] = task
@@ -760,6 +784,7 @@ class WorkflowBuilder:
             | ReflexiveOperator
             | MultiChoiceOperator
             | TerminateOperator
+            | ChildWorkflowOperator
         ),
         **kwargs: Any,
     ) -> None:
@@ -1037,6 +1062,61 @@ class WorkflowBuilder:
 
         self._current_task = task_id
         return self
+
+    def child_workflows(
+        self,
+        task_id: str,
+        children: dict[str, dict[str, Any]],
+        result_key: str | None = None,
+        timeout_seconds: int | None = None,
+        **kwargs: Any,
+    ) -> "WorkflowBuilder":
+        """Spawn N child workflows as separate DURABLE runs and await + collect their results.
+
+        Each child is its own workflow_run (crash-recoverable, linked by parent_run_id) and may
+        itself spawn children. ``children`` maps a branch name to ``{"workflow_name", "inputs"}``;
+        the collected ``{branch: {status, result}}`` map is stored under ``result_key``.
+
+        Example:
+            builder.child_workflows(
+                "fanout",
+                {
+                    "a": {"workflow_name": "summarize", "inputs": {"url": "{{u1}}"}},
+                    "b": {"workflow_name": "summarize", "inputs": {"url": "{{u2}}"}},
+                },
+                result_key="summaries",
+            )
+        """
+        if "depends_on" in kwargs and "dependencies" not in kwargs:
+            kwargs["dependencies"] = kwargs.pop("depends_on")
+        elif "depends_on" in kwargs:
+            kwargs.pop("depends_on")
+        if result_key is not None:
+            kwargs["result_key"] = result_key
+        if timeout_seconds is not None:
+            kwargs["timeout_seconds"] = timeout_seconds
+        task = ChildWorkflowOperator(task_id=task_id, children=children, **kwargs)
+        self._add_task(task, **kwargs)
+        self._current_task = task_id
+        return self
+
+    def child_workflow(
+        self,
+        task_id: str,
+        workflow_name: str,
+        inputs: dict[str, Any] | None = None,
+        result_key: str | None = None,
+        timeout_seconds: int | None = None,
+        **kwargs: Any,
+    ) -> "WorkflowBuilder":
+        """Spawn + await a SINGLE durable child workflow (convenience over child_workflows)."""
+        return self.child_workflows(
+            task_id,
+            {task_id: {"workflow_name": workflow_name, "inputs": inputs or {}}},
+            result_key=result_key,
+            timeout_seconds=timeout_seconds,
+            **kwargs,
+        )
 
     def parallel_with_join(
         self,

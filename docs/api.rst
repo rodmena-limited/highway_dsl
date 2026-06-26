@@ -1,7 +1,7 @@
 API Reference
 =============
 
-This section provides detailed API documentation for Highway DSL v2.1.2.
+This section provides detailed API documentation for Highway DSL v2.2.0.
 
 WorkflowBuilder
 ---------------

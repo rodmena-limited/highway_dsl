@@ -206,4 +206,5 @@ class TestPhase2Integration:
         assert restored.deadline_seconds == 900
         assert restored.deadline_action == "cancel"
         fe2 = restored.tasks["process_dynamic"]
+        assert isinstance(fe2, ForEachOperator)
         assert fe2.dynamic is True
