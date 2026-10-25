@@ -7,7 +7,7 @@
 
 **Highway DSL** is a Python-based domain-specific language for defining production-grade workflows with Temporal-style coordination patterns. It is part of the larger **Highway** project, an advanced workflow engine capable of running complex DAG-based workflows with durability guarantees.
 
-> **Version 3.0.0** removes the `highway_dsl.mcp_client_server` module, which was a client for the retired dsl.rodmena.app generator service. The DSL language, its operators and its JSON and YAML formats are unchanged from 2.2.0, so workflows written for 2.2.0 load and serialise the same way in 3.0.0.
+> **Version 3.0.0** removes the `highway_dsl.mcp_client_server` module, which was a client for the retired DSL generator web service. The DSL language, its operators and its JSON and YAML formats are unchanged from 2.2.0, so workflows written for 2.2.0 load and serialise the same way in 3.0.0.
 
 ## Version 2.2.0 - LTS Stable Release
 
@@ -541,7 +541,7 @@ builder.task(
 ### Version 3.0.0 (Current)
 
 **Removed:**
-- `highway_dsl.mcp_client_server` and the generator app under `app/`. They called https://dsl.rodmena.app/api/v1/generate_dsl, which was retired on 2026-10-25 and now answers 410 Gone.
+- `highway_dsl.mcp_client_server` and the generator app under `app/`. They were clients of the DSL generator web service, which was retired on 2026-10-25.
 
 **Unchanged:** the DSL language, every operator, `WorkflowBuilder`, and the JSON and YAML formats from 2.2.0. `highway_dsl.mcp_server` (the `highway-mcp-server` command) stays.
 
