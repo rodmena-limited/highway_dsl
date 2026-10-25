@@ -3,12 +3,11 @@
 [![PyPI version](https://badge.fury.io/py/highway-dsl.svg)](https://badge.fury.io/py/highway-dsl)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![LTS Stable](https://img.shields.io/badge/Status-LTS%20Stable-blue)](https://pypi.org/project/highway-dsl/)
-[![Version](https://img.shields.io/badge/Version-2.2.0-green)](https://github.com/rodmena-limited/highway_dsl)
-[![Publish to PyPI](https://github.com/rodmena-limited/highway_dsl/actions/workflows/publish.yml/badge.svg)](https://github.com/rodmena-limited/highway_dsl/actions/workflows/publish.yml)
+[![Version](https://img.shields.io/badge/Version-3.0.0-green)](https://github.com/rodmena-limited/highway_dsl)
 
 **Highway DSL** is a Python-based domain-specific language for defining production-grade workflows with Temporal-style coordination patterns. It is part of the larger **Highway** project, an advanced workflow engine capable of running complex DAG-based workflows with durability guarantees.
 
-> **🎯 LTS Stable Release**: Version 2.2.0 is a Long-Term Support release. No breaking changes will be introduced in the 2.x series, making it safe for production deployments. All future 2.x releases will maintain backward compatibility.
+> **Version 3.0.0** removes the `highway_dsl.mcp_client_server` module, which was a client for the retired dsl.rodmena.app generator service. The DSL language, its operators and its JSON and YAML formats are unchanged from 2.2.0, so workflows written for 2.2.0 load and serialise the same way in 3.0.0.
 
 ## Version 2.2.0 - LTS Stable Release
 
@@ -539,7 +538,14 @@ builder.task(
 
 ## Version History
 
-### Version 2.2.0 - LTS Stable Release (Current)
+### Version 3.0.0 (Current)
+
+**Removed:**
+- `highway_dsl.mcp_client_server` and the generator app under `app/`. They called https://dsl.rodmena.app/api/v1/generate_dsl, which was retired on 2026-10-25 and now answers 410 Gone.
+
+**Unchanged:** the DSL language, every operator, `WorkflowBuilder`, and the JSON and YAML formats from 2.2.0. `highway_dsl.mcp_server` (the `highway-mcp-server` command) stays.
+
+### Version 2.2.0 - LTS Stable Release
 
 **New in 2.2.0:**
 - `child_workflows()` / `child_workflow()` — spawn N child workflows as separate **durable** runs (each its own run, linked by `parent_run_id`), then await + collect their results via the run-id-independent counter-join. Each child is crash-recoverable and may itself spawn children (deep hierarchies) — unlike `parallel()` branch tasks, which run inline within the parent run.

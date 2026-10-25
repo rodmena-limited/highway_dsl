@@ -19,13 +19,9 @@ Welcome to Highway DSL Documentation
    :target: https://pypi.org/project/highway-dsl/
    :alt: LTS Stable
 
-.. image:: https://img.shields.io/badge/Version-2.2.0-green
+.. image:: https://img.shields.io/badge/Version-3.0.0-green
    :target: https://github.com/rodmena-limited/highway_dsl
    :alt: Version
-
-.. image:: https://github.com/rodmena-limited/highway_dsl/actions/workflows/publish.yml/badge.svg
-   :target: https://github.com/rodmena-limited/highway_dsl/actions/workflows/publish.yml
-   :alt: Publish to PyPI
 
 Version 2.2.0 - LTS Stable Release
 ------------------------------------
