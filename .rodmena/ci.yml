@@ -1,0 +1,55 @@
+version: 1
+
+concurrency:
+  group: ci-${{ ref }}
+  cancel_in_progress: true
+
+jobs:
+
+  tests-py313:
+    name: "lock, pytest and mypy strict on Python 3.13"
+    image: containers.rodmena.co.uk/rodmena/ci-python:3.13
+    timeout_minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: lock in sync with pyproject
+        run: uv lock --check
+      - name: install from the frozen lock
+        run: uv sync --frozen --extra dev
+      - name: the generator app and its client stay retired
+        run: |
+          set -eu
+          test ! -e app
+          test ! -e highway_dsl/mcp_client_server.py
+          if git grep -nE "dsl\.rodmena\.app|generate_dsl" -- . ':!.rodmena/ci.yml'; then echo "reference to the retired DSL generator"; exit 5; fi
+      - name: the suite collects real tests
+        run: |
+          set -eu
+          N=$(.venv/bin/pytest --collect-only -q -p no:cacheprovider | grep -c '::')
+          echo "collected: $N"
+          test "$N" -gt 140
+      - name: pytest
+        run: .venv/bin/pytest -q -p no:cacheprovider
+      - name: a planted failing test turns pytest red
+        run: |
+          set -eu
+          printf 'def test_planted_red():\n    assert False\n' > tests/test_planted_red_ci.py
+          if .venv/bin/pytest -q -p no:cacheprovider tests/test_planted_red_ci.py; then echo "pytest passed a planted failure"; exit 5; fi
+          rm tests/test_planted_red_ci.py
+      - name: mypy strict
+        run: .venv/bin/mypy .
+
+  tests-py310:
+    name: "pytest on Python 3.10 (requires-python floor)"
+    image: containers.rodmena.co.uk/rodmena/ci-python:3.13
+    timeout_minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: install from the frozen lock on 3.10
+        run: uv sync --frozen --extra dev --python 3.10
+      - name: interpreter is 3.10
+        run: .venv/bin/python -c "import sys; print(sys.version); sys.exit(sys.version_info[:2] != (3, 10))"
+      - name: pytest
+        run: .venv/bin/pytest -q -p no:cacheprovider

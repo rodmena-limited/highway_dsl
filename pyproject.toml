@@ -51,7 +51,6 @@ plugins = ["pydantic.mypy"]
 exclude = [
     "build/",
     "dist/",
-    "app/gunicorn.conf.py",  # Gunicorn hooks have dynamic types
 ]
 
 [[tool.mypy.overrides]]
@@ -60,33 +59,8 @@ disallow_untyped_defs = false
 disallow_untyped_calls = false
 
 [[tool.mypy.overrides]]
-module = "app.*"
-disallow_untyped_defs = false
-disallow_untyped_calls = false
-
-[[tool.mypy.overrides]]
-module = "selenium.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "webdriver_manager.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
 module = "mcp.*"
 ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "requests.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "flask.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "highway_dsl.mcp_client_server"
-disallow_untyped_decorators = false
 
 [[tool.mypy.overrides]]
 module = "highway_dsl.mcp_server"
@@ -101,7 +75,6 @@ warn_required_dynamic_aliases = true
 source = ["highway_dsl"]
 omit = [
     "highway_dsl/mcp_server.py",
-    "highway_dsl/mcp_client_server.py",
 ]
 
 [tool.coverage.report]
